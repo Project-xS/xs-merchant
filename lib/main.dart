@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -27,7 +26,7 @@ class _HomePageState extends State<HomePage> {
             NavigationDestination(
               icon: Icon(Icons.restaurant_menu),
               label: "Menu",
-              selectedIcon:pages(selectedIndex);
+              // selectedIcon:pages(selectedIndex);
               ),
             NavigationDestination(
               icon: Icon(Icons.pending_actions),
@@ -39,9 +38,9 @@ class _HomePageState extends State<HomePage> {
             setState(() {
               currentindex=ind;
             });
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) )
-            )
+            // Navigator.of(context).push(
+            //   MaterialPageRoute(builder: (context) )
+            // )
           },
           selectedIndex: currentindex,
           indicatorColor:Colors.amber,
@@ -51,8 +50,4 @@ class _HomePageState extends State<HomePage> {
       ,
         ),);
   }
-}
-
-void pages(int index){
-  push
 }

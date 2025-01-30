@@ -1,6 +1,8 @@
-# merchant
+# Xs-merchant
 
-A new Flutter project.
+Current Status:
+
+![alt text](image-1.png)
 
 ## Getting Started
 
