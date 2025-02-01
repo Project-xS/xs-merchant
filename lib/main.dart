@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'package:window_size/window_size.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/menupage.dart';
 
-void main() {
+void main(){
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+  WidgetsFlutterBinding.ensureInitialized();
+    setWindowMinSize(const Size(1025,1025));
+  }
   runApp(MaterialApp(
     theme:ThemeData.dark(),
     home:HomePage()));

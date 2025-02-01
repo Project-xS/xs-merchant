@@ -2,8 +2,20 @@
 
 Current Status:
 
+1. Added Price Editor:
 ![alt text](image.png)
 
+When Clicked the edit icon:
+![alt text](image-1.png)
+
+When Changed to 80:
+![alt text](image-2.png)
+
+2. Creating New Item(Needs Formatting)
+![alt text](image-3.png)
+
+Added new Item will be directly added on menu
+![alt text](image-4.png)
 ## Getting Started
 
 This project is a starting point for a Flutter application.
