@@ -21,11 +21,33 @@ class _MenupageState extends State<Menupage> {
     7: {'name': 'V Parotta', 'price': 30},
     8: {'name': 'N Parotta', 'price': 35},
     9: {'name': 'Noodles', 'price': 80},
+    10: {'name': 'oodles', 'price': 90},
+    11: {'name': 'Chcken Rice', 'price': 120},
+    12: {'name': 'Veg Frie Rice', 'price': 100},
+    13: {'name': 'Chlli Chicken', 'price': 150},
+    14: {'name': 'ice', 'price': 50},
+    15: {'name': 'asam', 'price': 40},
+    16: {'name': 'Sabar', 'price': 60},
+    17: {'name': 'V arotta', 'price': 30},
+    18: {'name': 'N arotta', 'price': 35},
+    19: {'name': 'Nodles', 'price': 80},
+    20: {'name': 'oodles', 'price': 90},
+    21: {'name': 'Chicen Rice', 'price': 120},
+    22: {'name': 'Veg Fied Rice', 'price': 100},
+    23: {'name': 'Chili Chicken', 'price': 150},
+    24: {'name': 'Rie', 'price': 50},
+    25: {'name': 'Raam', 'price': 40},
+    26: {'name': 'Sambr', 'price': 60},
+    27: {'name': 'V Paotta', 'price': 30},
+    28: {'name': 'N Paotta', 'price': 35},
+    29: {'name': 'Noodes', 'price': 80},
+    30: {'name': 'odles', 'price': 90},
+
   };
 
   int newitemid = 10;
-  Set<int> onmenuid = {1, 2, 6, 8};
-  Set<int> offmenuid = {3, 4, 5, 7, 9};
+  Set<int> onmenuid = {1, 2, 6, 8, 15, 16, 18, 24, 25, 26, 27, 30};
+  Set<int> offmenuid = {3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 17, 19, 20, 21, 22, 23, 28, 29};
 
   void toggleItem(int itemId) {
     setState(() {
@@ -41,7 +63,7 @@ class _MenupageState extends State<Menupage> {
 
   void changeRate(int itemId, String name) {
     int newRate = 0;
-    TextEditingController controller = TextEditingController();
+    TextEditingController controllerCR = TextEditingController();
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -51,7 +73,7 @@ class _MenupageState extends State<Menupage> {
             padding: EdgeInsets.all(10.00),
             child: Form(
               child: TextFormField(
-                controller: controller,
+                controller: controllerCR,
                 autofocus: true,
                 autocorrect: false,
                 keyboardType: TextInputType.number,
@@ -68,7 +90,7 @@ class _MenupageState extends State<Menupage> {
                       fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
                       overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255))),
                     onPressed: () {
-                      if (controller.text.isEmpty) {
+                      if (controllerCR.text.isEmpty || controllerCR.text.isEmpty || int.tryParse(controllerCR.text) == null || int.parse(controllerCR.text) == 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
@@ -76,15 +98,8 @@ class _MenupageState extends State<Menupage> {
                           ),
                         );
                       }
-                      newRate = int.parse(controller.text);
-                      if (newRate == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Error: Price Cannot be Changed to 0", style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                      } else {
+                      else{
+                        newRate = int.parse(controllerCR.text);
                         setState(() {
                           items[itemId] = {
                             'name' : items[itemId]?['name'],
@@ -105,23 +120,33 @@ class _MenupageState extends State<Menupage> {
       TextEditingController controller2 = TextEditingController();
       return AlertDialog(
         title: Text("Add new Item: ",style: TextStyle(fontWeight: FontWeight.w700)),
-        content: Form(
-          child: Column(
-            children: [TextFormField(
-              controller: controller1,
-              autocorrect: false,
-              textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(labelText: "Name", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
-            ),
-            TextFormField(
-              controller: controller2,
-              autocorrect: false,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(labelText: "Price", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
-            ),
-            ]),
-            ),
+        content: SizedBox(
+          width: double.minPositive,
+          height: 120.00,
+          child: Form(
+            child: Column(
+              children: [Padding(
+                padding: EdgeInsets.all(5.0),
+                child: TextFormField(
+                  controller: controller1,
+                  autocorrect: false,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(labelText: "Name", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(5.0),
+                child: TextFormField(
+                  controller: controller2,
+                  autocorrect: false,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(labelText: "Price", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
+                ),
+              ),
+              ]),
+              ),
+        ),
       actions:[TextButton(
                     style: ButtonStyle(
                       backgroundColor: WidgetStatePropertyAll(Colors.black), 
@@ -130,15 +155,24 @@ class _MenupageState extends State<Menupage> {
                       fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
                       overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255))),
                     onPressed: () {
-                      if (controller1.text == "" || int.parse(controller2.text) == 0){
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error - Don't feed Empty Values", style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                            backgroundColor: Colors.redAccent));
-                      }
+                      String name = controller1.text.trim();
+                      String priceText = controller2.text.trim();
+                      if (name.isEmpty || priceText.isEmpty || int.tryParse(priceText) == null || int.parse(priceText) == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Error - Don't feed Empty or Invalid Values",
+                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
+                              ),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
                       setState(() {
                         items[newitemid] = { 
-                          'name': controller1.text,
-                          'price': int.parse(controller2.text)
+                          'name': name,
+                          'price': int.parse(priceText)
                           };
                         onmenuid.add(newitemid);
                         newitemid++;
@@ -146,17 +180,76 @@ class _MenupageState extends State<Menupage> {
                       });
                     },
                     child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
-                  )
-      ]
+                  )]
       );
     });
   }
 
+  void deleteItem(int itemId, String name){
+    showDialog(context: context, builder: (context){
+      return AlertDialog(
+        title: Text("Do you want to delete $name", style: TextStyle(fontWeight: FontWeight.w700)),
+        content: SizedBox(
+          width: double.minPositive,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(Colors.black),
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
+                  fixedSize: WidgetStatePropertyAll(Size(120, 45)),
+                  overlayColor: WidgetStatePropertyAll(Color.fromARGB(255, 37, 113, 255)),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel")
+              ),
+              SizedBox(width:20.00),
+              TextButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(Colors.red),
+                  foregroundColor: WidgetStatePropertyAll(Colors.black),
+                  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
+                  fixedSize: WidgetStatePropertyAll(Size(120, 45)),
+                  overlayColor: WidgetStatePropertyAll(Colors.redAccent),
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (onmenuid.contains(itemId)) {
+                      onmenuid.remove(itemId);
+                    } else {
+                      offmenuid.remove(itemId);
+                    }
+                    items.remove(itemId);
+                    Navigator.pop(context);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "$name Deleted Successfully",
+                        style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
+                      ),
+                      backgroundColor: Colors.cyanAccent,
+                    ),
+                  );
+                },
+                child: Text("Delete"),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+        
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton:FloatingActionButton(
-        backgroundColor: Colors.green,
+      floatingActionButton: FloatingActionButton(
+        elevation: 5.00,
+        backgroundColor: Colors.cyan,
           child:Icon(Icons.add,color: Colors.black,),
           onPressed: (){
               addNewItem();
@@ -165,83 +258,115 @@ class _MenupageState extends State<Menupage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height:10.00),
-            buildGridSection("On Menu", onmenuid, Colors.green),
-            SizedBox(height:15.00),
-            buildGridSection("Not On Menu", offmenuid, Colors.grey),
+          SizedBox(height: 10.00),
+          Text("On Menu:", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+          if (onmenuid.isEmpty) 
+            Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  "No Items on Menu",
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+              ),
+            )
+          else 
+            buildGridSection(onmenuid, Colors.green),
+          SizedBox(height: 15.00),
+          Text("Not On Menu:", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+          if (offmenuid.isEmpty) 
+            Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  "No Items Available",
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+              ),
+            )
+          else 
+            buildGridSection(offmenuid, Colors.grey),
           ],
         ),
       ),
     );
   }
 
-  Widget buildGridSection(String title, Set<int> menuSet, Color bgColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(4.0),
-          child: Text(title, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+Widget buildGridSection(Set<int> menuSet, Color bgColor) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 6,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1,
         ),
-        GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 6,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1,
-          ),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: menuSet.length,
-          itemBuilder: (BuildContext context, int index) {
-            int itemId = menuSet.elementAt(index);
-            return GridTile(
-              child: Stack(
-                children: [
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => toggleItem(itemId),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AspectRatio(aspectRatio: 1.5, child:icon),
-                            Text(
-                              items[itemId]?['name'] ?? "Unknown Item",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
-                            Text(
-                              "₹${items[itemId]?['price'] ?? 'N/A'}",
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
-                          ],
-                        ),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: menuSet.length, // This can be a paginated count in future
+        itemBuilder: (BuildContext context, int index) {
+          int itemId = menuSet.elementAt(index);
+          return GridTile(
+            child: Stack(
+              children: [
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: InkWell(
+                    onTap: () => toggleItem(itemId),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AspectRatio(aspectRatio: 1.5, child: icon),
+                          Text(
+                            items[itemId]?['name'] ?? "Unknown Item",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            "₹${items[itemId]?['price'] ?? 'N/A'}",
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  Positioned(
-                    right: 5,
-                    top: 5,
-                    child: IconButton(
-                      hoverColor: Colors.blue,
-                      icon: Icon(Icons.edit, color: Colors.black),
-                      onPressed: () {
-                        changeRate(itemId, items[itemId]?['name']);
-                      },
-                    ),
+                ),
+                Positioned(
+                  left: 5,
+                  top: 5,
+                  child: IconButton(
+                    hoverColor: Colors.blue,
+                    icon: Icon(Icons.edit, color: Colors.black),
+                    onPressed: () {
+                      changeRate(itemId, items[itemId]?['name']);
+                    },
                   ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
+                ),
+                Positioned(
+                  right: 5,
+                  top: 5,
+                  child: IconButton(
+                    hoverColor: Colors.blue,
+                    icon: Icon(Icons.delete, color: Colors.black),
+                    onPressed: () {
+                      deleteItem(itemId, items[itemId]?['name']);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ],
+  );
+}
 }

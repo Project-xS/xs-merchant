@@ -2,20 +2,21 @@
 
 Current Status:
 
-1. Added Price Editor:
+1. Added Delete Item Feature:
 ![alt text](image.png)
 
-When Clicked the edit icon:
+When Clicked the Delete icon:
+ - Added Confirmation for deleting Items
 ![alt text](image-1.png)
 
-When Changed to 80:
+When Deleted:
+ - Snackbar Pops up
 ![alt text](image-2.png)
 
-2. Creating New Item(Needs Formatting)
+2. Formatted New Item Add
 ![alt text](image-3.png)
 
-Added new Item will be directly added on menu
-![alt text](image-4.png)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
