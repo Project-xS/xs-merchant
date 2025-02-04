@@ -61,24 +61,43 @@ class _MenupageState extends State<Menupage> {
     });
   }
 
-  void changeRate(int itemId, String name) {
+  void modifyItem(int itemId, String oldName, int oldRate) {
     int newRate = 0;
-    TextEditingController controllerCR = TextEditingController();
+    String name = "";
+      TextEditingController controllerCR = TextEditingController(text: "$oldRate");
+      TextEditingController controllerN = TextEditingController(text: oldName);
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Change Rate of $name:", style: TextStyle(fontWeight: FontWeight.w700)),
+          title: Text("Modify Item - $oldName :", style: TextStyle(fontWeight: FontWeight.w700)),
           content: Padding(
             padding: EdgeInsets.all(10.00),
-            child: Form(
-              child: TextFormField(
-                controller: controllerCR,
-                autofocus: true,
-                autocorrect: false,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(labelText: "New Price - ₹", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
+            child: SizedBox(
+              height: 140.00,
+              child: Form(
+                child: Column(
+                  children: [
+                  TextFormField(
+                      controller: controllerN,
+                      maxLength: 40,
+                      autofocus: true,
+                      autocorrect: false,
+                      decoration: InputDecoration(
+                      labelText: "New Name", 
+                      labelStyle: TextStyle(fontSize:15.00), 
+                      floatingLabelStyle: TextStyle(fontSize:20.00)),
+                ),
+                    TextFormField(
+                      controller: controllerCR,
+                      maxLength: 6,
+                      autofocus: true,
+                      autocorrect: false,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(labelText: "New Price - ₹", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
+                    ),
+                ]),
               ),
             ),
           ),
@@ -99,10 +118,16 @@ class _MenupageState extends State<Menupage> {
                         );
                       }
                       else{
+                        if (controllerN.text.isEmpty || controllerN.text.isEmpty){
+                          name = oldName;
+                        }
+                        else{
+                          name = controllerN.text;
+                        }
                         newRate = int.parse(controllerCR.text);
                         setState(() {
                           items[itemId] = {
-                            'name' : items[itemId]?['name'],
+                            'name' : name,
                             'price' : newRate,
                       };});
                       }
@@ -122,12 +147,13 @@ class _MenupageState extends State<Menupage> {
         title: Text("Add new Item: ",style: TextStyle(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: double.minPositive,
-          height: 120.00,
+          height: 160.00,
           child: Form(
             child: Column(
               children: [Padding(
                 padding: EdgeInsets.all(5.0),
                 child: TextFormField(
+                  maxLength: 40,
                   controller: controller1,
                   autocorrect: false,
                   textCapitalization: TextCapitalization.words,
@@ -137,6 +163,7 @@ class _MenupageState extends State<Menupage> {
               Padding(
                 padding: EdgeInsets.all(5.0),
                 child: TextFormField(
+                  maxLength: 4,
                   controller: controller2,
                   autocorrect: false,
                   keyboardType: TextInputType.number,
@@ -248,7 +275,7 @@ class _MenupageState extends State<Menupage> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        elevation: 5.00,
+        elevation: 10.00,
         backgroundColor: Colors.cyan,
           child:Icon(Icons.add,color: Colors.black,),
           onPressed: (){
@@ -296,73 +323,96 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 6,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1,
-        ),
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: menuSet.length, // This can be a paginated count in future
-        itemBuilder: (BuildContext context, int index) {
-          int itemId = menuSet.elementAt(index);
-          return GridTile(
-            child: Stack(
-              children: [
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: InkWell(
-                    onTap: () => toggleItem(itemId),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: bgColor,
+      LayoutBuilder(
+        builder: (context, constraints) {
+          int crossAxisCount = 6;
+          if (constraints.maxWidth < 960) {
+            crossAxisCount = 3;
+          } else if (constraints.maxWidth < 1300) {
+            crossAxisCount = 4;
+          }
+            else if (constraints.maxWidth < 1500) {
+              crossAxisCount = 5;
+          }
+
+          return GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1,
+            ),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: menuSet.length,
+            itemBuilder: (BuildContext context, int index) {
+              int itemId = menuSet.elementAt(index);
+              return GridTile(
+                child: Stack(
+                  children: [
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: InkWell(
+                        onTap: () => toggleItem(itemId),
                         borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AspectRatio(aspectRatio: 1.5, child: icon),
-                          Text(
-                            items[itemId]?['name'] ?? "Unknown Item",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          Text(
-                            "₹${items[itemId]?['price'] ?? 'N/A'}",
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AspectRatio(
+                                aspectRatio: 1.5,
+                                child: icon),
+                              AspectRatio(
+                                aspectRatio: 10,
+                                child: Text(
+                                  items[itemId]?['name'] ?? "Unknown Item",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ),
+                              AspectRatio(
+                                aspectRatio: 10,
+                                child: Text(
+                                  "₹${items[itemId]?['price'] ?? 'N/A'}",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      left: 5,
+                      top: 5,
+                      child: IconButton(
+                        hoverColor: Colors.blue,
+                        icon: Icon(Icons.edit, color: Colors.black),
+                        onPressed: () {
+                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price']);
+                        },
+                      ),
+                    ),
+                    Positioned(
+                      right: 5,
+                      top: 5,
+                      child: IconButton(
+                        hoverColor: Colors.blue,
+                        icon: Icon(Icons.delete, color: Colors.black),
+                        onPressed: () {
+                          deleteItem(itemId, items[itemId]?['name']);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  left: 5,
-                  top: 5,
-                  child: IconButton(
-                    hoverColor: Colors.blue,
-                    icon: Icon(Icons.edit, color: Colors.black),
-                    onPressed: () {
-                      changeRate(itemId, items[itemId]?['name']);
-                    },
-                  ),
-                ),
-                Positioned(
-                  right: 5,
-                  top: 5,
-                  child: IconButton(
-                    hoverColor: Colors.blue,
-                    icon: Icon(Icons.delete, color: Colors.black),
-                    onPressed: () {
-                      deleteItem(itemId, items[itemId]?['name']);
-                    },
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
