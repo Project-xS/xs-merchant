@@ -162,40 +162,7 @@ class _MenupageState extends State<Menupage> {
               ]),
               ),
         ),
-      actions:[TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(Colors.black), 
-                      foregroundColor: WidgetStatePropertyAll(Colors.white),
-                      padding:WidgetStatePropertyAll(EdgeInsets.all(30.00)),
-                      fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
-                      overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255))),
-                    onPressed: () {
-                      String name = controller1.text.trim();
-                      String priceText = controller2.text.trim();
-                      if (name.isEmpty || priceText.isEmpty || int.tryParse(priceText) == null || int.parse(priceText) == 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Error - Don't feed Empty or Invalid Values",
-                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
-                              ),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                          return;
-                        }
-                      setState(() {
-                        items[newitemid] = { 
-                          'name': name,
-                          'price': int.parse(priceText)
-                          };
-                        onmenuid.add(newitemid);
-                        newitemid++;
-                        Navigator.pop(context);
-                      });
-                    },
-                    child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
-                  )]
+      actions:[]
       );
     });
   }
@@ -207,11 +174,11 @@ class _MenupageState extends State<Menupage> {
       if (isAdd){
         if (onmenu){
           text = "Remove";
-          text2 = "from On Menu Items";
+          text2 = "from On Menu Items ";
         }
         else{
           text = "Add";
-          text2 = "to menu Items";
+          text2 = "to menu Items ";
         }
       }
       else{
@@ -269,7 +236,7 @@ class _MenupageState extends State<Menupage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "Item : $name $text $text2 Successful",
+                        "Item : $name $text $text2""Successful",
                         style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
                       ),
                       backgroundColor: Colors.cyanAccent,
@@ -285,17 +252,169 @@ class _MenupageState extends State<Menupage> {
     },
   );
 }
-        
+  
+  void massEdit() {
+    Map<int, Map<String, dynamic>> changes = {};
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title:Text("Multiple Item Edit:"),
+          titleTextStyle: TextStyle(
+              fontSize: 25.00,
+              fontWeight: FontWeight.w700,
+          ),
+          clipBehavior: Clip.hardEdge,
+          content: SizedBox(
+            height: 400.00,
+            width: 500.00,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: items.length,
+              itemBuilder: (BuildContext context, int index) {
+                int itemId = items.keys.elementAt(index);
+                return ListTile(
+                  subtitle: Form(
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 200.00,
+                              child: TextFormField(
+                                initialValue: items[itemId]?['name'],
+                                decoration: InputDecoration(labelText: "Item Name"),
+                                onChanged: (String value){ 
+                                  if (value.isEmpty){
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
+                                    backgroundColor: Colors.redAccent,));
+                                  }
+                                  else{
+                                    changes[itemId]={
+                                      'name' : value,
+                                      'price' : changes.containsKey(itemId) == true ? (changes[itemId]?['price']) : (items[itemId]?['price'])
+                                    };
+                                }
+                                }),
+                            ),
+                            SizedBox(width:10.00),
+                            SizedBox(
+                              width: 90.00,
+                              child: TextFormField(
+                                initialValue: items[itemId]?['price'].toString(),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                decoration: InputDecoration(labelText: "Price"),
+                                onChanged: (value){ 
+                                  if (value.isEmpty){
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
+                                    backgroundColor: Colors.redAccent,));
+                                  }
+                                  else{
+                                    changes[itemId]={
+                                      'price' : int.parse(value),
+                                      'name' : changes.containsKey(itemId) == true ? (changes[itemId]?['name']) : (items[itemId]?['name'])
+                                    };
+                                }}
+                              ),
+                            ),SizedBox(width:10.00),
+                            StatefulBuilder(
+                              builder: (context, setState) {
+                              return SizedBox(
+                                width: 135.00,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Checkbox(
+                                      value: onmenuid.contains(itemId),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          if (!onmenuid.contains(itemId)) {
+                                            onmenuid.add(itemId);
+                                            offmenuid.remove(itemId);
+                                          } else {
+                                            onmenuid.remove(itemId);
+                                            offmenuid.add(itemId);
+                                          }
+                                      });
+                                      },
+                                    ),
+                                    Text(
+                                      onmenuid.contains(itemId) ? "On Menu" : "Not On Menu",
+                                      style: TextStyle(fontSize: 16))
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.black),
+                foregroundColor: WidgetStateProperty.all(Colors.white),
+                padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
+                fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
+                overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+              ),
+              onPressed: () {
+                  setState(() {
+                    for (int i in changes.keys){
+                      if(changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']){
+                        items[i] = {
+                          'name' : changes[i]?['name'],
+                          'price' : changes[i]?['price']
+                        };
+                      }}
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                        "Item Changes are Successful",
+                        style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
+                        ),
+                        backgroundColor: Colors.cyanAccent,
+                        ));
+                      Navigator.pop(context);
+                    });
+              },
+              child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [FloatingActionButton(
         elevation: 10.00,
         backgroundColor: Colors.cyan,
-          child:Icon(Icons.add,color: Colors.black,),
           onPressed: (){
               addNewItem();
-          }),
+          },
+          child: Icon(Icons.add,color: Colors.black)
+          ),
+          SizedBox(width: 10.00),
+          FloatingActionButton(
+            elevation: 10.00,
+            backgroundColor: Colors.cyan,
+            onPressed: () {
+              massEdit();
+            },
+            child: Icon(Icons.edit,color: Colors.black),
+          )]),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +536,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                       right: 5,
                       top: 5,
                       child: IconButton(
-                        hoverColor: Colors.blue,
+                        hoverColor: Colors.red,
                         icon: Icon(Icons.delete, color: Colors.black),
                         onPressed: () {
                           delAddItem(itemId, items[itemId]?['name'], false, false);
