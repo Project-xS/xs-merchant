@@ -49,18 +49,6 @@ class _MenupageState extends State<Menupage> {
   Set<int> onmenuid = {1, 2, 6, 8, 15, 16, 18, 24, 25, 26, 27, 30};
   Set<int> offmenuid = {3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 17, 19, 20, 21, 22, 23, 28, 29};
 
-  void toggleItem(int itemId) {
-    setState(() {
-      if (onmenuid.contains(itemId)) {
-        onmenuid.remove(itemId);
-        offmenuid.add(itemId);
-      } else {
-        offmenuid.remove(itemId);
-        onmenuid.add(itemId);
-      }
-    });
-  }
-
   void modifyItem(int itemId, String oldName, int oldRate) {
     int newRate = 0;
     String name = "";
@@ -212,10 +200,25 @@ class _MenupageState extends State<Menupage> {
     });
   }
 
-  void deleteItem(int itemId, String name){
+  void delAddItem(int itemId, String name, bool isAdd , bool onmenu){
     showDialog(context: context, builder: (context){
+      String text = "";
+      String text2 = "";
+      if (isAdd){
+        if (onmenu){
+          text = "Remove";
+          text2 = "from On Menu Items";
+        }
+        else{
+          text = "Add";
+          text2 = "to menu Items";
+        }
+      }
+      else{
+        text = "Delete";
+      }
       return AlertDialog(
-        title: Text("Do you want to delete $name", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text("Do you want to $text \"$name\" $text2:", style: TextStyle(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: double.minPositive,
           child: Row(
@@ -235,33 +238,45 @@ class _MenupageState extends State<Menupage> {
               SizedBox(width:20.00),
               TextButton(
                 style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(Colors.red),
+                  backgroundColor: WidgetStatePropertyAll(isAdd 
+                        ? (onmenu ? Colors.yellow : Colors.green) 
+                        : Colors.red),
                   foregroundColor: WidgetStatePropertyAll(Colors.black),
                   padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
                   fixedSize: WidgetStatePropertyAll(Size(120, 45)),
-                  overlayColor: WidgetStatePropertyAll(Colors.redAccent),
+                  overlayColor: WidgetStatePropertyAll(isAdd 
+                      ? (onmenu ? Colors.yellowAccent : Colors.greenAccent) 
+                      : Colors.redAccent),
                 ),
                 onPressed: () {
-                  setState(() {
-                    if (onmenuid.contains(itemId)) {
-                      onmenuid.remove(itemId);
-                    } else {
-                      offmenuid.remove(itemId);
-                    }
-                    items.remove(itemId);
-                    Navigator.pop(context);
-                  });
+                    setState(() {
+                      if (onmenuid.contains(itemId)) {
+                        onmenuid.remove(itemId);
+                        if (isAdd == true){
+                          offmenuid.add(itemId);
+                        }
+                      } else {
+                          offmenuid.remove(itemId);
+                          if (isAdd == true){
+                            onmenuid.add(itemId);
+                        }
+                      }
+                      if (isAdd == false){
+                        items.remove(itemId);
+                      }
+                      Navigator.pop(context);
+                    });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "$name Deleted Successfully",
+                        "Item : $name $text $text2 Successful",
                         style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
                       ),
                       backgroundColor: Colors.cyanAccent,
                     ),
                   );
                 },
-                child: Text("Delete"),
+                child: Text(text),
               ),
             ],
           ),
@@ -353,7 +368,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: InkWell(
-                        onTap: () => toggleItem(itemId),
+                        onTap: () => delAddItem(itemId, items[itemId]?['name'], true, onmenuid.contains(itemId)),
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           decoration: BoxDecoration(
@@ -405,7 +420,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                         hoverColor: Colors.blue,
                         icon: Icon(Icons.delete, color: Colors.black),
                         onPressed: () {
-                          deleteItem(itemId, items[itemId]?['name']);
+                          delAddItem(itemId, items[itemId]?['name'], false, false);
                         },
                       ),
                     ),
