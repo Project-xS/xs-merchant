@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class Menupage extends StatefulWidget {
   const Menupage({super.key});
@@ -12,48 +13,48 @@ class _MenupageState extends State<Menupage> {
   Image icon = Image(image: AssetImage("assets/logo.png"), width: 250.00, height: 150.00);
 
   Map<int, Map<String, dynamic>> items = {
-    1: {'name': 'Chicken Rice', 'price': 120},
-    2: {'name': 'Veg Fried Rice', 'price': 100},
-    3: {'name': 'Chilli Chicken', 'price': 150},
-    4: {'name': 'Rice', 'price': 50},
-    5: {'name': 'Rasam', 'price': 40},
-    6: {'name': 'Sambar', 'price': 60},
-    7: {'name': 'V Parotta', 'price': 30},
-    8: {'name': 'N Parotta', 'price': 35},
-    9: {'name': 'Noodles', 'price': 80},
-    10: {'name': 'oodles', 'price': 90},
-    11: {'name': 'Chcken Rice', 'price': 120},
-    12: {'name': 'Veg Frie Rice', 'price': 100},
-    13: {'name': 'Chlli Chicken', 'price': 150},
-    14: {'name': 'ice', 'price': 50},
-    15: {'name': 'asam', 'price': 40},
-    16: {'name': 'Sabar', 'price': 60},
-    17: {'name': 'V arotta', 'price': 30},
-    18: {'name': 'N arotta', 'price': 35},
-    19: {'name': 'Nodles', 'price': 80},
-    20: {'name': 'oodles', 'price': 90},
-    21: {'name': 'Chicen Rice', 'price': 120},
-    22: {'name': 'Veg Fied Rice', 'price': 100},
-    23: {'name': 'Chili Chicken', 'price': 150},
-    24: {'name': 'Rie', 'price': 50},
-    25: {'name': 'Raam', 'price': 40},
-    26: {'name': 'Sambr', 'price': 60},
-    27: {'name': 'V Paotta', 'price': 30},
-    28: {'name': 'N Paotta', 'price': 35},
-    29: {'name': 'Noodes', 'price': 80},
-    30: {'name': 'odles', 'price': 90},
+    1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false},
+    2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true},
+    3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false},
+    4: {'name': 'Rice', 'price': 50, 'isVeg': true},
+    5: {'name': 'Rasam', 'price': 40, 'isVeg': true},
+    6: {'name': 'Sambar', 'price': 60, 'isVeg': true},
+    7: {'name': 'V Parotta', 'price': 30, 'isVeg': true},
+    8: {'name': 'N Parotta', 'price': 35, 'isVeg': false},
+    9: {'name': 'Noodles', 'price': 80, 'isVeg': false},
+    10: {'name': 'special', 'price': 9999, 'isVeg': true},
+    11: {'name': 'Chcken Rice', 'price': 120, 'isVeg': false},
+    12: {'name': 'Veg Frie Rice', 'price': 100, 'isVeg': true},
+    13: {'name': 'Chlli Chicken', 'price': 150, 'isVeg': false},
+    14: {'name': 'ice', 'price': 50, 'isVeg': true},
+    15: {'name': 'asam', 'price': 40, 'isVeg': true},
+    16: {'name': 'Sabar', 'price': 60, 'isVeg': true},
+    17: {'name': 'V arotta', 'price': 30, 'isVeg': false},
+    18: {'name': 'N arotta', 'price': 35, 'isVeg': false},
+    19: {'name': 'Nodles', 'price': 80, 'isVeg': true},
+    20: {'name': 'oodles', 'price': 90, 'isVeg': true},
+    21: {'name': 'Chicen Rice', 'price': 120, 'isVeg': false},
+    22: {'name': 'Veg Fied Rice', 'price': 100, 'isVeg': true},
+    23: {'name': 'Chili Chicken', 'price': 150, 'isVeg': false},
+    24: {'name': 'Rie', 'price': 50, 'isVeg': false},
+    25: {'name': 'Raam', 'price': 40, 'isVeg': true},
+    26: {'name': 'Sambr', 'price': 60, 'isVeg': false},
+    27: {'name': 'V Paotta', 'price': 30, 'isVeg': true},
+    28: {'name': 'N Paotta', 'price': 35, 'isVeg': false},
+    29: {'name': 'Noodes', 'price': 80, 'isVeg': false},
+    30: {'name': 'odles', 'price': 90, 'isVeg': false},
 
   };
 
-  int newitemid = 10;
+  int newitemid = 1;
   Set<int> onmenuid = {1, 2, 6, 8, 15, 16, 18, 24, 25, 26, 27, 30};
   Set<int> offmenuid = {3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 17, 19, 20, 21, 22, 23, 28, 29};
 
-  void modifyItem(int itemId, String oldName, int oldRate) {
+  void modifyItem(int itemId, String oldName, int oldRate, bool isVeg) {
     int newRate = 0;
     String name = "";
-      TextEditingController controllerCR = TextEditingController(text: "$oldRate");
-      TextEditingController controllerN = TextEditingController(text: oldName);
+    TextEditingController controllerCR = TextEditingController(text: "$oldRate");
+    TextEditingController controllerN = TextEditingController(text: oldName);
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -62,9 +63,10 @@ class _MenupageState extends State<Menupage> {
           content: Padding(
             padding: EdgeInsets.all(10.00),
             child: SizedBox(
-              height: 140.00,
+              height: 170.00,
               child: Form(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                   TextFormField(
                       controller: controllerN,
@@ -78,17 +80,38 @@ class _MenupageState extends State<Menupage> {
                 ),
                     TextFormField(
                       controller: controllerCR,
-                      maxLength: 6,
+                      maxLength: 4,
                       autofocus: true,
                       autocorrect: false,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(labelText: "New Price - ₹", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
                     ),
-                ]),
+                    Row(
+                      children: [Text("Veg : ", style: TextStyle(fontSize:15.00)),
+                        StatefulBuilder(
+                          builder:(context, setState) {
+                              return Checkbox(
+                                value: items[itemId]?['isVeg'], 
+                                onChanged: (value){
+                                    setState((){
+                                      if (items[itemId]?['isVeg'] == true){
+                                        items[itemId]?['isVeg'] = false;
+                                        isVeg = false;
+                                      }
+                                      else{
+                                        items[itemId]?['isVeg'] = true;
+                                        isVeg = true;
+                                      }
+                                    });
+                                }
+                                );}
+                        ),
+                      ],
+                    )])
+                ),
               ),
             ),
-          ),
         actions: [TextButton(
                     style: ButtonStyle(
                       backgroundColor: WidgetStatePropertyAll(Colors.black), 
@@ -114,13 +137,22 @@ class _MenupageState extends State<Menupage> {
                         }
                         newRate = int.parse(controllerCR.text);
                         setState(() {
+                          if (items.values.any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == name.trim().toLowerCase().replaceAll(' ', ''))){
+                            ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Error: $name Already Exist - Give a new Name",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      }
+                        else{
                           items[itemId] = {
                             'name' : name,
                             'price' : newRate,
-                      };});
-                      }
+                            'isVeg' : isVeg,
+                          };}
                       Navigator.pop(context);
-                    },
+                    });}},
                     child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
                   ),],);
       },
@@ -131,11 +163,12 @@ class _MenupageState extends State<Menupage> {
     showDialog(context: context, builder: (BuildContext context){
       TextEditingController controller1 = TextEditingController();
       TextEditingController controller2 = TextEditingController();
+      bool isVeg = false;
       return AlertDialog(
         title: Text("Add new Item: ",style: TextStyle(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: double.minPositive,
-          height: 160.00,
+          height: 200.00,
           child: Form(
             child: Column(
               children: [Padding(
@@ -159,33 +192,101 @@ class _MenupageState extends State<Menupage> {
                   decoration: InputDecoration(labelText: "Price", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
                 ),
               ),
+              SizedBox(height:10.00),
+              Row(
+                      children: [Text("Veg : ", style: TextStyle(fontSize:15.00)),
+                        StatefulBuilder(
+                          builder:(context, setState) {
+                              return Checkbox(
+                                value: isVeg, 
+                                onChanged: (value){
+                                    setState((){
+                                      if (isVeg){
+                                        isVeg = false;
+                                      }
+                                      else{
+                                        isVeg = true;
+                                      }
+                                    });
+                                }
+                                );}
+                        ),
+                      ],
+                    )
               ]),
               ),
         ),
-      actions:[]
+      actions:[TextButton(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(Colors.black), 
+                      foregroundColor: WidgetStatePropertyAll(Colors.white),
+                      padding:WidgetStatePropertyAll(EdgeInsets.all(30.00)),
+                      fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
+                      overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255))),
+                    onPressed: () {
+                      String name = controller1.text.trim();
+                      String priceText = controller2.text.trim();
+                      if (name.isEmpty || priceText.isEmpty || int.tryParse(priceText) == null || int.parse(priceText) == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Error - Don't feed Empty or Invalid Values",
+                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
+                              ),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+                      setState(() {
+                        if (offmenuid.contains(newitemid)){
+                          offmenuid.remove(newitemid);
+                        }
+                        if (items.values.any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == name.trim().toLowerCase().replaceAll(' ', ''))){
+                            newitemid = items.keys.firstWhere(
+                              (key) => items[key]?['name'].toLowerCase() == name, 
+                              orElse: () => newitemid = newitemid);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                            content: Text("Exception: $name Already Exists, Changed that item details",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                        items[newitemid] = { 
+                          'name': name,
+                          'price': int.parse(priceText),
+                          'isVeg' : isVeg
+                          };
+                          Navigator.pop(context);
+                      }
+                      else{
+                        items[newitemid] = { 
+                          'name': name,
+                          'price': int.parse(priceText),
+                          'isVeg' : isVeg
+                          };
+                        onmenuid.add(newitemid);
+                        newitemid++;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                        "Item : \"$name\" Added Successful",
+                        style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
+                        ),
+                        backgroundColor: Colors.cyanAccent,
+                        ));
+                      Navigator.pop(context);
+                      }});
+                    },
+                    child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
+                  )]
       );
     });
   }
 
   void delAddItem(int itemId, String name, bool isAdd , bool onmenu){
     showDialog(context: context, builder: (context){
-      String text = "";
-      String text2 = "";
-      if (isAdd){
-        if (onmenu){
-          text = "Remove";
-          text2 = "from On Menu Items ";
-        }
-        else{
-          text = "Add";
-          text2 = "to menu Items ";
-        }
-      }
-      else{
-        text = "Delete";
-      }
       return AlertDialog(
-        title: Text("Do you want to $text \"$name\" $text2:", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text("Do you want to ${(isAdd && onmenu)?"Remove \"$name\" from the Menu":((isAdd && !onmenu)?"Add \"$name\" to the Menu":"Delete \"$name\"")}", style: TextStyle(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: double.minPositive,
           child: Row(
@@ -205,15 +306,11 @@ class _MenupageState extends State<Menupage> {
               SizedBox(width:20.00),
               TextButton(
                 style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(isAdd 
-                        ? (onmenu ? Colors.yellow : Colors.green) 
-                        : Colors.red),
+                  backgroundColor: WidgetStatePropertyAll(isAdd?(onmenu?Colors.yellow:Colors.green):Colors.red),
                   foregroundColor: WidgetStatePropertyAll(Colors.black),
                   padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
                   fixedSize: WidgetStatePropertyAll(Size(120, 45)),
-                  overlayColor: WidgetStatePropertyAll(isAdd 
-                      ? (onmenu ? Colors.yellowAccent : Colors.greenAccent) 
-                      : Colors.redAccent),
+                  overlayColor: WidgetStatePropertyAll(isAdd?(onmenu?Colors.yellowAccent:Colors.greenAccent):Colors.redAccent),
                 ),
                 onPressed: () {
                     setState(() {
@@ -233,19 +330,17 @@ class _MenupageState extends State<Menupage> {
                       }
                       Navigator.pop(context);
                     });
-                  ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "Item : $name $text $text2""Successful",
+                        "Item : ${(isAdd && onmenu)?"$name Removed from Menu":((isAdd && !onmenu)?"$name Added to the Menu":"$name Deleted Successfully")}",
                         style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
                       ),
-                      backgroundColor: Colors.cyanAccent,
-                    ),
+                      backgroundColor: (isAdd && onmenu)?Colors.yellowAccent:((isAdd && !onmenu)?Colors.cyanAccent:Colors.redAccent))
                   );
                 },
-                child: Text(text),
-              ),
-            ],
+                child: Text((isAdd && onmenu)?"Remove":((isAdd && !onmenu)?"Add":"Delete")),
+          )],
           ),
         ),
       );
@@ -254,6 +349,8 @@ class _MenupageState extends State<Menupage> {
 }
   
   void massEdit() {
+    bool isError = false;
+    Set<String> err = {};
     Map<int, Map<String, dynamic>> changes = {};
     showDialog(
       context: context,
@@ -264,7 +361,6 @@ class _MenupageState extends State<Menupage> {
               fontSize: 25.00,
               fontWeight: FontWeight.w700,
           ),
-          clipBehavior: Clip.hardEdge,
           content: SizedBox(
             height: 400.00,
             width: 500.00,
@@ -278,34 +374,49 @@ class _MenupageState extends State<Menupage> {
                     child: Column(
                       children: [
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(
-                              width: 200.00,
+                              width: 150.00,
                               child: TextFormField(
+                                maxLength: 40,
                                 initialValue: items[itemId]?['name'],
-                                decoration: InputDecoration(labelText: "Item Name"),
-                                onChanged: (String value){ 
+                                decoration: InputDecoration(labelText: "Item Name", counterText: ""),
+                                onChanged: (value){ 
                                   if (value.isEmpty){
                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                     content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
                                     backgroundColor: Colors.redAccent,));
                                   }
                                   else{
-                                    changes[itemId]={
-                                      'name' : value,
-                                      'price' : changes.containsKey(itemId) == true ? (changes[itemId]?['price']) : (items[itemId]?['price'])
-                                    };
-                                }
+                                    if (items.values.any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))){
+                                      isError = true;
+                                      err.add(value.trim().replaceAll(" ",""));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text("Exception: $value Already Exits, Change the name",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
+                                          backgroundColor: Colors.redAccent,
+                                        ),
+                                      );
+                                    }
+                                    else{
+                                      changes[itemId]={
+                                        'name' : value,
+                                        'price' : changes.containsKey(itemId) == true ? (changes[itemId]?['price']) : (items[itemId]?['price']),
+                                        'isVeg' : changes.containsKey(itemId) == true ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
+                                      };
+                                }}
                                 }),
                             ),
                             SizedBox(width:10.00),
                             SizedBox(
-                              width: 90.00,
+                              width: 50.00,
                               child: TextFormField(
+                                maxLength: 4,
                                 initialValue: items[itemId]?['price'].toString(),
                                 keyboardType: TextInputType.number,
                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                decoration: InputDecoration(labelText: "Price"),
+                                decoration: InputDecoration(labelText: "Price", counterText: ""),
                                 onChanged: (value){ 
                                   if (value.isEmpty){
                                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -315,7 +426,8 @@ class _MenupageState extends State<Menupage> {
                                   else{
                                     changes[itemId]={
                                       'price' : int.parse(value),
-                                      'name' : changes.containsKey(itemId) == true ? (changes[itemId]?['name']) : (items[itemId]?['name'])
+                                      'name' : changes.containsKey(itemId) == true ? (changes[itemId]?['name']) : (items[itemId]?['name']),
+                                      'isVeg' : changes.containsKey(itemId) == true ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
                                     };
                                 }}
                               ),
@@ -323,8 +435,26 @@ class _MenupageState extends State<Menupage> {
                             StatefulBuilder(
                               builder: (context, setState) {
                               return SizedBox(
-                                width: 135.00,
-                                child: Row(
+                                width: 220.00,
+                                child:Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Checkbox(
+                                                value: items[itemId]?['isVeg'],
+                                                onChanged: (value){
+                                                    setState((){
+                                                      if (items[itemId]?['isVeg'] == true){
+                                                        items[itemId]?['isVeg'] = false;
+                                                      }
+                                                      else{
+                                                        items[itemId]?['isVeg'] = true;
+                                                      }
+                                                    });
+                                                }
+                                        ),
+                                      Text("Veg", style: TextStyle(fontSize:15.00)), 
+                                  SizedBox(width:10.00),                                  
+                                  Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Checkbox(
@@ -342,11 +472,12 @@ class _MenupageState extends State<Menupage> {
                                       },
                                     ),
                                     Text(
+                                      overflow: TextOverflow.ellipsis,
                                       onmenuid.contains(itemId) ? "On Menu" : "Not On Menu",
-                                      style: TextStyle(fontSize: 16))
+                                      style: TextStyle(fontSize: 15))
                                   ],
                                 ),
-                              );
+                              ]));
                             }),
                           ],
                         ),
@@ -366,13 +497,20 @@ class _MenupageState extends State<Menupage> {
                 fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
                 overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
               ),
-              onPressed: () {
+              onPressed: !isError ? () { 
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error: $err name Already Exists, Change that to proceed",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
+                      backgroundColor: Colors.redAccent,
+                    ),);} 
+                : () {
                   setState(() {
                     for (int i in changes.keys){
                       if(changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']){
                         items[i] = {
                           'name' : changes[i]?['name'],
-                          'price' : changes[i]?['price']
+                          'price' : changes[i]?['price'],
+                          'isVeg' : items[i]?['isVeg']
                         };
                       }}
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -502,12 +640,31 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                                 child: icon),
                               AspectRatio(
                                 aspectRatio: 10,
-                                child: Text(
-                                  items[itemId]?['name'] ?? "Unknown Item",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                  child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        items[itemId]?['name'] ?? "Unknown Item",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                    SizedBox(width: 2),
+                                    if (items[itemId]?['isVeg'] ?? false) 
+                                      Icon(Symbols.nutrition_sharp, size: 18, color: Colors.pink)
+                                    else 
+                                      Icon(Icons.kebab_dining, size: 18, color: Colors.brown),
+                                  ],
                                 ),
-                              ),
+                                ),
                               AspectRatio(
                                 aspectRatio: 10,
                                 child: Text(
@@ -528,7 +685,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                         hoverColor: Colors.blue,
                         icon: Icon(Icons.edit, color: Colors.black),
                         onPressed: () {
-                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price']);
+                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price'], items[itemId]?['isVeg']);
                         },
                       ),
                     ),
@@ -552,5 +709,4 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
       ),
     ],
   );
-}
-}
+}}
