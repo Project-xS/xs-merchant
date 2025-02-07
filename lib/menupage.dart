@@ -46,241 +46,298 @@ class _MenupageState extends State<Menupage> {
 
   };
 
-  int newitemid = 1;
+  int newitemid = 30;
   Set<int> onmenuid = {1, 2, 6, 8, 15, 16, 18, 24, 25, 26, 27, 30};
   Set<int> offmenuid = {3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 17, 19, 20, 21, 22, 23, 28, 29};
 
   void modifyItem(int itemId, String oldName, int oldRate, bool isVeg) {
-    int newRate = 0;
+    bool isError = false;
     String name = "";
-    TextEditingController controllerCR = TextEditingController(text: "$oldRate");
-    TextEditingController controllerN = TextEditingController(text: oldName);
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Modify Item - $oldName :", style: TextStyle(fontWeight: FontWeight.w700)),
-          content: Padding(
-            padding: EdgeInsets.all(10.00),
-            child: SizedBox(
-              height: 170.00,
-              child: Form(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                  TextFormField(
-                      controller: controllerN,
-                      maxLength: 40,
-                      autofocus: true,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                      labelText: "New Name", 
-                      labelStyle: TextStyle(fontSize:15.00), 
-                      floatingLabelStyle: TextStyle(fontSize:20.00)),
+            return AlertDialog(
+              title: Text("Modify Item - $oldName :", style: TextStyle(fontWeight: FontWeight.w700)),
+              content: Padding(
+                padding: EdgeInsets.all(10.00),
+                child: SizedBox(
+                  height: 190.00,
+                  child: Form(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        StatefulBuilder(
+                          builder: (context, setState) {
+                          return TextFormField(
+                            maxLength: 40,
+                            initialValue: oldName,
+                            autofocus: true,
+                            autocorrect: false,
+                            decoration: InputDecoration(
+                              labelText: "New Name",
+                              labelStyle: TextStyle(fontSize: 15.00),
+                              floatingLabelStyle: TextStyle(fontSize: 20.00),
+                              counterText: "",
+                              errorText: isError ? "Item Already Present" : null,
+                              border: OutlineInputBorder(),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: isError ? Colors.red : Colors.blue, width: 2),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: isError ? Colors.red : Colors.grey, width: 2),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                if (items.values.where((item) => item != items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
+                                  isError = true;
+                                } else {
+                                  isError = false;
+                                  name = value;
+                                }
+                              });
+                            },
+                          );}
+                        ),
+                        SizedBox(height: 20.00),
+                        TextFormField(
+                          maxLength: 4,
+                          initialValue: oldRate.toString(),
+                          autofocus: true,
+                          autocorrect: false,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: "New Price - ₹",
+                            labelStyle: TextStyle(fontSize: 15.00),
+                            floatingLabelStyle: TextStyle(fontSize: 20.00),
+                            border: OutlineInputBorder(),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.blue, width: 2),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey, width: 2),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              oldRate = int.tryParse(value) ?? oldRate;
+                            });
+                          },
+                        ),
+                        Row(
+                          children: [
+                            Text("Veg : ", style: TextStyle(fontSize: 15.00)),
+                            StatefulBuilder(
+                              builder:(context, setState) {
+                              return Checkbox(
+                                value: isVeg,
+                                onChanged: (value) {
+                                  setState(() {
+                                    isVeg = value ?? false;
+                                  });
+                                },
+                              );},
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
                 ),
-                    TextFormField(
-                      controller: controllerCR,
+              ),
+              actions: [
+                TextButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(Colors.black),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
+                    fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
+                    overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+                  ),
+                  onPressed: isError?null:(){
+                          setState(() {
+                            items[itemId] = {
+                              'name': (name.isEmpty)?oldName:name,
+                              'price': oldRate,
+                              'isVeg': isVeg,
+                            };
+                            Navigator.pop(context);
+                          });
+                        },
+                  child: Row(children: [
+                    Icon(Icons.check, color: Colors.greenAccent),
+                    SizedBox(width: 5.00),
+                    Text("Submit", style: TextStyle(fontWeight: FontWeight.w600)),
+                  ]),
+                ),
+              ],
+            );
+          },
+        );
+  }
+
+  void addNewItem() {
+    bool isError = false;
+    String name = "";
+    String priceText = "";
+    bool isVeg = false;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Add new Item: ", style: TextStyle(fontWeight: FontWeight.w700)),
+            content: SizedBox(
+              width: double.minPositive,
+              height: 205.00,
+              child: Column(
+                children: [
+                  StatefulBuilder(
+                    builder: (context, setState) {
+                    return Padding(
+                      padding: EdgeInsets.all(5.0),
+                      child: TextFormField(
+                        maxLength: 40,
+                        autocorrect: false,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          labelText: "Name",
+                          labelStyle: TextStyle(fontSize: 15.00),
+                          floatingLabelStyle: TextStyle(fontSize: 20.00),
+                          errorText: isError ? "Item Already Exists, this Updates the existing item" : null,
+                          errorMaxLines: 2,
+                          border: OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: isError ? Colors.red : Colors.blue, width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: isError ? Colors.red : Colors.grey, width: 2),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            name = value;
+                            isError = items.values.any(
+                              (item) => item['name'].trim().toLowerCase().replaceAll(' ', '') ==
+                                  value.trim().toLowerCase().replaceAll(' ', ''),
+                            );
+                          });
+                        },
+                      )
+                    );},
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(5.0),
+                    child: TextFormField(
                       maxLength: 4,
-                      autofocus: true,
                       autocorrect: false,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(labelText: "New Price - ₹", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
-                    ),
-                    Row(
-                      children: [Text("Veg : ", style: TextStyle(fontSize:15.00)),
-                        StatefulBuilder(
-                          builder:(context, setState) {
-                              return Checkbox(
-                                value: items[itemId]?['isVeg'], 
-                                onChanged: (value){
-                                    setState((){
-                                      if (items[itemId]?['isVeg'] == true){
-                                        items[itemId]?['isVeg'] = false;
-                                        isVeg = false;
-                                      }
-                                      else{
-                                        items[itemId]?['isVeg'] = true;
-                                        isVeg = true;
-                                      }
-                                    });
-                                }
-                                );}
+                      decoration: InputDecoration(
+                        labelText: "Price",
+                        labelStyle: TextStyle(fontSize: 15.00),
+                        floatingLabelStyle: TextStyle(fontSize: 20.00),
+                        border: OutlineInputBorder(),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
                         ),
-                      ],
-                    )])
-                ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey, width: 2),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          priceText = value;
+                        });
+                      },
+                    ),
+                  ),
+                StatefulBuilder(builder: (context, setState) {
+                  return Row(
+                    children: [
+                      Text("Veg : ", style: TextStyle(fontSize: 15.00)),
+                      Checkbox(
+                        value: isVeg,
+                        onChanged: (value) {
+                          setState(() {
+                            isVeg = value ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  );}),
+                ],
               ),
             ),
-        actions: [TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(Colors.black), 
-                      foregroundColor: WidgetStatePropertyAll(Colors.white),
-                      padding:WidgetStatePropertyAll(EdgeInsets.all(30.00)),
-                      fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
-                      overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255))),
-                    onPressed: () {
-                      if (controllerCR.text.isEmpty || controllerCR.text.isEmpty || int.tryParse(controllerCR.text) == null || int.parse(controllerCR.text) == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                      }
-                      else{
-                        if (controllerN.text.isEmpty || controllerN.text.isEmpty){
-                          name = oldName;
-                        }
-                        else{
-                          name = controllerN.text;
-                        }
-                        newRate = int.parse(controllerCR.text);
-                        setState(() {
-                          if (items.values.any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == name.trim().toLowerCase().replaceAll(' ', ''))){
-                            ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Error: $name Already Exist - Give a new Name",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                      }
-                        else{
-                          items[itemId] = {
-                            'name' : name,
-                            'price' : newRate,
-                            'isVeg' : isVeg,
-                          };}
-                      Navigator.pop(context);
-                    });}},
-                    child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
-                  ),],);
-      },
-    );
-  }
-
-  void addNewItem(){
-    showDialog(context: context, builder: (BuildContext context){
-      TextEditingController controller1 = TextEditingController();
-      TextEditingController controller2 = TextEditingController();
-      bool isVeg = false;
-      return AlertDialog(
-        title: Text("Add new Item: ",style: TextStyle(fontWeight: FontWeight.w700)),
-        content: SizedBox(
-          width: double.minPositive,
-          height: 200.00,
-          child: Form(
-            child: Column(
-              children: [Padding(
-                padding: EdgeInsets.all(5.0),
-                child: TextFormField(
-                  maxLength: 40,
-                  controller: controller1,
-                  autocorrect: false,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: InputDecoration(labelText: "Name", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
+            actions: [
+              TextButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(Colors.black),
+                  foregroundColor: WidgetStatePropertyAll(Colors.white),
+                  padding: WidgetStatePropertyAll(EdgeInsets.all(30.00)),
+                  fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
+                  overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255)),
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(5.0),
-                child: TextFormField(
-                  maxLength: 4,
-                  controller: controller2,
-                  autocorrect: false,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: InputDecoration(labelText: "Price", labelStyle: TextStyle(fontSize:15.00), floatingLabelStyle: TextStyle(fontSize:20.00)),
-                ),
-              ),
-              SizedBox(height:10.00),
-              Row(
-                      children: [Text("Veg : ", style: TextStyle(fontSize:15.00)),
-                        StatefulBuilder(
-                          builder:(context, setState) {
-                              return Checkbox(
-                                value: isVeg, 
-                                onChanged: (value){
-                                    setState((){
-                                      if (isVeg){
-                                        isVeg = false;
-                                      }
-                                      else{
-                                        isVeg = true;
-                                      }
-                                    });
-                                }
-                                );}
-                        ),
-                      ],
-                    )
-              ]),
-              ),
-        ),
-      actions:[TextButton(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(Colors.black), 
-                      foregroundColor: WidgetStatePropertyAll(Colors.white),
-                      padding:WidgetStatePropertyAll(EdgeInsets.all(30.00)),
-                      fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
-                      overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255))),
-                    onPressed: () {
-                      String name = controller1.text.trim();
-                      String priceText = controller2.text.trim();
-                      if (name.isEmpty || priceText.isEmpty || int.tryParse(priceText) == null || int.parse(priceText) == 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Error - Don't feed Empty or Invalid Values",
-                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
-                              ),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                          return;
-                        }
-                      setState(() {
-                        if (offmenuid.contains(newitemid)){
-                          offmenuid.remove(newitemid);
-                        }
-                        if (items.values.any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == name.trim().toLowerCase().replaceAll(' ', ''))){
-                            newitemid = items.keys.firstWhere(
-                              (key) => items[key]?['name'].toLowerCase() == name, 
-                              orElse: () => newitemid = newitemid);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                            content: Text("Exception: $name Already Exists, Changed that item details",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
-                        items[newitemid] = { 
-                          'name': name,
-                          'price': int.parse(priceText),
-                          'isVeg' : isVeg
-                          };
-                          Navigator.pop(context);
-                      }
-                      else{
-                        items[newitemid] = { 
-                          'name': name,
-                          'price': int.parse(priceText),
-                          'isVeg' : isVeg
-                          };
-                        onmenuid.add(newitemid);
-                        newitemid++;
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                onPressed: () {
+                  if (name.isEmpty || priceText.isEmpty || int.tryParse(priceText) == null || int.parse(priceText) == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
                         content: Text(
-                        "Item : \"$name\" Added Successful",
-                        style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
+                          "Error - Don't feed Empty or Invalid Values",
+                          style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
                         ),
-                        backgroundColor: Colors.cyanAccent,
-                        ));
-                      Navigator.pop(context);
-                      }});
-                    },
-                    child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
-                  )]
-      );
-    });
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
+                  setState(() {
+                    if (offmenuid.contains(newitemid)) {
+                      offmenuid.remove(newitemid);
+                    }
+                    int olditemid = newitemid;
+                    newitemid = items.keys.firstWhere(
+                      (key) => items[key]?['name'].trim().toLowerCase().replaceAll(' ', '') ==
+                          name.trim().toLowerCase().replaceAll(' ', ''),
+                          orElse: () => newitemid = olditemid,
+                    );
+                    if (isError){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Exception: $name Already Exists, Updated its details",
+                            style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
+                          ),
+                          backgroundColor: Colors.yellowAccent,
+                        ),
+                      );
+                    }
+                      items[newitemid] = {
+                        'name': name,
+                        'price': int.parse(priceText),
+                        'isVeg': isVeg,
+                      };
+                      onmenuid.add(newitemid);
+                      newitemid++;
+                    if(!isError){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Item : \"$name\" Added Successfully",
+                            style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
+                          ),
+                          backgroundColor: Colors.cyanAccent,
+                        ),
+                      );
+                    }
+                  });
+                  Navigator.pop(context);
+                  },
+                child: Row(children: [Icon(Icons.check, color: Colors.greenAccent), Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+              ),
+            ],
+          );
+        });
   }
 
   void delAddItem(int itemId, String name, bool isAdd , bool onmenu){
@@ -349,186 +406,230 @@ class _MenupageState extends State<Menupage> {
 }
   
   void massEdit() {
-    bool isError = false;
+    Map<int, bool> errorMap = {};
     Set<String> err = {};
     Map<int, Map<String, dynamic>> changes = {};
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title:Text("Multiple Item Edit:"),
-          titleTextStyle: TextStyle(
-              fontSize: 25.00,
-              fontWeight: FontWeight.w700,
-          ),
-          content: SizedBox(
-            height: 400.00,
-            width: 500.00,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: items.length,
-              itemBuilder: (BuildContext context, int index) {
-                int itemId = items.keys.elementAt(index);
-                return ListTile(
-                  subtitle: Form(
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
+            return AlertDialog(
+              title: Text("Multiple Item Edit:"),
+              titleTextStyle: TextStyle(fontSize: 25.00, fontWeight: FontWeight.w700),
+              content: SizedBox(
+                height: 400.00,
+                width: 477.00,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    int itemId = items.keys.elementAt(index);
+                    return ListTile(
+                      subtitle: Form(
+                        child: Column(
                           children: [
-                            SizedBox(
-                              width: 150.00,
-                              child: TextFormField(
-                                maxLength: 40,
-                                initialValue: items[itemId]?['name'],
-                                decoration: InputDecoration(labelText: "Item Name", counterText: ""),
-                                onChanged: (value){ 
-                                  if (value.isEmpty){
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                    content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                                    backgroundColor: Colors.redAccent,));
-                                  }
-                                  else{
-                                    if (items.values.any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))){
-                                      isError = true;
-                                      err.add(value.trim().replaceAll(" ",""));
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text("Exception: $value Already Exits, Change the name",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                                          backgroundColor: Colors.redAccent,
-                                        ),
-                                      );
-                                    }
-                                    else{
-                                      changes[itemId]={
-                                        'name' : value,
-                                        'price' : changes.containsKey(itemId) == true ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                        'isVeg' : changes.containsKey(itemId) == true ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
-                                      };
-                                }}
-                                }),
-                            ),
-                            SizedBox(width:10.00),
-                            SizedBox(
-                              width: 50.00,
-                              child: TextFormField(
-                                maxLength: 4,
-                                initialValue: items[itemId]?['price'].toString(),
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                decoration: InputDecoration(labelText: "Price", counterText: ""),
-                                onChanged: (value){ 
-                                  if (value.isEmpty){
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                    content: Text("Error: Price Cannot be Empty",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                                    backgroundColor: Colors.redAccent,));
-                                  }
-                                  else{
-                                    changes[itemId]={
-                                      'price' : int.parse(value),
-                                      'name' : changes.containsKey(itemId) == true ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                      'isVeg' : changes.containsKey(itemId) == true ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
-                                    };
-                                }}
-                              ),
-                            ),SizedBox(width:10.00),
-                            StatefulBuilder(
-                              builder: (context, setState) {
-                              return SizedBox(
-                                width: 220.00,
-                                child:Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Checkbox(
-                                                value: items[itemId]?['isVeg'],
-                                                onChanged: (value){
-                                                    setState((){
-                                                      if (items[itemId]?['isVeg'] == true){
-                                                        items[itemId]?['isVeg'] = false;
-                                                      }
-                                                      else{
-                                                        items[itemId]?['isVeg'] = true;
-                                                      }
-                                                    });
-                                                }
-                                        ),
-                                      Text("Veg", style: TextStyle(fontSize:15.00)), 
-                                  SizedBox(width:10.00),                                  
-                                  Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Checkbox(
-                                      value: onmenuid.contains(itemId),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                StatefulBuilder(
+                                  builder: (context, setState) {
+                                  return SizedBox( 
+                                    width: 150.00,
+                                    child: TextFormField(
+                                      maxLength: 40,
+                                      initialValue: items[itemId]?['name'],
                                       onChanged: (value) {
                                         setState(() {
-                                          if (!onmenuid.contains(itemId)) {
-                                            onmenuid.add(itemId);
-                                            offmenuid.remove(itemId);
+                                          if (value.isEmpty) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text("Error: Name Cannot be Empty",
+                                                    style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                                backgroundColor: Colors.redAccent,
+                                              ),
+                                            );
                                           } else {
-                                            onmenuid.remove(itemId);
-                                            offmenuid.add(itemId);
+                                            if (items.values.where((item) => item != items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
+                                              errorMap[itemId] = true;
+                                              err.add(value.trim().toLowerCase().replaceAll(" ", ""));
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text("Exception: $value Already Exists, Change the name",
+                                                      style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                                  backgroundColor: Colors.redAccent,
+                                                ),
+                                              );
+                                            } else {
+                                              errorMap[itemId] = false;
+                                              changes[itemId] = {
+                                                'name': value,
+                                                'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
+                                                'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
+                                              };
+                                            }
                                           }
-                                      });
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: "Item Name",
+                                        counterText: "",
+                                        errorText: errorMap[itemId] == true ? "Name Already Present" : null,
+                                        border: OutlineInputBorder(),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.grey, width: 2),
+                                        ),
+                                      ),
+                                    ),
+                                  );},
+                                ),
+                                SizedBox(width: 10.00),
+                                  SizedBox(
+                                    width: 60.00,
+                                    child: TextFormField(
+                                      maxLength: 4,
+                                      initialValue: items[itemId]?['price'].toString(),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                      onChanged: (value) {
+                                        if (value.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Error: Price Cannot be Empty",
+                                                  style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                              backgroundColor: Colors.redAccent,
+                                            ),
+                                          );
+                                        } else {
+                                          changes[itemId] = {
+                                            'price': int.parse(value),
+                                            'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
+                                            'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
+                                          };
+                                        }
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: "Price",
+                                        counterText: "",
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.grey, width: 2),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.00),
+                                  SizedBox(
+                                    width: 70.00,
+                                    child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                        return Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Checkbox(
+                                              value: items[itemId]?['isVeg'],
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  items[itemId]?['isVeg'] = !(items[itemId]?['isVeg'] ?? false);
+                                                });
+                                              },
+                                            ),
+                                            Text("Veg", style: TextStyle(fontSize: 15.00)),
+                                          ],
+                                        );
                                       },
                                     ),
-                                    Text(
-                                      overflow: TextOverflow.ellipsis,
-                                      onmenuid.contains(itemId) ? "On Menu" : "Not On Menu",
-                                      style: TextStyle(fontSize: 15))
-                                  ],
-                                ),
-                              ]));
-                            }),
-                          ],
+                                  ),
+                                  SizedBox(width: 10.00),
+                                  Expanded(
+                                    child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                        return Row(
+                                          children: [
+                                            Checkbox(
+                                              value: onmenuid.contains(itemId),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  if (!onmenuid.contains(itemId)) {
+                                                    onmenuid.add(itemId);
+                                                    offmenuid.remove(itemId);
+                                                  } else {
+                                                    onmenuid.remove(itemId);
+                                                    offmenuid.add(itemId);
+                                                  }
+                                                });
+                                              },
+                                            ),
+                                            Expanded(
+                                              child: Text(
+                                                onmenuid.contains(itemId) ? "On Menu" : "Not On Menu",
+                                                style: TextStyle(fontSize: 15),
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ])
+                            ]),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.black),
-                foregroundColor: WidgetStateProperty.all(Colors.white),
-                padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+                    );
+                  },
+                ),
               ),
-              onPressed: !isError ? () { 
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Error: $err name Already Exists, Change that to proceed",style: TextStyle(fontSize: 15.00, color:Colors.black, fontWeight: FontWeight.w700),),
-                      backgroundColor: Colors.redAccent,
-                    ),);} 
-                : () {
-                  setState(() {
-                    for (int i in changes.keys){
-                      if(changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']){
-                        items[i] = {
-                          'name' : changes[i]?['name'],
-                          'price' : changes[i]?['price'],
-                          'isVeg' : items[i]?['isVeg']
-                        };
-                      }}
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                        "Item Changes are Successful",
-                        style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
-                        ),
-                        backgroundColor: Colors.cyanAccent,
-                        ));
-                      Navigator.pop(context);
-                    });
-              },
-              child: Row(spacing: 5.00,children:[Icon(Icons.check,color:Colors.greenAccent),Text("Submit", style:TextStyle(fontWeight: FontWeight.w600))],),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(Colors.black),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
+                    fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
+                    overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+                  ),
+                  onPressed: errorMap.containsValue(true)
+                      ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Error: Name(s) Already Exists, Change that to proceed",
+                                  style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
+                      : () {
+                          setState(() {
+                            for (int i in changes.keys) {
+                              if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']) {
+                                items[i] = {
+                                  'name': changes[i]?['name'],
+                                  'price': changes[i]?['price'],
+                                  'isVeg': items[i]?['isVeg']
+                                };
+                              }
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(
+                                "Item Changes are Successful",
+                                style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
+                              ),
+                              backgroundColor: Colors.cyanAccent,
+                            ));
+                            Navigator.pop(context);
+                          });
+                        },
+                  child: Row(children: [Icon(Icons.check, color: Colors.greenAccent), Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+                ),
+              ],
+            );
+          },
         );
-      },
-    );
   }
 
   @override
