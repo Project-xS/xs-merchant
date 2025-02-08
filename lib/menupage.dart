@@ -155,16 +155,18 @@ class _MenupageState extends State<Menupage> {
                     fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
                     overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
                   ),
-                  onPressed: isError?null:(){
-                          setState(() {
-                            items[itemId] = {
-                              'name': (name.isEmpty)?oldName:name,
-                              'price': oldRate,
-                              'isVeg': isVeg,
-                            };
-                            Navigator.pop(context);
-                          });
-                        },
+                  onPressed: isError ? null : () {
+                    if(!isError){
+                        setState(() {
+                          items[itemId] = {
+                            'name': name.isNotEmpty?name:oldName,
+                            'price': oldRate,
+                            'isVeg': isVeg,
+                          };
+                        });
+                        Navigator.pop(context);
+                        }
+                      },
                   child: Row(children: [
                     Icon(Icons.check, color: Colors.greenAccent),
                     SizedBox(width: 5.00),
@@ -460,20 +462,21 @@ class _MenupageState extends State<Menupage> {
                                                 ),
                                               );
                                             } else {
-                                              errorMap[itemId] = false;
+                                              errorMap.remove(itemId);
+                                              if (!errorMap.containsKey(itemId)){
                                               changes[itemId] = {
                                                 'name': value,
                                                 'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
                                                 'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
                                               };
-                                            }
+                                            }}
                                           }
                                         });
                                       },
                                       decoration: InputDecoration(
                                         labelText: "Item Name",
                                         counterText: "",
-                                        errorText: errorMap[itemId] == true ? "Name Already Present" : null,
+                                        errorText: errorMap[itemId] == true ? "Item Already Exists" : null,
                                         border: OutlineInputBorder(),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
@@ -593,7 +596,7 @@ class _MenupageState extends State<Menupage> {
                     fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
                     overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
                   ),
-                  onPressed: errorMap.containsValue(true)
+                  onPressed: (errorMap.isNotEmpty)
                       ? () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -604,6 +607,7 @@ class _MenupageState extends State<Menupage> {
                           );
                         }
                       : () {
+                        if(errorMap.isEmpty){
                           setState(() {
                             for (int i in changes.keys) {
                               if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']) {
@@ -621,8 +625,9 @@ class _MenupageState extends State<Menupage> {
                               ),
                               backgroundColor: Colors.cyanAccent,
                             ));
+                            errorMap.clear();
                             Navigator.pop(context);
-                          });
+                          });}
                         },
                   child: Row(children: [Icon(Icons.check, color: Colors.greenAccent), Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
                 ),
