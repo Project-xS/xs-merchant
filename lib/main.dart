@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("FoodBoard", style:TextStyle(fontWeight:FontWeight.w500, fontSize: 35.00)),leading: Image(image: AssetImage('assets/logo.png')), toolbarHeight: 80.00,),
+      appBar: AppBar(title: Text("FoodBoard", style:TextStyle(fontWeight:FontWeight.w500, fontSize: 35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
       body: Column(
         children: [Text(name, style:TextStyle(fontWeight:FontWeight.bold, fontSize:50.00),), 
         SizedBox(

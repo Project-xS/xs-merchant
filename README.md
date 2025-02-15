@@ -1,6 +1,11 @@
 # Xs-merchant
 
+BUGS: Adding item sometimes causes null, item sometimes not adding, basic functionality compromised for testing sorting
+      Sorting implementaion
+
 Features:
+
+Added Generic Item pic, Added Veg/Non-Veg picture for easy identification
 
 1. Modify Item in Bulk with Name Checkpoint
 ![alt text](image-8.png)
