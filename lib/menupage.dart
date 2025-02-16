@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:merchant/tristatetoggle.dart';
 
 class Menupage extends StatefulWidget {
   const Menupage({super.key});
@@ -12,7 +13,7 @@ class Menupage extends StatefulWidget {
 class _MenupageState extends State<Menupage> {
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
   Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
-
+  int sort = 1;
   Map<int, Map<String, dynamic>> item = {
     1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false, 'onmenu': true},
     2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true, 'onmenu': true},
@@ -47,17 +48,25 @@ class _MenupageState extends State<Menupage> {
   };
 
   int newitemid = 31;
-
-  Set<int> get onmenuid =>
-      items.entries.where((entry) => entry.value['onmenu'] == true).map((entry) => entry.key).toSet();
-  Set<int> get offmenuid =>
-      items.entries.where((entry) => entry.value['onmenu'] == false).map((entry) => entry.key).toSet();
-
   Map<int, Map<String, dynamic>> get items {
-    var sortedEntries = item.entries.toList()
-      ..sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ','').compareTo(b.value["name"].toLowerCase().replaceAll(' ','')));
-    return {for (var entry in sortedEntries) entry.key: entry.value};
+  var sortedEntries = item.entries.toList();
+
+  if (sort == 1) {
+    sortedEntries.sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ', '').compareTo(b.value["name"].toLowerCase().replaceAll(' ', '')));
+  } else if (sort == 2) {
+    sortedEntries.sort((a, b) => b.value["price"].compareTo(a.value["price"]));
+  } else if (sort == 3) {
+    sortedEntries.sort((a, b) => (a.value["isVeg"] ? 0 : 1).compareTo(b.value["isVeg"] ? 0 : 1));
   }
+
+  return {for (var entry in sortedEntries) entry.key: entry.value};
+}
+
+Set<int> get onmenuid =>
+    items.entries.where((entry) => entry.value['onmenu'] == true).map((entry) => entry.key).toSet();
+
+Set<int> get offmenuid =>
+    items.entries.where((entry) => entry.value['onmenu'] == false).map((entry) => entry.key).toSet();
 
   void modifyItem(int itemId, String oldName, int oldRate, bool isVeg, bool onmenu) {
     bool isError = false;
@@ -708,12 +717,72 @@ class _MenupageState extends State<Menupage> {
             },
             child: Icon(Icons.edit,color: Colors.black),
           )]),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          SizedBox(height: 10.00),
-          Text("On Menu:", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            SizedBox(height: 20.00),
+            Column(
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: Text(
+                  "On Menu:",
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+              ),
+              SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("Sort by: ", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)),
+                      Text("Name", style: TextStyle(fontSize: 20.0)),
+                      SizedBox(width: 10.0),
+                      Text("Price", style: TextStyle(fontSize: 20.0)),
+                      SizedBox(width: 10.0),
+                      Text("Veg", style: TextStyle(fontSize: 20.0)),
+                      SizedBox(width: 10.00)
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+                Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 40.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Text("Sort:", style: TextStyle(fontSize: 20.0)),
+                      // SizedBox(width: 5.0),
+                      TriStateToggleSwitch(
+                        initialState: SwitchState.inactive,
+                        onChanged: (switchState) {
+                          setState(() {
+                            if (switchState == SwitchState.inactive) {  
+                              sort = 1;
+                            } else if (switchState == SwitchState.dual) {  
+                              sort = 2;
+                            } else {  
+                              sort = 3;
+                            }
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+           SizedBox(height: 10),
+            ],
+          ),
           if (onmenuid.isEmpty)
             Center(
               child: Padding(
@@ -726,8 +795,61 @@ class _MenupageState extends State<Menupage> {
             )
           else 
             buildGridSection(onmenuid, Colors.green),
-          SizedBox(height: 15.00),
-          Text("Not On Menu:", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+          SizedBox(height: 25.00),
+          Align(
+                alignment: Alignment.center,
+                child: Text(
+                  "Not on Menu:",
+                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("Sort by: ", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)),
+                      Text("Name", style: TextStyle(fontSize: 20.0)),
+                      SizedBox(width: 10.0),
+                      Text("Price", style: TextStyle(fontSize: 20.0)),
+                      SizedBox(width: 10.0),
+                      Text("Veg", style: TextStyle(fontSize: 20.0)),
+                      SizedBox(width: 10.00)
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+                Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 40.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TriStateToggleSwitch(
+                        initialState: SwitchState.inactive,
+                        onChanged: (switchState) {
+                          setState(() {
+                            if (switchState == SwitchState.inactive) {  
+                              sort = 1;
+                            } else if (switchState == SwitchState.dual) {  
+                              sort = 2;
+                            } else {  
+                              sort = 3;
+                            }
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.00),
           if (offmenuid.isEmpty) 
             Center(
               child: Padding(
