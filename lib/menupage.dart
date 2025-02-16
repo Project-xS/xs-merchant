@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -14,7 +13,7 @@ class _MenupageState extends State<Menupage> {
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
   Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
 
-  Map<int, Map<String, dynamic>> items = {
+  Map<int, Map<String, dynamic>> item = {
     1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false, 'onmenu': true},
     2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true, 'onmenu': true},
     3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true},
@@ -47,39 +46,18 @@ class _MenupageState extends State<Menupage> {
     30: {'name': 'odles', 'price': 90, 'isVeg': false, 'onmenu': false},
   };
 
-  int newitemid = 30;
-  Set<int> onmenuid = {1, 2, 6, 8, 15, 16, 18, 24, 25, 26, 27, 30};  
-  Set<int> offmenuid = {3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 17, 19, 20, 21, 22, 23, 28, 29};
-  
-  // late Map<int, Map<String, dynamic>> items;
-  Map<int, Map<String, dynamic>> sortItems(Map<int, Map<String, dynamic>> items) {
-  var sortedEntries = items.entries.toList()
-    ..sort((a, b) => a.value["name"].compareTo(b.value["name"]));
+  int newitemid = 31;
 
-  return {for (var entry in sortedEntries) entry.key: entry.value};
-}
+  Set<int> get onmenuid =>
+      items.entries.where((entry) => entry.value['onmenu'] == true).map((entry) => entry.key).toSet();
+  Set<int> get offmenuid =>
+      items.entries.where((entry) => entry.value['onmenu'] == false).map((entry) => entry.key).toSet();
 
-  // // late LinkedHashMap<int, Map<String, dynamic>> items;
-  // // // late SplayTreeMap<int, Map<String, dynamic>> items;
-
-  // _MenupageState() {
-  // //   items = LinkedHashMap.fromEntries(
-  // //   item.entries.toList()..sort((a, b) => a.value['name'].toLowerCase().compareTo(b.value['name'].toLowerCase())));
-  // // //   items = SplayTreeMap<int, Map<String, dynamic>>(
-  // // // (key1, key2) {
-  // // //   final String name1 = item[key1]?['name']?.toLowerCase() ?? '';
-  // // //   final String name2 = item[key2]?['name']?.toLowerCase() ?? '';
-  // // //   return name1.compareTo(name2);
-  // // // },
-  // // //   )..addAll(item);    
-  // //   offmenuid.clear();
-  // //   onmenuid.clear();
-  //   items = sortItems(item);
-  //   offmenuid = items.entries.where((entry) => entry.value['onmenu'] == false).map((entry) => entry.key).toSet();
-  //   onmenuid = items.entries.where((entry) => entry.value['onmenu'] == true).map((entry) => entry.key).toSet();
-  // //   debugPrint("$items");
-  // }
-
+  Map<int, Map<String, dynamic>> get items {
+    var sortedEntries = item.entries.toList()
+      ..sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ','').compareTo(b.value["name"].toLowerCase().replaceAll(' ','')));
+    return {for (var entry in sortedEntries) entry.key: entry.value};
+  }
 
   void modifyItem(int itemId, String oldName, int oldRate, bool isVeg, bool onmenu) {
     bool isError = false;
@@ -191,13 +169,12 @@ class _MenupageState extends State<Menupage> {
                   onPressed: isError ? null : () {
                     if(!isError){
                         setState(() {
-                          items[itemId] = {
+                          item[itemId] = {
                             'name': name.isNotEmpty?name:oldName,
                             'price': oldRate,
                             'isVeg': isVeg,
                             'onmenu': onmenu
                           };
-                          _MenupageState();
                         });
                         Navigator.pop(context);
                         }
@@ -214,11 +191,12 @@ class _MenupageState extends State<Menupage> {
         );
   }
 
-  void addNewItem() {
+  void addNewItem(int newitemid) {
     bool isError = false;
     String name = "";
     String priceText = "";
     bool isVeg = false;
+    bool onmenu = true;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -299,6 +277,12 @@ class _MenupageState extends State<Menupage> {
                         onChanged: (value) {
                           setState(() {
                             isVeg = value ?? false;
+                            if (value == null || isVeg == false){
+                              isVeg = false;
+                            }
+                            else{
+                              isVeg = true;
+                            }
                           });
                         },
                       ),
@@ -337,27 +321,25 @@ class _MenupageState extends State<Menupage> {
                           orElse: () => olditemid,
                     );
                     if(foundItemId!=olditemid){
-                      items[foundItemId] = {
+                      item[foundItemId] = {
                         'name': name,
                         'price': int.parse(priceText),
                         'isVeg': isVeg,
-                        'onmenu': true
+                        'onmenu': onmenu
                       };
                       if (offmenuid.contains(foundItemId)){
                         offmenuid.remove(foundItemId);
                       }
                       }
                       else{
-                        items[olditemid+1] = {
+                        item[olditemid+1] = {
                         'name': name,
                         'price': int.parse(priceText),
                         'isVeg': isVeg,
-                        'onmenu': true
+                        'onmenu': onmenu
                       };
                       onmenuid.add(newitemid);
-                      newitemid+=1;
                       }
-                      debugPrint("$newitemid");
                     if (isError){
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -421,19 +403,17 @@ class _MenupageState extends State<Menupage> {
                 ),
                 onPressed: () {
                     setState(() {
-                      if (items[itemId]?['onmenu']) {
+                      if (item[itemId]?['onmenu']) {
                         if (isAdd == true){
                           onmenuid.remove(itemId);
                           offmenuid.add(itemId);
-                          items[itemId]?['onmenu'] = false;
-                          _MenupageState();
+                          item[itemId]?['onmenu'] = false;
                         }
                       } else {
                           if (isAdd == true){
-                            items[itemId]?['onmenu'] = true;
+                            item[itemId]?['onmenu'] = true;
                             onmenuid.add(itemId);
                             offmenuid.remove(itemId);
-                            _MenupageState();
                         }
                       }
                       if (isAdd == false){
@@ -502,6 +482,8 @@ class _MenupageState extends State<Menupage> {
                                       onChanged: (value) {
                                         setState(() {
                                           if (value.isEmpty) {
+                                            errorMap[itemId] = true;
+                                            err.add('Empty');
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               SnackBar(
                                                 content: Text("Error: Name Cannot be Empty",
@@ -536,7 +518,7 @@ class _MenupageState extends State<Menupage> {
                                       decoration: InputDecoration(
                                         labelText: "Item Name",
                                         counterText: "",
-                                        errorText: errorMap[itemId] == true ? "Item Already Exists" : null,
+                                        errorText: errorMap[itemId] == true ? "Item Exists or Empty" : null,
                                         border: OutlineInputBorder(),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
@@ -596,10 +578,10 @@ class _MenupageState extends State<Menupage> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Checkbox(
-                                              value: items[itemId]?['isVeg'],
+                                              value: item[itemId]?['isVeg'],
                                               onChanged: (value) {
                                                 setState(() {
-                                                  items[itemId]?['isVeg'] = !(items[itemId]?['isVeg'] ?? false);
+                                                  item[itemId]?['isVeg'] = !(item[itemId]?['isVeg'] ?? false);
                                                 });
                                               },
                                             ),
@@ -616,17 +598,17 @@ class _MenupageState extends State<Menupage> {
                                         return Row(
                                           children: [
                                             Checkbox(
-                                              value: items[itemId]?['onmenu'],
+                                              value: item[itemId]?['onmenu'],
                                               onChanged: (value) {
                                                 setState(() {
-                                                  if (!items[itemId]?['onmenu']) {
-                                                    items[itemId]?['onmenu'] = true;
+                                                  if (!item[itemId]?['onmenu']) {
+                                                    item[itemId]?['onmenu'] = true;
                                                     if(offmenuid.contains(itemId)){
                                                       offmenuid.remove(itemId);
                                                     }
                                                     onmenuid.add(itemId);
                                                   } else {
-                                                    items[itemId]?['onmenu'] = false;
+                                                    item[itemId]?['onmenu'] = false;
                                                     onmenuid.remove(itemId);
                                                     offmenuid.add(itemId);
                                                   }
@@ -635,7 +617,7 @@ class _MenupageState extends State<Menupage> {
                                             ),
                                             Expanded(
                                               child: Text(
-                                                items[itemId]?['onmenu'] ? "On Menu" : "Not On Menu",
+                                                item[itemId]?['onmenu'] ? "On Menu" : "Not On Menu",
                                                 style: TextStyle(fontSize: 15),
                                                 textAlign: TextAlign.start,
                                                 overflow: TextOverflow.ellipsis,
@@ -677,15 +659,14 @@ class _MenupageState extends State<Menupage> {
                           setState(() {
                             for (int i in changes.keys) {
                               if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']) {
-                                items[i] = {
+                                item[i] = {
                                   'name': changes[i]?['name'],
                                   'price': changes[i]?['price'],
-                                  'isVeg': items[i]?['isVeg'],
-                                  'onmenu': items[i]?['onmenu']
+                                  'isVeg': item[i]?['isVeg'],
+                                  'onmenu': item[i]?['onmenu']
                                 };
                               }
                             }
-                            _MenupageState();
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(
                                 "Item Changes are Successful",
@@ -714,7 +695,7 @@ class _MenupageState extends State<Menupage> {
         elevation: 10.00,
         backgroundColor: Colors.cyan,
           onPressed: (){
-              addNewItem();
+              addNewItem(newitemid++);
           },
           child: Icon(Icons.add,color: Colors.black)
           ),

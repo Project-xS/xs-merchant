@@ -1,7 +1,6 @@
 # Xs-merchant
 
-BUGS: Adding item sometimes causes null, item sometimes not adding, basic functionality compromised for testing sorting
-      Sorting implementaion
+Added Sort by name by default and fixed all the bugs
 
 Features:
 
