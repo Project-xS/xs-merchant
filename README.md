@@ -1,6 +1,10 @@
 # Xs-merchant
 
+Added Sort by name by default and fixed all the bugs
+
 Features:
+
+Added Generic Item pic, Added Veg/Non-Veg picture for easy identification
 
 1. Modify Item in Bulk with Name Checkpoint
 ![alt text](image-8.png)

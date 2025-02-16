@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 class Menupage extends StatefulWidget {
   const Menupage({super.key});
@@ -9,48 +8,58 @@ class Menupage extends StatefulWidget {
   State<Menupage> createState() => _MenupageState();
 }
 
+
 class _MenupageState extends State<Menupage> {
-  Image icon = Image(image: AssetImage("assets/logo.png"), width: 250.00, height: 150.00);
+  Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
+  Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
 
-  Map<int, Map<String, dynamic>> items = {
-    1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false},
-    2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true},
-    3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false},
-    4: {'name': 'Rice', 'price': 50, 'isVeg': true},
-    5: {'name': 'Rasam', 'price': 40, 'isVeg': true},
-    6: {'name': 'Sambar', 'price': 60, 'isVeg': true},
-    7: {'name': 'V Parotta', 'price': 30, 'isVeg': true},
-    8: {'name': 'N Parotta', 'price': 35, 'isVeg': false},
-    9: {'name': 'Noodles', 'price': 80, 'isVeg': false},
-    10: {'name': 'special', 'price': 9999, 'isVeg': true},
-    11: {'name': 'Chcken Rice', 'price': 120, 'isVeg': false},
-    12: {'name': 'Veg Frie Rice', 'price': 100, 'isVeg': true},
-    13: {'name': 'Chlli Chicken', 'price': 150, 'isVeg': false},
-    14: {'name': 'ice', 'price': 50, 'isVeg': true},
-    15: {'name': 'asam', 'price': 40, 'isVeg': true},
-    16: {'name': 'Sabar', 'price': 60, 'isVeg': true},
-    17: {'name': 'V arotta', 'price': 30, 'isVeg': false},
-    18: {'name': 'N arotta', 'price': 35, 'isVeg': false},
-    19: {'name': 'Nodles', 'price': 80, 'isVeg': true},
-    20: {'name': 'oodles', 'price': 90, 'isVeg': true},
-    21: {'name': 'Chicen Rice', 'price': 120, 'isVeg': false},
-    22: {'name': 'Veg Fied Rice', 'price': 100, 'isVeg': true},
-    23: {'name': 'Chili Chicken', 'price': 150, 'isVeg': false},
-    24: {'name': 'Rie', 'price': 50, 'isVeg': false},
-    25: {'name': 'Raam', 'price': 40, 'isVeg': true},
-    26: {'name': 'Sambr', 'price': 60, 'isVeg': false},
-    27: {'name': 'V Paotta', 'price': 30, 'isVeg': true},
-    28: {'name': 'N Paotta', 'price': 35, 'isVeg': false},
-    29: {'name': 'Noodes', 'price': 80, 'isVeg': false},
-    30: {'name': 'odles', 'price': 90, 'isVeg': false},
-
+  Map<int, Map<String, dynamic>> item = {
+    1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false, 'onmenu': true},
+    2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true, 'onmenu': true},
+    3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true},
+    4: {'name': 'Rice', 'price': 50, 'isVeg': true, 'onmenu': true},
+    5: {'name': 'Rasam', 'price': 40, 'isVeg': true, 'onmenu': true},
+    6: {'name': 'Sambar', 'price': 60, 'isVeg': true, 'onmenu': false},
+    7: {'name': 'V Parotta', 'price': 30, 'isVeg': true, 'onmenu': true},
+    8: {'name': 'N Parotta', 'price': 35, 'isVeg': false, 'onmenu': false},
+    9: {'name': 'Noodles', 'price': 80, 'isVeg': false, 'onmenu': false},
+    10: {'name': 'special', 'price': 9999, 'isVeg': true, 'onmenu': true},
+    11: {'name': 'Chcken Rice', 'price': 120, 'isVeg': false, 'onmenu': false},
+    12: {'name': 'Veg Frie Rice', 'price': 100, 'isVeg': true, 'onmenu': false},
+    13: {'name': 'Chlli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true},
+    14: {'name': 'ice', 'price': 50, 'isVeg': true, 'onmenu': false},
+    15: {'name': 'asam', 'price': 40, 'isVeg': true, 'onmenu': false},
+    16: {'name': 'Sabar', 'price': 60, 'isVeg': true, 'onmenu': false},
+    17: {'name': 'V arotta', 'price': 30, 'isVeg': false, 'onmenu': false},
+    18: {'name': 'N arotta', 'price': 35, 'isVeg': false, 'onmenu': false},
+    19: {'name': 'Nodles', 'price': 80, 'isVeg': true, 'onmenu': true},
+    20: {'name': 'oodles', 'price': 90, 'isVeg': true, 'onmenu': false},
+    21: {'name': 'Chicen Rice', 'price': 120, 'isVeg': false, 'onmenu': false},
+    22: {'name': 'Veg Fied Rice', 'price': 100, 'isVeg': true, 'onmenu': false},
+    23: {'name': 'Chili Chicken', 'price': 150, 'isVeg': false, 'onmenu': false},
+    24: {'name': 'Rie', 'price': 50, 'isVeg': false, 'onmenu': false},
+    25: {'name': 'Raam', 'price': 40, 'isVeg': true, 'onmenu': false},
+    26: {'name': 'Sambr', 'price': 60, 'isVeg': false, 'onmenu': false},
+    27: {'name': 'V Paotta', 'price': 30, 'isVeg': true, 'onmenu': false},
+    28: {'name': 'N Paotta', 'price': 35, 'isVeg': false, 'onmenu': false},
+    29: {'name': 'Noodes', 'price': 80, 'isVeg': false, 'onmenu': false},
+    30: {'name': 'odles', 'price': 90, 'isVeg': false, 'onmenu': false},
   };
 
-  int newitemid = 30;
-  Set<int> onmenuid = {1, 2, 6, 8, 15, 16, 18, 24, 25, 26, 27, 30};
-  Set<int> offmenuid = {3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 17, 19, 20, 21, 22, 23, 28, 29};
+  int newitemid = 31;
 
-  void modifyItem(int itemId, String oldName, int oldRate, bool isVeg) {
+  Set<int> get onmenuid =>
+      items.entries.where((entry) => entry.value['onmenu'] == true).map((entry) => entry.key).toSet();
+  Set<int> get offmenuid =>
+      items.entries.where((entry) => entry.value['onmenu'] == false).map((entry) => entry.key).toSet();
+
+  Map<int, Map<String, dynamic>> get items {
+    var sortedEntries = item.entries.toList()
+      ..sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ','').compareTo(b.value["name"].toLowerCase().replaceAll(' ','')));
+    return {for (var entry in sortedEntries) entry.key: entry.value};
+  }
+
+  void modifyItem(int itemId, String oldName, int oldRate, bool isVeg, bool onmenu) {
     bool isError = false;
     String name = "";
     showDialog(
@@ -73,6 +82,8 @@ class _MenupageState extends State<Menupage> {
                             initialValue: oldName,
                             autofocus: true,
                             autocorrect: false,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
                             decoration: InputDecoration(
                               labelText: "New Name",
                               labelStyle: TextStyle(fontSize: 15.00),
@@ -158,10 +169,11 @@ class _MenupageState extends State<Menupage> {
                   onPressed: isError ? null : () {
                     if(!isError){
                         setState(() {
-                          items[itemId] = {
+                          item[itemId] = {
                             'name': name.isNotEmpty?name:oldName,
                             'price': oldRate,
                             'isVeg': isVeg,
+                            'onmenu': onmenu
                           };
                         });
                         Navigator.pop(context);
@@ -179,11 +191,12 @@ class _MenupageState extends State<Menupage> {
         );
   }
 
-  void addNewItem() {
+  void addNewItem(int newitemid) {
     bool isError = false;
     String name = "";
     String priceText = "";
     bool isVeg = false;
+    bool onmenu = true;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -202,6 +215,7 @@ class _MenupageState extends State<Menupage> {
                         maxLength: 40,
                         autocorrect: false,
                         textCapitalization: TextCapitalization.words,
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
                         decoration: InputDecoration(
                           labelText: "Name",
                           labelStyle: TextStyle(fontSize: 15.00),
@@ -263,6 +277,12 @@ class _MenupageState extends State<Menupage> {
                         onChanged: (value) {
                           setState(() {
                             isVeg = value ?? false;
+                            if (value == null || isVeg == false){
+                              isVeg = false;
+                            }
+                            else{
+                              isVeg = true;
+                            }
                           });
                         },
                       ),
@@ -294,15 +314,32 @@ class _MenupageState extends State<Menupage> {
                     return;
                   }
                   setState(() {
-                    if (offmenuid.contains(newitemid)) {
-                      offmenuid.remove(newitemid);
-                    }
                     int olditemid = newitemid;
-                    newitemid = items.keys.firstWhere(
+                    int foundItemId = items.keys.firstWhere(
                       (key) => items[key]?['name'].trim().toLowerCase().replaceAll(' ', '') ==
                           name.trim().toLowerCase().replaceAll(' ', ''),
-                          orElse: () => newitemid = olditemid,
+                          orElse: () => olditemid,
                     );
+                    if(foundItemId!=olditemid){
+                      item[foundItemId] = {
+                        'name': name,
+                        'price': int.parse(priceText),
+                        'isVeg': isVeg,
+                        'onmenu': onmenu
+                      };
+                      if (offmenuid.contains(foundItemId)){
+                        offmenuid.remove(foundItemId);
+                      }
+                      }
+                      else{
+                        item[olditemid+1] = {
+                        'name': name,
+                        'price': int.parse(priceText),
+                        'isVeg': isVeg,
+                        'onmenu': onmenu
+                      };
+                      onmenuid.add(newitemid);
+                      }
                     if (isError){
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -314,14 +351,7 @@ class _MenupageState extends State<Menupage> {
                         ),
                       );
                     }
-                      items[newitemid] = {
-                        'name': name,
-                        'price': int.parse(priceText),
-                        'isVeg': isVeg,
-                      };
-                      onmenuid.add(newitemid);
-                      newitemid++;
-                    if(!isError){
+                    else{
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -373,18 +403,26 @@ class _MenupageState extends State<Menupage> {
                 ),
                 onPressed: () {
                     setState(() {
-                      if (onmenuid.contains(itemId)) {
-                        onmenuid.remove(itemId);
+                      if (item[itemId]?['onmenu']) {
                         if (isAdd == true){
+                          onmenuid.remove(itemId);
                           offmenuid.add(itemId);
+                          item[itemId]?['onmenu'] = false;
                         }
                       } else {
-                          offmenuid.remove(itemId);
                           if (isAdd == true){
+                            item[itemId]?['onmenu'] = true;
                             onmenuid.add(itemId);
+                            offmenuid.remove(itemId);
                         }
                       }
                       if (isAdd == false){
+                        if (onmenuid.contains(itemId)){
+                          onmenuid.remove(itemId);
+                        }
+                        else{
+                          offmenuid.remove(itemId);
+                        }
                         items.remove(itemId);
                       }
                       Navigator.pop(context);
@@ -440,9 +478,12 @@ class _MenupageState extends State<Menupage> {
                                     child: TextFormField(
                                       maxLength: 40,
                                       initialValue: items[itemId]?['name'],
+                                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
                                       onChanged: (value) {
                                         setState(() {
                                           if (value.isEmpty) {
+                                            errorMap[itemId] = true;
+                                            err.add('Empty');
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               SnackBar(
                                                 content: Text("Error: Name Cannot be Empty",
@@ -467,7 +508,8 @@ class _MenupageState extends State<Menupage> {
                                               changes[itemId] = {
                                                 'name': value,
                                                 'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                                'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
+                                                'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
+                                                'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu'])
                                               };
                                             }}
                                           }
@@ -476,7 +518,7 @@ class _MenupageState extends State<Menupage> {
                                       decoration: InputDecoration(
                                         labelText: "Item Name",
                                         counterText: "",
-                                        errorText: errorMap[itemId] == true ? "Item Already Exists" : null,
+                                        errorText: errorMap[itemId] == true ? "Item Exists or Empty" : null,
                                         border: OutlineInputBorder(),
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
@@ -509,7 +551,9 @@ class _MenupageState extends State<Menupage> {
                                           changes[itemId] = {
                                             'price': int.parse(value),
                                             'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                            'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg'])
+                                            'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
+                                            'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu'])
+
                                           };
                                         }
                                       },
@@ -534,10 +578,10 @@ class _MenupageState extends State<Menupage> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Checkbox(
-                                              value: items[itemId]?['isVeg'],
+                                              value: item[itemId]?['isVeg'],
                                               onChanged: (value) {
                                                 setState(() {
-                                                  items[itemId]?['isVeg'] = !(items[itemId]?['isVeg'] ?? false);
+                                                  item[itemId]?['isVeg'] = !(item[itemId]?['isVeg'] ?? false);
                                                 });
                                               },
                                             ),
@@ -554,13 +598,17 @@ class _MenupageState extends State<Menupage> {
                                         return Row(
                                           children: [
                                             Checkbox(
-                                              value: onmenuid.contains(itemId),
+                                              value: item[itemId]?['onmenu'],
                                               onChanged: (value) {
                                                 setState(() {
-                                                  if (!onmenuid.contains(itemId)) {
+                                                  if (!item[itemId]?['onmenu']) {
+                                                    item[itemId]?['onmenu'] = true;
+                                                    if(offmenuid.contains(itemId)){
+                                                      offmenuid.remove(itemId);
+                                                    }
                                                     onmenuid.add(itemId);
-                                                    offmenuid.remove(itemId);
                                                   } else {
+                                                    item[itemId]?['onmenu'] = false;
                                                     onmenuid.remove(itemId);
                                                     offmenuid.add(itemId);
                                                   }
@@ -569,7 +617,7 @@ class _MenupageState extends State<Menupage> {
                                             ),
                                             Expanded(
                                               child: Text(
-                                                onmenuid.contains(itemId) ? "On Menu" : "Not On Menu",
+                                                item[itemId]?['onmenu'] ? "On Menu" : "Not On Menu",
                                                 style: TextStyle(fontSize: 15),
                                                 textAlign: TextAlign.start,
                                                 overflow: TextOverflow.ellipsis,
@@ -611,10 +659,11 @@ class _MenupageState extends State<Menupage> {
                           setState(() {
                             for (int i in changes.keys) {
                               if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']) {
-                                items[i] = {
+                                item[i] = {
                                   'name': changes[i]?['name'],
                                   'price': changes[i]?['price'],
-                                  'isVeg': items[i]?['isVeg']
+                                  'isVeg': item[i]?['isVeg'],
+                                  'onmenu': item[i]?['onmenu']
                                 };
                               }
                             }
@@ -646,7 +695,7 @@ class _MenupageState extends State<Menupage> {
         elevation: 10.00,
         backgroundColor: Colors.cyan,
           onPressed: (){
-              addNewItem();
+              addNewItem(newitemid++);
           },
           child: Icon(Icons.add,color: Colors.black)
           ),
@@ -665,7 +714,7 @@ class _MenupageState extends State<Menupage> {
           children: [
           SizedBox(height: 10.00),
           Text("On Menu:", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
-          if (onmenuid.isEmpty) 
+          if (onmenuid.isEmpty)
             Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -712,7 +761,6 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
             else if (constraints.maxWidth < 1500) {
               crossAxisCount = 5;
           }
-
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
@@ -728,10 +776,8 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
               return GridTile(
                 child: Stack(
                   children: [
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: InkWell(
-                        onTap: () => delAddItem(itemId, items[itemId]?['name'], true, onmenuid.contains(itemId)),
+                    InkWell(
+                        onTap: () => delAddItem(itemId, items[itemId]?['name'], true, items[itemId]?['onmenu']),
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           decoration: BoxDecoration(
@@ -741,9 +787,10 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              SizedBox(height:20),
                               AspectRatio(
                                 aspectRatio: 1.5,
-                                child: icon),
+                                child: itemicon),
                               AspectRatio(
                                 aspectRatio: 10,
                                   child: Row(
@@ -754,7 +801,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                                         items[itemId]?['name'] ?? "Unknown Item",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 17,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                           overflow: TextOverflow.ellipsis,
@@ -763,11 +810,6 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                                         softWrap: false,
                                       ),
                                     ),
-                                    SizedBox(width: 2),
-                                    if (items[itemId]?['isVeg'] ?? false) 
-                                      Icon(Symbols.nutrition_sharp, size: 18, color: Colors.pink)
-                                    else 
-                                      Icon(Icons.kebab_dining, size: 18, color: Colors.brown),
                                   ],
                                 ),
                                 ),
@@ -776,14 +818,13 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                                 child: Text(
                                   "₹${items[itemId]?['price'] ?? 'N/A'}",
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 17),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
                     Positioned(
                       left: 5,
                       top: 5,
@@ -791,7 +832,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                         hoverColor: Colors.blue,
                         icon: Icon(Icons.edit, color: Colors.black),
                         onPressed: () {
-                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price'], items[itemId]?['isVeg']);
+                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price'], items[itemId]?['isVeg'], items[itemId]?['onmenu']);
                         },
                       ),
                     ),
@@ -806,6 +847,11 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                         },
                       ),
                     ),
+                    Positioned(
+                      right: 45,
+                      bottom: 60,
+                      child: Image.asset((items[itemId]?['isVeg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
+                    )
                   ],
                 ),
               );
