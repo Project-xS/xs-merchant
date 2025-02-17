@@ -81,8 +81,8 @@ class _TriStateToggleSwitchState extends State<TriStateToggleSwitch> {
       child: GestureDetector(
         onTap: toggleState,
         child: Container(
-          width: 76.5,
-          height: 31,
+          width: 78,
+          height: 35,
           decoration: BoxDecoration(
             color: _switchState == SwitchState.active
                 ? switchActiveStateBackgroundColor
@@ -91,10 +91,11 @@ class _TriStateToggleSwitchState extends State<TriStateToggleSwitch> {
                     : switchDualStateBackgroundColor,
             borderRadius: BorderRadius.circular(20.0),
           ),
-          padding: const EdgeInsets.all(2.0),
+          padding: const EdgeInsets.all(5.0),
           alignment: switchInitialPosition,
           child: AnimatedAlign(
-            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOutCirc,
+            duration: const Duration(milliseconds: 600),
             alignment: switchInitialPosition,
             child: Container(
               height: 27.0,

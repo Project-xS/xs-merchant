@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:merchant/orders.dart';
 import 'package:window_size/window_size.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/menupage.dart';
@@ -21,10 +22,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String name="PKS";
-  int currentIndex=0;
+  int currentIndex = 1;
   final List<Widget> pages = [
     Center(child: Menupage()),
-    Center(child: Text('Orders Page', style: TextStyle(fontSize: 30))),
+    Center(child: Orders()),
     Center(child: Text('Order History Page', style: TextStyle(fontSize: 30))),
   ];
   @override

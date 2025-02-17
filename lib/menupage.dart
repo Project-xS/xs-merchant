@@ -188,7 +188,9 @@ Set<int> get offmenuid =>
                         Navigator.pop(context);
                         }
                       },
-                  child: Row(children: [
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                     Icon(Icons.check, color: Colors.greenAccent),
                     SizedBox(width: 5.00),
                     Text("Submit", style: TextStyle(fontWeight: FontWeight.w600)),
@@ -374,7 +376,11 @@ Set<int> get offmenuid =>
                   });
                   Navigator.pop(context);
                   },
-                child: Row(children: [Icon(Icons.check, color: Colors.greenAccent), Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [Icon(Icons.check, color: Colors.greenAccent), 
+                  Text("Submit", 
+                  style: TextStyle(fontWeight: FontWeight.w600))]),
               ),
             ],
           );
@@ -687,7 +693,10 @@ Set<int> get offmenuid =>
                             Navigator.pop(context);
                           });}
                         },
-                  child: Row(children: [Icon(Icons.check, color: Colors.greenAccent), Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [Icon(Icons.check, color: Colors.greenAccent), 
+                    Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
                 ),
               ],
             );
@@ -759,8 +768,6 @@ Set<int> get offmenuid =>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Text("Sort:", style: TextStyle(fontSize: 20.0)),
-                      // SizedBox(width: 5.0),
                       TriStateToggleSwitch(
                         initialState: SwitchState.inactive,
                         onChanged: (switchState) {
