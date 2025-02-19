@@ -2,7 +2,8 @@
 
 Features:
 
-Added Generic Item pic, Added Veg/Non-Veg picture for easy identification
+ - Introduced Stocks count on grid on Menu Page and edit and modify stocks too
+ - Changed Sort by Veg to Low_stocks(Look 2(4) or image-18)
 
 1. Orders Page
 ![alt text](image-13.png)
@@ -33,9 +34,9 @@ Added Generic Item pic, Added Veg/Non-Veg picture for easy identification
  
 ![alt text](image-10.png)
 
- - Sort by Veg:
+ - Sort by Low_Stocks:
 
-![alt text](image-11.png)
+![alt text](image-18.png)
 
  - Sort Toggle in Not on Menu too, for easy access
 

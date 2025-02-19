@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:merchant/tristatetoggle.dart';
 
 class Menupage extends StatefulWidget {
@@ -15,36 +17,36 @@ class _MenupageState extends State<Menupage> {
   Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
   int sort = 1;
   Map<int, Map<String, dynamic>> item = {
-    1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false, 'onmenu': true},
-    2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true, 'onmenu': true},
-    3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true},
-    4: {'name': 'Rice', 'price': 50, 'isVeg': true, 'onmenu': true},
-    5: {'name': 'Rasam', 'price': 40, 'isVeg': true, 'onmenu': true},
-    6: {'name': 'Sambar', 'price': 60, 'isVeg': true, 'onmenu': false},
-    7: {'name': 'V Parotta', 'price': 30, 'isVeg': true, 'onmenu': true},
-    8: {'name': 'N Parotta', 'price': 35, 'isVeg': false, 'onmenu': false},
-    9: {'name': 'Noodles', 'price': 80, 'isVeg': false, 'onmenu': false},
-    10: {'name': 'special', 'price': 9999, 'isVeg': true, 'onmenu': true},
-    11: {'name': 'Chcken Rice', 'price': 120, 'isVeg': false, 'onmenu': false},
-    12: {'name': 'Veg Frie Rice', 'price': 100, 'isVeg': true, 'onmenu': false},
-    13: {'name': 'Chlli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true},
-    14: {'name': 'ice', 'price': 50, 'isVeg': true, 'onmenu': false},
-    15: {'name': 'asam', 'price': 40, 'isVeg': true, 'onmenu': false},
-    16: {'name': 'Sabar', 'price': 60, 'isVeg': true, 'onmenu': false},
-    17: {'name': 'V arotta', 'price': 30, 'isVeg': false, 'onmenu': false},
-    18: {'name': 'N arotta', 'price': 35, 'isVeg': false, 'onmenu': false},
-    19: {'name': 'Nodles', 'price': 80, 'isVeg': true, 'onmenu': true},
-    20: {'name': 'oodles', 'price': 90, 'isVeg': true, 'onmenu': false},
-    21: {'name': 'Chicen Rice', 'price': 120, 'isVeg': false, 'onmenu': false},
-    22: {'name': 'Veg Fied Rice', 'price': 100, 'isVeg': true, 'onmenu': false},
-    23: {'name': 'Chili Chicken', 'price': 150, 'isVeg': false, 'onmenu': false},
-    24: {'name': 'Rie', 'price': 50, 'isVeg': false, 'onmenu': false},
-    25: {'name': 'Raam', 'price': 40, 'isVeg': true, 'onmenu': false},
-    26: {'name': 'Sambr', 'price': 60, 'isVeg': false, 'onmenu': false},
-    27: {'name': 'V Paotta', 'price': 30, 'isVeg': true, 'onmenu': false},
-    28: {'name': 'N Paotta', 'price': 35, 'isVeg': false, 'onmenu': false},
-    29: {'name': 'Noodes', 'price': 80, 'isVeg': false, 'onmenu': false},
-    30: {'name': 'odles', 'price': 90, 'isVeg': false, 'onmenu': false},
+    1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false, 'onmenu': true, 'stocks': -1},
+    2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true, 'onmenu': true, 'stocks': -1},
+    3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true, 'stocks': 100},
+    4: {'name': 'Rice', 'price': 50, 'isVeg': true, 'onmenu': true, 'stocks': 0},
+    5: {'name': 'Rasam', 'price': 40, 'isVeg': true, 'onmenu': true, 'stocks': 500},
+    6: {'name': 'Sambar', 'price': 60, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    7: {'name': 'V Parotta', 'price': 30, 'isVeg': true, 'onmenu': true, 'stocks': 100},
+    8: {'name': 'N Parotta', 'price': 35, 'isVeg': false, 'onmenu': false, 'stocks': 500},
+    9: {'name': 'Noodles', 'price': 80, 'isVeg': false, 'onmenu': false, 'stocks': 500},
+    10: {'name': 'special', 'price': 9999, 'isVeg': true, 'onmenu': true, 'stocks': 100},
+    11: {'name': 'Chcken Rice', 'price': 120, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    12: {'name': 'Veg Frie Rice', 'price': 100, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    13: {'name': 'Chlli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true, 'stocks': 500},
+    14: {'name': 'ice', 'price': 50, 'isVeg': true, 'onmenu': false, 'stocks': 500},
+    15: {'name': 'asam', 'price': 40, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    16: {'name': 'Sabar', 'price': 60, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    17: {'name': 'V arotta', 'price': 30, 'isVeg': false, 'onmenu': false, 'stocks': 500},
+    18: {'name': 'N arotta', 'price': 35, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    19: {'name': 'Nodles', 'price': 80, 'isVeg': true, 'onmenu': true, 'stocks': 100},
+    20: {'name': 'oodles', 'price': 90, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    21: {'name': 'Chicen Rice', 'price': 120, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    22: {'name': 'Veg Fied Rice', 'price': 100, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    23: {'name': 'Chili Chicken', 'price': 150, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    24: {'name': 'Rie', 'price': 50, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    25: {'name': 'Raam', 'price': 40, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    26: {'name': 'Sambr', 'price': 60, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    27: {'name': 'V Paotta', 'price': 30, 'isVeg': true, 'onmenu': false, 'stocks': 100},
+    28: {'name': 'N Paotta', 'price': 35, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    29: {'name': 'Noodes', 'price': 80, 'isVeg': false, 'onmenu': false, 'stocks': 100},
+    30: {'name': 'odles', 'price': 90, 'isVeg': false, 'onmenu': false, 'stocks': 100},
   };
 
   int newitemid = 31;
@@ -56,21 +58,39 @@ class _MenupageState extends State<Menupage> {
   } else if (sort == 2) {
     sortedEntries.sort((a, b) => b.value["price"].compareTo(a.value["price"]));
   } else if (sort == 3) {
-    sortedEntries.sort((a, b) => (a.value["isVeg"] ? 0 : 1).compareTo(b.value["isVeg"] ? 0 : 1));
+    sortedEntries.sort((a, b) {
+      int getPriority(Map<String, dynamic> item) {
+        if (item["stocks"] == 0 && item["onmenu"] == true) return 0;
+        if (item["stocks"] == 0 && item["onmenu"] == false) return 1;
+        if (item["stocks"] == -1) return 3;
+        return 2;
+      }
+      int priorityA = getPriority(a.value);
+      int priorityB = getPriority(b.value);
+
+      if (priorityA != priorityB) {
+        return priorityA.compareTo(priorityB);
+      }
+      if (priorityA == 2) {
+        return a.value["stocks"].compareTo(b.value["stocks"]);
+      }
+      return 0;
+    });
   }
 
   return {for (var entry in sortedEntries) entry.key: entry.value};
 }
 
 Set<int> get onmenuid =>
-    items.entries.where((entry) => entry.value['onmenu'] == true).map((entry) => entry.key).toSet();
+    items.entries.where((entry) => entry.value['onmenu'] == true && (entry.value['stocks'] == -1 || entry.value['stocks'] >= 1)).map((entry) => entry.key).toSet();
 
 Set<int> get offmenuid =>
-    items.entries.where((entry) => entry.value['onmenu'] == false).map((entry) => entry.key).toSet();
+    items.entries.where((entry) => entry.value['onmenu'] == false || (entry.value['stocks'] != -1 && entry.value['stocks'] == 0)).map((entry) => entry.key).toSet();
 
   void modifyItem(int itemId, String oldName, int oldRate, bool isVeg, bool onmenu) {
     bool isError = false;
     String name = "";
+    int stocks = 0;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -79,7 +99,7 @@ Set<int> get offmenuid =>
               content: Padding(
                 padding: EdgeInsets.all(10.00),
                 child: SizedBox(
-                  height: 190.00,
+                  height: 250.00,
                   child: Form(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -145,6 +165,46 @@ Set<int> get offmenuid =>
                             });
                           },
                         ),
+                        TextFormField(
+                          maxLength: 5,
+                          initialValue: "${items[itemId]?['stocks']}",
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
+                          onChanged: (value) {
+                            if (value.isEmpty || value == "-") {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Error: Stocks can be either -1 or finite",
+                                      style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            } else {
+                              int? parsedValue = int.tryParse(value);
+                              if(parsedValue != null){
+                                if (parsedValue < -1){
+                                  stocks = 1;
+                                }
+                                else{
+                                  stocks = parsedValue;
+                                }
+                              }
+                              else{
+                                stocks = 0;
+                              }
+                            }
+                          },
+                          decoration: InputDecoration(
+                            labelText: "Stocks",
+                            hintText: "Enter -1 for Unlimited",
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.blue, width: 2),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey, width: 2),
+                            ),
+                          ),
+                        ),
                         Row(
                           children: [
                             Text("Veg : ", style: TextStyle(fontSize: 15.00)),
@@ -182,7 +242,8 @@ Set<int> get offmenuid =>
                             'name': name.isNotEmpty?name:oldName,
                             'price': oldRate,
                             'isVeg': isVeg,
-                            'onmenu': onmenu
+                            'onmenu': onmenu,
+                            'stocks': stocks
                           };
                         });
                         Navigator.pop(context);
@@ -206,6 +267,7 @@ Set<int> get offmenuid =>
     bool isError = false;
     String name = "";
     String priceText = "";
+    int stocks = 0;
     bool isVeg = false;
     bool onmenu = true;
     showDialog(
@@ -215,7 +277,7 @@ Set<int> get offmenuid =>
             title: Text("Add new Item: ", style: TextStyle(fontWeight: FontWeight.w700)),
             content: SizedBox(
               width: double.minPositive,
-              height: 205.00,
+              height: 285.00,
               child: Column(
                 children: [
                   StatefulBuilder(
@@ -279,6 +341,49 @@ Set<int> get offmenuid =>
                       },
                     ),
                   ),
+                Padding(
+                  padding: EdgeInsets.all(5.0),
+                  child: TextFormField(
+                    maxLength: 5,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
+                    onChanged: (value) {
+                      if (value.isEmpty || value == "-") {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Error: Stocks can be either -1 or finite",
+                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      } else {
+                        int? parsedValue = int.tryParse(value);
+                        if(parsedValue != null){
+                          if (parsedValue < -1){
+                            stocks = 1;
+                          }
+                          else{
+                            stocks = parsedValue;
+                          }
+                        }
+                        else{
+                          stocks = 0;
+                        }
+                      }
+                    },
+                    decoration: InputDecoration(
+                      labelText: "Stocks",
+                      hintText: "Enter -1 for Unlimited",
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.blue, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 15.00),
                 StatefulBuilder(builder: (context, setState) {
                   return Row(
                     children: [
@@ -336,7 +441,8 @@ Set<int> get offmenuid =>
                         'name': name,
                         'price': int.parse(priceText),
                         'isVeg': isVeg,
-                        'onmenu': onmenu
+                        'onmenu': onmenu,
+                        'stocks': stocks,
                       };
                       if (offmenuid.contains(foundItemId)){
                         offmenuid.remove(foundItemId);
@@ -347,7 +453,8 @@ Set<int> get offmenuid =>
                         'name': name,
                         'price': int.parse(priceText),
                         'isVeg': isVeg,
-                        'onmenu': onmenu
+                        'onmenu': onmenu,
+                        'stocks': stocks
                       };
                       onmenuid.add(newitemid);
                       }
@@ -472,7 +579,7 @@ Set<int> get offmenuid =>
               titleTextStyle: TextStyle(fontSize: 25.00, fontWeight: FontWeight.w700),
               content: SizedBox(
                 height: 400.00,
-                width: 477.00,
+                width: 550.00,
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: items.length,
@@ -524,7 +631,8 @@ Set<int> get offmenuid =>
                                                 'name': value,
                                                 'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
                                                 'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
-                                                'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu'])
+                                                'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu']),
+                                                'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
                                               };
                                             }}
                                           }
@@ -567,13 +675,56 @@ Set<int> get offmenuid =>
                                             'price': int.parse(value),
                                             'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
                                             'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
-                                            'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu'])
-
+                                            'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu']),
+                                            'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
                                           };
                                         }
                                       },
                                       decoration: InputDecoration(
                                         labelText: "Price",
+                                        counterText: "",
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(color: Colors.grey, width: 2),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.00),
+                                  SizedBox(
+                                    width: 60.00,
+                                    child: TextFormField(
+                                      maxLength: 5,
+                                      initialValue: items[itemId]?['stocks'].toString(),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
+                                      onChanged: (value) {
+                                        if (value.isEmpty || value == "-") {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Error: Stocks can be either -1 or finite",
+                                                  style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                              backgroundColor: Colors.redAccent,
+                                            ),
+                                          );
+                                        } else {
+                                          int? parsedValue = int.tryParse(value);
+                                          if (parsedValue != null) {
+                                            if (parsedValue < -1) parsedValue = -1;
+                                            changes[itemId] = {
+                                              'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
+                                              'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
+                                              'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
+                                              'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu']),
+                                              'stocks': parsedValue,
+                                            };
+                                          }
+                                        }
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: "Stocks",
                                         counterText: "",
                                         focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(color: Colors.blue, width: 2),
@@ -673,12 +824,13 @@ Set<int> get offmenuid =>
                         if(errorMap.isEmpty){
                           setState(() {
                             for (int i in changes.keys) {
-                              if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price']) {
+                              if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price'] || changes[i]?['stocks'] != items[i]?['stocks']) {
                                 item[i] = {
                                   'name': changes[i]?['name'],
                                   'price': changes[i]?['price'],
                                   'isVeg': item[i]?['isVeg'],
-                                  'onmenu': item[i]?['onmenu']
+                                  'onmenu': item[i]?['onmenu'],
+                                  'stocks': changes[i]?['stocks']
                                 };
                               }
                             }
@@ -704,6 +856,48 @@ Set<int> get offmenuid =>
         );
   }
 
+//   Future<void> apipostcall(int itemid, String name, double price, bool isVeg, int stocks, bool onmenu) async {
+//   final response = await http.post(
+//     Uri.parse('https://proj-xs.fly.dev/menu/create'),
+//     headers: {
+//       "accept": "application/json",
+//       "Content-Type": "application/json"
+//     },
+//     body: jsonEncode({
+//       "canteen_id": 99,
+//       "description": "hi",
+//       "list": true,
+//       "pic_link": "hi",
+//       "name": name,
+//       "price": price.toDouble(),
+//       "is_veg": isVeg,       
+//       "is_available": onmenu,
+//       "stock": stocks        
+//     }),
+//   );
+
+//   if (response.statusCode == 200 || response.statusCode == 201) { 
+//     debugPrint("✅ Item created successfully: $name");
+//   } else {
+//     debugPrint("❌ Failed to create item: ${response.body}");
+//   }
+//   // final response1 = await http.get(Uri.parse("https://proj-xs.fly.dev/menu/items"));
+//   // debugPrint(jsonDecode(response1.body));
+// }
+// 
+// Future<void> addNewItems() async {
+//   for (var entry in item.entries) {
+//     await apipostcall(
+//       entry.key,
+//       entry.value['name'],
+//       entry.value['price'].toDouble(),
+//       entry.value['isVeg'],
+//       entry.value['stocks'],
+//       entry.value['onmenu'],
+//     );
+//   }
+// }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -723,6 +917,11 @@ Set<int> get offmenuid =>
             backgroundColor: Colors.cyan,
             onPressed: () {
               massEdit();
+                // addNewItems();
+              // items.forEach((key, value) {
+                // apiputcall(key, value['name'], value['price'], value['isVeg'], value['stocks'], value['onmenu']);
+                // debugPrint("${key} ${value['name']}" "${value['price']}" "${value['isVeg']}" "${value['stocks']}" "${value['onmenu']}");
+              // });
             },
             child: Icon(Icons.edit,color: Colors.black),
           )]),
@@ -753,7 +952,7 @@ Set<int> get offmenuid =>
                       SizedBox(width: 10.0),
                       Text("Price", style: TextStyle(fontSize: 20.0)),
                       SizedBox(width: 10.0),
-                      Text("Veg", style: TextStyle(fontSize: 20.0)),
+                      Text("Low_Stocks", style: TextStyle(fontSize: 20.0)),
                       SizedBox(width: 10.00)
                     ],
                   ),
@@ -801,7 +1000,7 @@ Set<int> get offmenuid =>
               ),
             )
           else 
-            buildGridSection(onmenuid, Colors.green),
+            buildGridSection(onmenuid, Colors.green, Colors.white),
           SizedBox(height: 25.00),
           Align(
                 alignment: Alignment.center,
@@ -822,7 +1021,7 @@ Set<int> get offmenuid =>
                       SizedBox(width: 10.0),
                       Text("Price", style: TextStyle(fontSize: 20.0)),
                       SizedBox(width: 10.0),
-                      Text("Veg", style: TextStyle(fontSize: 20.0)),
+                      Text("Low_Stocks", style: TextStyle(fontSize: 20.0)),
                       SizedBox(width: 10.00)
                     ],
                   ),
@@ -868,14 +1067,14 @@ Set<int> get offmenuid =>
               ),
             )
           else 
-            buildGridSection(offmenuid, Colors.grey),
+            buildGridSection(offmenuid, Colors.grey, Colors.black),
           ],
         ),
       ),
     );
   }
 
-Widget buildGridSection(Set<int> menuSet, Color bgColor) {
+Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -909,6 +1108,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                         onTap: () => delAddItem(itemId, items[itemId]?['name'], true, items[itemId]?['onmenu']),
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
+                          height: 285,
                           decoration: BoxDecoration(
                             color: bgColor,
                             borderRadius: BorderRadius.circular(10),
@@ -916,13 +1116,11 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SizedBox(height:20),
+                              SizedBox(height:5),
                               AspectRatio(
-                                aspectRatio: 1.5,
+                                aspectRatio: 1.6,
                                 child: itemicon),
-                              AspectRatio(
-                                aspectRatio: 10,
-                                  child: Row(
+                              Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Flexible(
@@ -932,7 +1130,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white,
+                                          color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         maxLines: 1,
@@ -941,15 +1139,16 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                                     ),
                                   ],
                                 ),
-                                ),
-                              AspectRatio(
-                                aspectRatio: 10,
-                                child: Text(
+                                Text(
                                   "₹${items[itemId]?['price'] ?? 'N/A'}",
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 17),
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
                                 ),
-                              ),
+                              Text(
+                                  "Stock: ${items[itemId]?['stocks'] == -1 ? 'Unlimited' : '${items[itemId]?['stocks']}'}",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
+                                ),
                             ],
                           ),
                         ),
@@ -978,7 +1177,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor) {
                     ),
                     Positioned(
                       right: 45,
-                      bottom: 60,
+                      bottom: 80,
                       child: Image.asset((items[itemId]?['isVeg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
                     )
                   ],

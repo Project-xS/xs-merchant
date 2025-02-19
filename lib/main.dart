@@ -1,4 +1,5 @@
 import 'dart:io';
+// import 'package:http/http.dart' as http;
 import 'package:merchant/orders.dart';
 import 'package:window_size/window_size.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,9 @@ void main(){
   WidgetsFlutterBinding.ensureInitialized();
     setWindowMinSize(const Size(1025,1025));
   }
+  // Map<int, Map<String, dynamic>> items = {};
   runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     theme:ThemeData.dark(),
     home:HomePage()));
 }
