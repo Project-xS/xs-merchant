@@ -1,5 +1,5 @@
 import 'dart:io';
-// import 'package:http/http.dart' as http;
+import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
 import 'package:window_size/window_size.dart';
 import 'package:flutter/material.dart';
@@ -28,8 +28,8 @@ class _HomePageState extends State<HomePage> {
   int currentIndex = 1;
   final List<Widget> pages = [
     Center(child: Menupage()),
+    Center(child: OrderHistory()),
     Center(child: Orders()),
-    Center(child: Text('Order History Page', style: TextStyle(fontSize: 30))),
   ];
   @override
   Widget build(BuildContext context) {
@@ -61,11 +61,11 @@ class _HomePageState extends State<HomePage> {
                   label: "Menu",
                   ),
                 NavigationDestination(
-                  icon: Icon(Icons.pending_actions),
-                  label: "Orders"),
+                  icon: Icon(Icons.local_shipping_outlined),
+                  label: "Order History and Verification"),
                 NavigationDestination(
-                  icon: Icon(Icons.history),
-                  label: "Order History"),],
+                  icon: Icon(Icons.pending_actions),
+                  label: "Orders"),],
               onDestinationSelected: (int ind){
                 setState(() {
                   currentIndex=ind;
