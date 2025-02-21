@@ -2,11 +2,26 @@
 
 Features:
 
- - Orders history and Verification Page with working search
- - Introduced Stocks count on grid on Menu Page and edit and modify stocks too
- - Changed Sort by Veg to Low_stocks(Look 2(4) or image-18)
+ - Orders history and Verification Page with working search and delivering order works(Rfid yet to find)
 
-1. Orders Delivered History and Verfication Page
+1. Deliver Item with rfid(Yet to find) UI:
+
+![alt text](image-19.png)
+
+ - When Rfid Number(now its orderid) is entered:
+
+ ![alt text](image-20.png)
+
+2. Orders Page with timed counts
+
+![alt text](image-11.png)
+
+- Whole New Orders Page which shows the orders received with time of delivery (7:00 am, 11:15 am, 12:00 pm, 3:00 pm).
+
+![alt text](image-21.png)
+
+3. Orders Delivered History and Verfication Page
+ - Note: It only shows delivered orders but we can search not delivered orders 
 
 ![alt text](image-13.png)
 
@@ -22,13 +37,8 @@ Features:
 
   ![alt text](image-16.png)
 
-2. Orders Page
 
-- Whole New Orders Page which shows the orders received.
-
-![alt text](image-11.png)
-
-3. Sort:
+4. Sort:
 
  - Sort by Name by default:
 
@@ -46,11 +56,11 @@ Features:
 
 ![alt text](image-12.png)
 
-4. Modify Item in Bulk with Name Checkpoint
+5. Modify Item in Bulk with Name Checkpoint
 
 ![alt text](image-8.png)
 
-5. Single Modify Items for Changing the both Name and Price
+6. Single Modify Items for Changing the both Name and Price
 
 ![alt text](image-5.png)
 
@@ -58,7 +68,7 @@ Features:
 
 ![alt text](image-4.png)
 
-6. Added Reconfirmation for Easy Adding and removing items from Menu
+7. Added Reconfirmation for Easy Adding and removing items from Menu
  - On Menu to Off Menu
 
 ![alt text](image-2.png)
@@ -67,7 +77,7 @@ Features:
 
  ![alt text](image-3.png)
 
-7. Add New item rework with checkpoint
+8. Add New item rework with checkpoint
 
 ![alt text](image-7.png)
 
@@ -75,7 +85,7 @@ Features:
 
 ![alt text](image-6.png)
 
-8. Added Delete Item Feature:
+9. Added Delete Item Feature:
 
 ![alt text](image-1.png)
 
