@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http;
+import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/tristatetoggle.dart';
 
 class Menupage extends StatefulWidget {
@@ -11,44 +14,45 @@ class Menupage extends StatefulWidget {
 }
 
 
-class _MenupageState extends State<Menupage> {
+class _MenupageState extends State<Menupage> with AutoFetchMixin{
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
   Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
   int sort = 1;
-  Map<int, Map<String, dynamic>> item = {
-    1: {'name': 'Chicken Rice', 'price': 120, 'isVeg': false, 'onmenu': true, 'stocks': -1},
-    2: {'name': 'Veg Fried Rice', 'price': 100, 'isVeg': true, 'onmenu': true, 'stocks': -1},
-    3: {'name': 'Chilli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true, 'stocks': 100},
-    4: {'name': 'Rice', 'price': 50, 'isVeg': true, 'onmenu': true, 'stocks': 0},
-    5: {'name': 'Rasam', 'price': 40, 'isVeg': true, 'onmenu': true, 'stocks': 500},
-    6: {'name': 'Sambar', 'price': 60, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    7: {'name': 'V Parotta', 'price': 30, 'isVeg': true, 'onmenu': true, 'stocks': 100},
-    8: {'name': 'N Parotta', 'price': 35, 'isVeg': false, 'onmenu': false, 'stocks': 500},
-    9: {'name': 'Noodles', 'price': 80, 'isVeg': false, 'onmenu': false, 'stocks': 500},
-    10: {'name': 'special', 'price': 9999, 'isVeg': true, 'onmenu': true, 'stocks': 100},
-    11: {'name': 'Chcken Rice', 'price': 120, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    12: {'name': 'Veg Frie Rice', 'price': 100, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    13: {'name': 'Chlli Chicken', 'price': 150, 'isVeg': false, 'onmenu': true, 'stocks': 500},
-    14: {'name': 'ice', 'price': 50, 'isVeg': true, 'onmenu': false, 'stocks': 500},
-    15: {'name': 'asam', 'price': 40, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    16: {'name': 'Sabar', 'price': 60, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    17: {'name': 'V arotta', 'price': 30, 'isVeg': false, 'onmenu': false, 'stocks': 500},
-    18: {'name': 'N arotta', 'price': 35, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    19: {'name': 'Nodles', 'price': 80, 'isVeg': true, 'onmenu': true, 'stocks': 100},
-    20: {'name': 'oodles', 'price': 90, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    21: {'name': 'Chicen Rice', 'price': 120, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    22: {'name': 'Veg Fied Rice', 'price': 100, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    23: {'name': 'Chili Chicken', 'price': 150, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    24: {'name': 'Rie', 'price': 50, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    25: {'name': 'Raam', 'price': 40, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    26: {'name': 'Sambr', 'price': 60, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    27: {'name': 'V Paotta', 'price': 30, 'isVeg': true, 'onmenu': false, 'stocks': 100},
-    28: {'name': 'N Paotta', 'price': 35, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    29: {'name': 'Noodes', 'price': 80, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-    30: {'name': 'odles', 'price': 90, 'isVeg': false, 'onmenu': false, 'stocks': 100},
-  };
+  // Map<int, Map<String, dynamic>> item1 = {
+  //   1: {'name': 'Chicken Rice', 'price': 120, 'is_veg': false, 'available': true, 'stocks': -1},
+  //   2: {'name': 'Veg Fried Rice', 'price': 100, 'is_veg': true, 'available': true, 'stocks': -1},
+  //   3: {'name': 'Chilli Chicken', 'price': 150, 'is_veg': false, 'available': true, 'stocks': 100},
+  //   4: {'name': 'Rice', 'price': 50, 'is_veg': true, 'available': true, 'stocks': 0},
+  //   5: {'name': 'Rasam', 'price': 40, 'is_veg': true, 'available': true, 'stocks': 500},
+  //   6: {'name': 'Sambar', 'price': 60, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   7: {'name': 'V Parotta', 'price': 30, 'is_veg': true, 'available': true, 'stocks': 100},
+  //   8: {'name': 'N Parotta', 'price': 35, 'is_veg': false, 'available': false, 'stocks': 500},
+  //   9: {'name': 'Noodles', 'price': 80, 'is_veg': false, 'available': false, 'stocks': 500},
+  //   10: {'name': 'special', 'price': 9999, 'is_veg': true, 'available': true, 'stocks': 100},
+  //   11: {'name': 'Chcken Rice', 'price': 120, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   12: {'name': 'Veg Frie Rice', 'price': 100, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   13: {'name': 'Chlli Chicken', 'price': 150, 'is_veg': false, 'available': true, 'stocks': 500},
+  //   14: {'name': 'ice', 'price': 50, 'is_veg': true, 'available': false, 'stocks': 500},
+  //   15: {'name': 'asam', 'price': 40, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   16: {'name': 'Sabar', 'price': 60, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   17: {'name': 'V arotta', 'price': 30, 'is_veg': false, 'available': false, 'stocks': 500},
+  //   18: {'name': 'N arotta', 'price': 35, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   19: {'name': 'Nodles', 'price': 80, 'is_veg': true, 'available': true, 'stocks': 100},
+  //   20: {'name': 'oodles', 'price': 90, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   21: {'name': 'Chicen Rice', 'price': 120, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   22: {'name': 'Veg Fied Rice', 'price': 100, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   23: {'name': 'Chili Chicken', 'price': 150, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   24: {'name': 'Rie', 'price': 50, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   25: {'name': 'Raam', 'price': 40, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   26: {'name': 'Sambr', 'price': 60, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   27: {'name': 'V Paotta', 'price': 30, 'is_veg': true, 'available': false, 'stocks': 100},
+  //   28: {'name': 'N Paotta', 'price': 35, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   29: {'name': 'Noodes', 'price': 80, 'is_veg': false, 'available': false, 'stocks': 100},
+  //   30: {'name': 'odles', 'price': 90, 'is_veg': false, 'available': false, 'stocks': 100},
+  // };
 
   int newitemid = 31;
+  Map<int, Map<String, dynamic>> item = {};
   Map<int, Map<String, dynamic>> get items {
   var sortedEntries = item.entries.toList();
 
@@ -59,8 +63,8 @@ class _MenupageState extends State<Menupage> {
   } else if (sort == 3) {
     sortedEntries.sort((a, b) {
       int getPriority(Map<String, dynamic> item) {
-        if (item["stocks"] == 0 && item["onmenu"] == true) return 0;
-        if (item["stocks"] == 0 && item["onmenu"] == false) return 1;
+        if (item["stocks"] == 0 && item["available"] == true) return 0;
+        if (item["stocks"] == 0 && item["available"] == false) return 1;
         if (item["stocks"] == -1) return 3;
         return 2;
       }
@@ -80,16 +84,16 @@ class _MenupageState extends State<Menupage> {
   return {for (var entry in sortedEntries) entry.key: entry.value};
 }
 
-Set<int> get onmenuid =>
-    items.entries.where((entry) => entry.value['onmenu'] == true && (entry.value['stocks'] == -1 || entry.value['stocks'] >= 1)).map((entry) => entry.key).toSet();
+Set<int> get availableid =>
+    items.entries.where((entry) => entry.value['available'] == true && (entry.value['stocks'] == -1 || entry.value['stocks'] >= 1)).map((entry) => entry.key).toSet();
 
-Set<int> get offmenuid =>
-    items.entries.where((entry) => entry.value['onmenu'] == false || (entry.value['stocks'] != -1 && entry.value['stocks'] == 0)).map((entry) => entry.key).toSet();
+Set<int> get navailableid =>
+    items.entries.where((entry) => entry.value['available'] == false || (entry.value['stocks'] != -1 && entry.value['stocks'] == 0)).map((entry) => entry.key).toSet();
 
-  void modifyItem(int itemId, String oldName, int oldRate, bool isVeg, bool onmenu) {
+  void modifyItem(int itemId, String oldName, double oldRate, bool isveg, bool available) {
     bool isError = false;
     String name = "";
-    int stocks = 0;
+    int stocks = items[itemId]?['stocks']??0;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -98,7 +102,7 @@ Set<int> get offmenuid =>
               content: Padding(
                 padding: EdgeInsets.all(10.00),
                 child: SizedBox(
-                  height: 250.00,
+                  height: 260.00,
                   child: Form(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -141,7 +145,7 @@ Set<int> get offmenuid =>
                         SizedBox(height: 20.00),
                         TextFormField(
                           maxLength: 4,
-                          initialValue: oldRate.toString(),
+                          initialValue: oldRate.toInt().toString(),
                           autofocus: true,
                           autocorrect: false,
                           keyboardType: TextInputType.number,
@@ -160,10 +164,11 @@ Set<int> get offmenuid =>
                           ),
                           onChanged: (value) {
                             setState(() {
-                              oldRate = int.tryParse(value) ?? oldRate;
+                              oldRate = (int.tryParse(value) != null)? int.parse(value).toDouble() : oldRate;
                             });
                           },
                         ),
+                  //Stock rests to 0 need to fix
                         TextFormField(
                           maxLength: 5,
                           initialValue: "${items[itemId]?['stocks']}",
@@ -179,8 +184,7 @@ Set<int> get offmenuid =>
                                 ),
                               );
                             } else {
-                              int? parsedValue = int.tryParse(value);
-                              if(parsedValue != null){
+                              int parsedValue = int.tryParse(value)??stocks;
                                 if (parsedValue < -1){
                                   stocks = 1;
                                 }
@@ -188,10 +192,6 @@ Set<int> get offmenuid =>
                                   stocks = parsedValue;
                                 }
                               }
-                              else{
-                                stocks = 0;
-                              }
-                            }
                           },
                           decoration: InputDecoration(
                             labelText: "Stocks",
@@ -210,10 +210,10 @@ Set<int> get offmenuid =>
                             StatefulBuilder(
                               builder:(context, setState) {
                               return Checkbox(
-                                value: isVeg,
+                                value: isveg,
                                 onChanged: (value) {
                                   setState(() {
-                                    isVeg = value ?? false;
+                                    isveg = value ?? false;
                                   });
                                 },
                               );},
@@ -240,10 +240,11 @@ Set<int> get offmenuid =>
                           item[itemId] = {
                             'name': name.isNotEmpty?name:oldName,
                             'price': oldRate,
-                            'isVeg': isVeg,
-                            'onmenu': onmenu,
+                            'is_veg': isveg,
+                            'available': available,
                             'stocks': stocks
                           };
+                          updateitem(itemId,item);
                         });
                         Navigator.pop(context);
                         }
@@ -267,8 +268,8 @@ Set<int> get offmenuid =>
     String name = "";
     String priceText = "";
     int stocks = 0;
-    bool isVeg = false;
-    bool onmenu = true;
+    bool isveg = false;
+    bool available = true;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -276,7 +277,7 @@ Set<int> get offmenuid =>
             title: Text("Add new Item: ", style: TextStyle(fontWeight: FontWeight.w700)),
             content: SizedBox(
               width: double.minPositive,
-              height: 285.00,
+              height: 300.00,
               child: Column(
                 children: [
                   StatefulBuilder(
@@ -388,15 +389,15 @@ Set<int> get offmenuid =>
                     children: [
                       Text("Veg : ", style: TextStyle(fontSize: 15.00)),
                       Checkbox(
-                        value: isVeg,
+                        value: isveg,
                         onChanged: (value) {
                           setState(() {
-                            isVeg = value ?? false;
-                            if (value == null || isVeg == false){
-                              isVeg = false;
+                            isveg = value ?? false;
+                            if (value == null || isveg == false){
+                              isveg = false;
                             }
                             else{
-                              isVeg = true;
+                              isveg = true;
                             }
                           });
                         },
@@ -438,24 +439,31 @@ Set<int> get offmenuid =>
                     if(foundItemId!=olditemid){
                       item[foundItemId] = {
                         'name': name,
-                        'price': int.parse(priceText),
-                        'isVeg': isVeg,
-                        'onmenu': onmenu,
+                        'price': int.parse(priceText).toDouble(),
+                        'is_veg': isveg,
+                        'available': available,
                         'stocks': stocks,
                       };
-                      if (offmenuid.contains(foundItemId)){
-                        offmenuid.remove(foundItemId);
+                      updateitem(foundItemId, item);
+                      if (navailableid.contains(foundItemId)){
+                        navailableid.remove(foundItemId);
+                        availableid.add(foundItemId);
                       }
                       }
                       else{
-                        item[olditemid+1] = {
-                        'name': name,
-                        'price': int.parse(priceText),
-                        'isVeg': isVeg,
-                        'onmenu': onmenu,
-                        'stocks': stocks
-                      };
-                      onmenuid.add(newitemid);
+                        apipostcall(name, int.parse(priceText).toDouble(), isveg, stocks, available);
+                        // item[] = {
+                        // 'name': name,
+                        // 'price': int.parse(priceText).toDouble(),   ask adi to send the new added item id and use that here
+                        // 'is_veg': isveg,
+                        // 'available': available,
+                        // 'stocks': stocks
+                      // };
+                      // availableid.add(newitemid);
+
+                      // for now im calling to refresh everything
+                      sleep(Duration(seconds: 15));
+                      getallitems();
                       }
                     if (isError){
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -493,10 +501,10 @@ Set<int> get offmenuid =>
         });
   }
 
-  void delAddItem(int itemId, String name, bool isAdd , bool onmenu){
+  void delAddItem(int itemId, String name, bool isAdd , bool available){
     showDialog(context: context, builder: (context){
       return AlertDialog(
-        title: Text("Do you want to ${(isAdd && onmenu)?"Remove \"$name\" from the Menu":((isAdd && !onmenu)?"Add \"$name\" to the Menu":"Delete \"$name\"")}", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text("Do you want to ${(isAdd && available)?"Remove \"$name\" from the Menu":((isAdd && !available)?"Add \"$name\" to the Menu":"Delete \"$name\"")}", style: TextStyle(fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: double.minPositive,
           child: Row(
@@ -516,48 +524,49 @@ Set<int> get offmenuid =>
               SizedBox(width:20.00),
               TextButton(
                 style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(isAdd?(onmenu?Colors.yellow:Colors.green):Colors.red),
+                  backgroundColor: WidgetStatePropertyAll(isAdd?(available?Colors.yellow:Colors.green):Colors.red),
                   foregroundColor: WidgetStatePropertyAll(Colors.black),
                   padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
                   fixedSize: WidgetStatePropertyAll(Size(120, 45)),
-                  overlayColor: WidgetStatePropertyAll(isAdd?(onmenu?Colors.yellowAccent:Colors.greenAccent):Colors.redAccent),
+                  overlayColor: WidgetStatePropertyAll(isAdd?(available?Colors.yellowAccent:Colors.greenAccent):Colors.redAccent),
                 ),
                 onPressed: () {
                     setState(() {
-                      if (item[itemId]?['onmenu']) {
-                        if (isAdd == true){
-                          onmenuid.remove(itemId);
-                          offmenuid.add(itemId);
-                          item[itemId]?['onmenu'] = false;
+                      if (isAdd == true){
+                        if (item[itemId]?['available']) {
+                          availableid.remove(itemId);
+                          navailableid.add(itemId);
+                          item[itemId]?['available'] = false;
+                          updateitem(itemId, item);
                         }
-                      } else {
-                          if (isAdd == true){
-                            item[itemId]?['onmenu'] = true;
-                            onmenuid.add(itemId);
-                            offmenuid.remove(itemId);
-                        }
-                      }
-                      if (isAdd == false){
-                        if (onmenuid.contains(itemId)){
-                          onmenuid.remove(itemId);
+                        else {
+                            item[itemId]?['available'] = true;
+                            availableid.add(itemId);
+                            navailableid.remove(itemId);
+                            updateitem(itemId, item);
+                      }}
+                      else{
+                        if (item[itemId]?['available']){
+                          availableid.remove(itemId);
                         }
                         else{
-                          offmenuid.remove(itemId);
+                          navailableid.remove(itemId);
                         }
-                        items.remove(itemId);
+                        item.remove(itemId);
+                        deleteitem(itemId);
                       }
                       Navigator.pop(context);
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "Item : ${(isAdd && onmenu)?"$name Removed from Menu":((isAdd && !onmenu)?"$name Added to the Menu":"$name Deleted Successfully")}",
+                        "Item : ${(isAdd && available)?"$name Removed from Menu":((isAdd && !available)?"$name Added to the Menu":"$name Deleted Successfully")}",
                         style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
                       ),
-                      backgroundColor: (isAdd && onmenu)?Colors.yellowAccent:((isAdd && !onmenu)?Colors.cyanAccent:Colors.redAccent))
+                      backgroundColor: (isAdd && available)?Colors.yellowAccent:((isAdd && !available)?Colors.cyanAccent:Colors.redAccent))
                   );
                 },
-                child: Text((isAdd && onmenu)?"Remove":((isAdd && !onmenu)?"Add":"Delete")),
+                child: Text((isAdd && available)?"Remove":((isAdd && !available)?"Add":"Delete")),
           )],
           ),
         ),
@@ -629,8 +638,8 @@ Set<int> get offmenuid =>
                                               changes[itemId] = {
                                                 'name': value,
                                                 'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                                'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
-                                                'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu']),
+                                                'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
+                                                'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
                                                 'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
                                               };
                                             }}
@@ -657,7 +666,7 @@ Set<int> get offmenuid =>
                                     width: 60.00,
                                     child: TextFormField(
                                       maxLength: 4,
-                                      initialValue: items[itemId]?['price'].toString(),
+                                      initialValue: items[itemId]?['price'].toInt().toString(),
                                       keyboardType: TextInputType.number,
                                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                       onChanged: (value) {
@@ -671,10 +680,10 @@ Set<int> get offmenuid =>
                                           );
                                         } else {
                                           changes[itemId] = {
-                                            'price': int.parse(value),
+                                            'price': int.parse(value).toDouble(),
                                             'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                            'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
-                                            'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu']),
+                                            'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
+                                            'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
                                             'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
                                           };
                                         }
@@ -715,8 +724,8 @@ Set<int> get offmenuid =>
                                             changes[itemId] = {
                                               'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
                                               'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                              'isVeg': changes.containsKey(itemId) ? (changes[itemId]?['isVeg']) : (items[itemId]?['isVeg']),
-                                              'onmenu': changes.containsKey(itemId) ? (changes[itemId]?['onmenu']) : (items[itemId]?['onmenu']),
+                                              'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
+                                              'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
                                               'stocks': parsedValue,
                                             };
                                           }
@@ -743,10 +752,10 @@ Set<int> get offmenuid =>
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Checkbox(
-                                              value: item[itemId]?['isVeg'],
+                                              value: item[itemId]?['is_veg'],
                                               onChanged: (value) {
                                                 setState(() {
-                                                  item[itemId]?['isVeg'] = !(item[itemId]?['isVeg'] ?? false);
+                                                  item[itemId]?['is_veg'] = !(item[itemId]?['is_veg'] ?? false);
                                                 });
                                               },
                                             ),
@@ -763,26 +772,26 @@ Set<int> get offmenuid =>
                                         return Row(
                                           children: [
                                             Checkbox(
-                                              value: item[itemId]?['onmenu'],
+                                              value: item[itemId]?['available'],
                                               onChanged: (value) {
                                                 setState(() {
-                                                  if (!item[itemId]?['onmenu']) {
-                                                    item[itemId]?['onmenu'] = true;
-                                                    if(offmenuid.contains(itemId)){
-                                                      offmenuid.remove(itemId);
+                                                  if (!item[itemId]?['available']) {
+                                                    item[itemId]?['available'] = true;
+                                                    if(navailableid.contains(itemId)){
+                                                      navailableid.remove(itemId);
                                                     }
-                                                    onmenuid.add(itemId);
+                                                    availableid.add(itemId);
                                                   } else {
-                                                    item[itemId]?['onmenu'] = false;
-                                                    onmenuid.remove(itemId);
-                                                    offmenuid.add(itemId);
+                                                    item[itemId]?['available'] = false;
+                                                    availableid.remove(itemId);
+                                                    navailableid.add(itemId);
                                                   }
                                                 });
                                               },
                                             ),
                                             Expanded(
                                               child: Text(
-                                                item[itemId]?['onmenu'] ? "On Menu" : "Not On Menu",
+                                                item[itemId]?['available'] ? "On Menu" : "Not On Menu",
                                                 style: TextStyle(fontSize: 15),
                                                 textAlign: TextAlign.start,
                                                 overflow: TextOverflow.ellipsis,
@@ -827,10 +836,11 @@ Set<int> get offmenuid =>
                                 item[i] = {
                                   'name': changes[i]?['name'],
                                   'price': changes[i]?['price'],
-                                  'isVeg': item[i]?['isVeg'],
-                                  'onmenu': item[i]?['onmenu'],
+                                  'is_veg': item[i]?['is_veg'],
+                                  'available': item[i]?['available'],
                                   'stocks': changes[i]?['stocks']
                                 };
+                                updateitem(i, item);
                               }
                             }
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -855,44 +865,147 @@ Set<int> get offmenuid =>
         );
   }
 
-//   Future<void> apipostcall(int itemid, String name, double price, bool isVeg, int stocks, bool onmenu) async {
-//   final response = await http.post(
-//     Uri.parse('https://proj-xs.fly.dev/menu/create'),
-//     headers: {
-//       "accept": "application/json",
-//       "Content-Type": "application/json"
-//     },
-//     body: jsonEncode({
-//       "canteen_id": 99,
-//       "description": "hi",
-//       "list": true,
-//       "pic_link": "hi",
-//       "name": name,
-//       "price": price.toDouble(),
-//       "is_veg": isVeg,       
-//       "is_available": onmenu,
-//       "stock": stocks        
-//     }),
-//   );
+void apipostcall(String name, double price, bool isveg, int stocks, bool available) async {
+  try {
+  final response = await http.post(
+    Uri.parse('https://proj-xs.fly.dev/menu/create'),
+    headers: {
+      "accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    body: jsonEncode({
+      "canteen_id": 1,
+      // "description": "hi",
+      "list": true,
+      // "pic_link": "hi",
+      "name": name,
+      "price": price,
+      "is_veg": isveg,       
+      "is_available": available,
+      "stock": stocks        
+    }), 
+  );
+  
+  if (response.statusCode == 200) { 
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Created Succesfully")));
+    }
+  } else {
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${response.body}")));
+    }
+  }
+} on Exception catch (e) {
+  if(mounted){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+  }
+}
+}
 
-//   if (response.statusCode == 200 || response.statusCode == 201) { 
-//     debugPrint("✅ Item created successfully: $name");
-//   } else {
-//     debugPrint("❌ Failed to create item: ${response.body}");
-//   }
-//   // final response1 = await http.get(Uri.parse("https://proj-xs.fly.dev/menu/items"));
-//   // debugPrint(jsonDecode(response1.body));
-// }
-// 
+ @override
+  void fetchData() { //Auto Fetch mixin function
+    getallitems();
+  }
+
+void getallitems() async{
+  if (!mounted) return;
+  try{
+  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/menu/items"));
+      //'name': 'Chicken Rice', 'price': 120, 'is_veg': false, 'available': true, 'stocks': -1
+      // Map<int, Map<String, dynamic>> item1 = {};
+      if (response.statusCode == 200){
+        Map<String, dynamic> decodedJson = jsonDecode(response.body);
+        List<dynamic> dataList = decodedJson["data"];
+        setState(() {
+          item.clear(); // Clear previous data
+          for (var item1 in dataList) {
+            item[item1["item_id"]] = {
+              "name": item1["name"],
+              "price": item1["price"].toDouble(),
+              "is_veg": item1["is_veg"],
+              "available": item1["is_available"],
+              "stocks": item1["stock"]
+            };
+          }
+          if(mounted){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Fetched Successfully")));
+          }
+    });
+}
+else{
+  if(mounted){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error from DB")));
+  }}
+  } on Exception catch (e){
+    if(mounted){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+  }
+  }
+  }
+
+void updateitem(int itemId, Map<int, Map<String, dynamic>> item) async{
+  try{
+  final response = await http.put(Uri.parse("https://proj-xs.fly.dev/menu/update"),
+  headers: {'accept' : 'application/json','Content-Type' : 'application/json'},
+  body: jsonEncode({
+    "item_id": itemId as num,
+    "update": {
+    "description": "string",
+    "is_available": item[itemId]?["available"] as bool,
+    "is_veg": item[itemId]?['is_veg'] as bool,
+    "list": item[itemId]?["available"] as bool,
+    "name": item[itemId]?["name"],
+    "pic_link": "string",
+    "price": item[itemId]?["price"] as num,
+    "stock": item[itemId]?["stocks"] as num
+  }}
+  ));
+  if (response.statusCode == 200){
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Update Successful")));
+    }
+  }
+  else{
+    if(mounted){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error from DB")));
+  }
+  }
+} on Exception catch (e){
+  if(mounted){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+  }
+}
+}
+
+void deleteitem(int itemId) async{
+  try{
+  final response = await http.delete(Uri.parse("https://proj-xs.fly.dev/menu/delete/$itemId"),
+  headers: {'accept' : 'application/json'});
+  if(response.statusCode == 200){
+    if (mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Deleted Successfully")));
+    }
+  }
+  else{
+    if (mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error from DB")));
+    }
+  } }on Exception catch (e){
+    if(mounted){
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+  }
+  }
+}
+
 // Future<void> addNewItems() async {
 //   for (var entry in item.entries) {
 //     await apipostcall(
 //       entry.key,
 //       entry.value['name'],
-//       entry.value['price'].toDouble(),
-//       entry.value['isVeg'],
+//       entry.value['price'],
+//       entry.value['is_veg'],
 //       entry.value['stocks'],
-//       entry.value['onmenu'],
+//       entry.value['available'],
 //     );
 //   }
 // }
@@ -900,30 +1013,40 @@ Set<int> get offmenuid =>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: Row(
+      floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
-        children: [FloatingActionButton(
-        elevation: 10.00,
-        backgroundColor: Colors.cyan,
-          onPressed: (){
-              addNewItem(newitemid++);
-          },
-          child: Icon(Icons.add,color: Colors.black)
-          ),
-          SizedBox(width: 10.00),
-          FloatingActionButton(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+          elevation: 10.00,
+          backgroundColor: Colors.cyan,
+            onPressed: (){
+                getallitems();
+            },
+            icon: Icon(Icons.refresh,color: Colors.black),
+            label: Text("Refresh", style: TextStyle(color: Colors.black)),
+            ),
+          SizedBox(height: 10.00),
+          FloatingActionButton.extended(
             elevation: 10.00,
             backgroundColor: Colors.cyan,
             onPressed: () {
               massEdit();
-                // addNewItems();
-              // items.forEach((key, value) {
-                // apiputcall(key, value['name'], value['price'], value['isVeg'], value['stocks'], value['onmenu']);
-                // debugPrint("${key} ${value['name']}" "${value['price']}" "${value['isVeg']}" "${value['stocks']}" "${value['onmenu']}");
-              // });
             },
-            child: Icon(Icons.edit,color: Colors.black),
-          )]),
+            icon: Icon(Icons.edit,color: Colors.black),
+            label: Text("Bulk Edit", style: TextStyle(color: Colors.black))
+          ),
+          SizedBox(height: 10.00),
+          FloatingActionButton.extended(
+          elevation: 10.00,
+          backgroundColor: Colors.cyan,
+          onPressed: (){
+              addNewItem(newitemid++);
+          },
+          icon: Icon(Icons.add,color: Colors.black),
+          label: Text("Add New Item", style: TextStyle(color: Colors.black))
+          ),
+          ]),
         body: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -988,7 +1111,7 @@ Set<int> get offmenuid =>
            SizedBox(height: 10),
             ],
           ),
-          if (onmenuid.isEmpty)
+          if (availableid.isEmpty)
             Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -999,7 +1122,7 @@ Set<int> get offmenuid =>
               ),
             )
           else 
-            buildGridSection(onmenuid, Colors.green, Colors.white),
+            buildGridSection(availableid, Colors.green, Colors.white),
           SizedBox(height: 25.00),
           Align(
                 alignment: Alignment.center,
@@ -1055,7 +1178,7 @@ Set<int> get offmenuid =>
               ],
             ),
             SizedBox(height: 10.00),
-          if (offmenuid.isEmpty) 
+          if (navailableid.isEmpty) 
             Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -1066,7 +1189,7 @@ Set<int> get offmenuid =>
               ),
             )
           else 
-            buildGridSection(offmenuid, Colors.grey, Colors.black),
+            buildGridSection(navailableid, Colors.grey, Colors.black),
           ],
         ),
       ),
@@ -1104,7 +1227,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                 child: Stack(
                   children: [
                     InkWell(
-                        onTap: () => delAddItem(itemId, items[itemId]?['name'], true, items[itemId]?['onmenu']),
+                        onTap: () => delAddItem(itemId, items[itemId]?['name'], true, items[itemId]?['available']),
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           height: 285,
@@ -1139,7 +1262,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                                   ],
                                 ),
                                 Text(
-                                  "₹${items[itemId]?['price'] ?? 'N/A'}",
+                                  "₹${items[itemId]?['price'].toInt() ?? 'N/A'}",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(fontWeight: FontWeight.bold, color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
                                 ),
@@ -1159,7 +1282,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                         hoverColor: Colors.blue,
                         icon: Icon(Icons.edit, color: Colors.black),
                         onPressed: () {
-                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price'], items[itemId]?['isVeg'], items[itemId]?['onmenu']);
+                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price'], items[itemId]?['is_veg'], items[itemId]?['available']);
                         },
                       ),
                     ),
@@ -1177,7 +1300,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                     Positioned(
                       right: 45,
                       bottom: 80,
-                      child: Image.asset((items[itemId]?['isVeg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
+                      child: Image.asset((items[itemId]?['is_veg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
                     )
                   ],
                 ),

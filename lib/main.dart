@@ -10,7 +10,6 @@ void main(){
   WidgetsFlutterBinding.ensureInitialized();
     setWindowMinSize(const Size(1025,1025));
   }
-  // Map<int, Map<String, dynamic>> items = {};
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme:ThemeData.dark(),
@@ -50,7 +49,6 @@ class _HomePageState extends State<HomePage> {
                 )),
               indicatorColor:Colors.amber,
               surfaceTintColor: Colors.grey,
-              labelPadding: EdgeInsets.all(0),
               labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
               indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10.00))),
             ),
