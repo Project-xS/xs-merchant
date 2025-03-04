@@ -10,7 +10,10 @@
               //mfrc522: ^0.0.5
                 //Android and IOS
                 //flutter_document_reader_core_fullrfid: ^7.5.887
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:merchant/auto_fetch_mixin.dart';
 
 class OrderHistory extends StatefulWidget {
   const OrderHistory({super.key});
@@ -19,21 +22,23 @@ class OrderHistory extends StatefulWidget {
   State<OrderHistory> createState() => _OrderHistoryState();
 }
 
-class _OrderHistoryState extends State<OrderHistory> {
-  Map<int, Map<String, dynamic>> orderhistory = {
-    1: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [1, 2, 2], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
-    2: {'name': ['Chicken Rice', 'Veg Fried Rice'], 'count': [2, 1], 'price': [100, 100], 'status': [null, null], 'submitted': false},
-    3: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rice'], 'count': [1, 4, 2], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
-    4: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [3, 1, 1], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
-    5: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rasam'], 'count': [7, 3, 1], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
-    6: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rasam'], 'count': [1, 2, 2], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
-    7: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [2, 1, 1], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
-    8: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rice'], 'count': [1, 4, 3], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
-    9: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [3, 1, 4], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
-    10: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rasam'], 'count': [7, 3, 4], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
-  };
+class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
+  // Map<int, Map<String, dynamic>> orderhistory = {
+  //   1: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [1, 2, 2], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
+  //   2: {'name': ['Chicken Rice', 'Veg Fried Rice'], 'count': [2, 1], 'price': [100, 100], 'status': [null, null], 'submitted': false},
+  //   3: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rice'], 'count': [1, 4, 2], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
+  //   4: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [3, 1, 1], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
+  //   5: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rasam'], 'count': [7, 3, 1], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
+  //   6: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rasam'], 'count': [1, 2, 2], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
+  //   7: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [2, 1, 1], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
+  //   8: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rice'], 'count': [1, 4, 3], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
+  //   9: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [3, 1, 4], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
+  //   10: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Rasam'], 'count': [7, 3, 4], 'price': [100, 100, 50], 'status': [null, null, null], 'submitted': false},
+  // };
+  Map<int, Map<String, dynamic>> orderhistory = {};
 
   List<int> searchResults = [];
+  Set<int> deliveredid = {};
 
   List<int> get filteredKeys => orderhistory.keys
     .where((key) => orderhistory[key]?['submitted'] != false)
@@ -49,6 +54,15 @@ class _OrderHistoryState extends State<OrderHistory> {
         }
       }
     });
+  }
+
+  @override
+  void fetchData(){
+    getorders(1);
+  }
+
+  void getorders(int value) async{
+    
   }
 
   @override
@@ -232,9 +246,13 @@ class _OrderHistoryState extends State<OrderHistory> {
   }
 
   void orderverfication(){
-    int to = 0;
+    int orderId = 0;
+    List<String> names = [];
+    List<int> count = [];
+    List<int> price = [];
+    List<dynamic> status = [];
     TextEditingController controller = TextEditingController(); 
-   showDialog(context: context, builder: (BuildContext context) {
+    showDialog(context: context, builder: (BuildContext context) {
     return StatefulBuilder(
       builder: (context, setState) {
         return AlertDialog(
@@ -244,7 +262,7 @@ class _OrderHistoryState extends State<OrderHistory> {
             height: 500,
             child: Column(
               children: [
-                    SearchBar(
+          SearchBar(
             backgroundColor: WidgetStateProperty.all(Colors.black),
             autoFocus: true,
             padding: WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
@@ -256,51 +274,73 @@ class _OrderHistoryState extends State<OrderHistory> {
                 onPressed: (){
                     controller.clear();
                     },
-                    ),IconButton(icon: Icon(Icons.done), 
-                      onPressed:() {
-                        setState(() {
-                        to = int.tryParse(controller.text) ?? 0;    
-                        });
-                    },
                     ),
-                    IconButton(icon: Icon(Icons.restart_alt),
-                      onPressed: (){
-                        setState(() {
-                          to = 0;
-                        });
-                      }),
-                      SizedBox(width:10.00)],
-            onChanged: (value){
-              String filteredValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-                if (value != filteredValue) {
-                  controller.value = TextEditingValue(
-                    text: filteredValue,
-                    selection: TextSelection.collapsed(offset: filteredValue.length),
-                  );
-                }
-              },
-              onSubmitted: (value) {
-                setState(() {
-                  to = int.tryParse(controller.text) ?? 0;    
-                });
-              },),
-            SizedBox(
-              width: 500,
-              height: 430,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    // IconButton(icon: Icon(Icons.done), 
+                    //   onPressed:() {
+                    //     setState(() {
+                    //     to = int.tryParse(controller.text) ?? 0;    
+                    //     });
+                    // },
+                    // ),
+                    // IconButton(icon: Icon(Icons.restart_alt),
+                    //   onPressed: (){
+                    //     setState(() {
+                    //       controller
+                    //     });
+                    //   }),
+                      SizedBox(width: 10.00)],
+                      onChanged: (value) async{
+                        if(value.isEmpty || controller.text.isEmpty || controller.text == ""){
+                          return;
+                        }
+                        try {
+                          final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?user_id=${controller.text}"));
+                          Map<String, dynamic> decodedJson = jsonDecode(response.body);
+                          orderId = decodedJson["data"][0]["order_id"]; //hardcoded for only 1 canteen
+                          setState((){
+                              for (var order in decodedJson["data"]) {
+                                names = [];
+                                count = [];
+                                price = [];
+                                status = [];
+                                for (var item in order["items"]) {
+                                  names.add(item["name"]);
+                                  count.add(item["quantity"]);
+                                  price.add(100);
+                                  status.add(null);
+                                }
+                                orderhistory[orderId] = {
+                                  'name': names,
+                                  'count': count,
+                                  'price': price,
+                                  'status': status,
+                                  'submitted': false
+                                };
+                          }});
+                          debugPrint("$orderhistory");
+                          }on Exception catch (e){
+                            if(mounted){
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+                            }
+                          }
+                      }
+                      ),
+                    SizedBox(
+                      width: 500,
+                      height: 430,
+                      child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     SizedBox(height: 20.0),
                     Expanded(
-                      child: (to == 0 || !orderhistory.keys.any((e) => e == to)) ? Center(child: Text("Not Found", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w600))) : ListView.builder(
+                      child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) ? Center(child: Text("Not Found", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w600))) : ListView.builder(
                         padding: EdgeInsets.all(10.0),
                         itemCount: 1,
                         itemBuilder: (BuildContext context, int index) {
-                          int orderId = to;
                           List<bool?> currentStatus = List<bool?>.from(orderhistory[orderId]?['status']);
-                          bool? isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
+                          bool? isSubmitted = (orderhistory[orderId]?['submitted'] == null) ? null : false;
                           return Card(
                             margin: EdgeInsets.symmetric(vertical: 10),
                             child: Padding(
@@ -310,6 +350,7 @@ class _OrderHistoryState extends State<OrderHistory> {
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      SizedBox(height: 10),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [

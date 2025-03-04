@@ -575,7 +575,9 @@ Set<int> get navailableid =>
   );
 }
   
-  void massEdit() {
+  void massEdit(){
+    Set<int> searchitems = {};
+    TextEditingController controller = TextEditingController();
     Map<int, bool> errorMap = {};
     Set<String> err = {};
     Map<int, Map<String, dynamic>> changes = {};
@@ -588,225 +590,291 @@ Set<int> get navailableid =>
               content: SizedBox(
                 height: 400.00,
                 width: 550.00,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: items.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    int itemId = items.keys.elementAt(index);
-                    return ListTile(
-                      subtitle: Form(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                StatefulBuilder(
-                                  builder: (context, setState) {
-                                  return SizedBox( 
-                                    width: 150.00,
-                                    child: TextFormField(
-                                      maxLength: 40,
-                                      initialValue: items[itemId]?['name'],
-                                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          if (value.isEmpty) {
-                                            errorMap[itemId] = true;
-                                            err.add('Empty');
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text("Error: Name Cannot be Empty",
-                                                    style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
-                                                backgroundColor: Colors.redAccent,
-                                              ),
-                                            );
-                                          } else {
-                                            if (items.values.where((item) => item != items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
-                                              errorMap[itemId] = true;
-                                              err.add(value.trim().toLowerCase().replaceAll(" ", ""));
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text("Exception: $value Already Exists, Change the name",
-                                                      style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
-                                                  backgroundColor: Colors.redAccent,
-                                                ),
-                                              );
-                                            } else {
-                                              errorMap.remove(itemId);
-                                              if (!errorMap.containsKey(itemId)){
-                                              changes[itemId] = {
-                                                'name': value,
-                                                'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                                'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
-                                                'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
-                                                'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
-                                              };
-                                            }}
-                                          }
-                                        });
-                                      },
-                                      decoration: InputDecoration(
-                                        labelText: "Item Name",
-                                        counterText: "",
-                                        errorText: errorMap[itemId] == true ? "Item Exists or Empty" : null,
-                                        border: OutlineInputBorder(),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.grey, width: 2),
-                                        ),
-                                      ),
-                                    ),
-                                  );},
-                                ),
-                                SizedBox(width: 10.00),
-                                  SizedBox(
-                                    width: 60.00,
-                                    child: TextFormField(
-                                      maxLength: 4,
-                                      initialValue: items[itemId]?['price'].toInt().toString(),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                      onChanged: (value) {
-                                        if (value.isEmpty) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text("Error: Price Cannot be Empty",
-                                                  style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
-                                              backgroundColor: Colors.redAccent,
-                                            ),
-                                          );
-                                        } else {
-                                          changes[itemId] = {
-                                            'price': int.parse(value).toDouble(),
-                                            'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                            'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
-                                            'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
-                                            'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
-                                          };
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                        labelText: "Price",
-                                        counterText: "",
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.blue, width: 2),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.grey, width: 2),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 10.00),
-                                  SizedBox(
-                                    width: 60.00,
-                                    child: TextFormField(
-                                      maxLength: 5,
-                                      initialValue: items[itemId]?['stocks'].toString(),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
-                                      onChanged: (value) {
-                                        if (value.isEmpty || value == "-") {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text("Error: Stocks can be either -1 or finite",
-                                                  style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
-                                              backgroundColor: Colors.redAccent,
-                                            ),
-                                          );
-                                        } else {
-                                          int? parsedValue = int.tryParse(value);
-                                          if (parsedValue != null) {
-                                            if (parsedValue < -1) parsedValue = -1;
-                                            changes[itemId] = {
-                                              'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                              'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                              'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
-                                              'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
-                                              'stocks': parsedValue,
-                                            };
-                                          }
-                                        }
-                                      },
-                                      decoration: InputDecoration(
-                                        labelText: "Stocks",
-                                        counterText: "",
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.blue, width: 2),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(color: Colors.grey, width: 2),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 10.00),
-                                  SizedBox(
-                                    width: 70.00,
-                                    child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                        return Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Checkbox(
-                                              value: item[itemId]?['is_veg'],
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  item[itemId]?['is_veg'] = !(item[itemId]?['is_veg'] ?? false);
-                                                });
-                                              },
-                                            ),
-                                            Text("Veg", style: TextStyle(fontSize: 15.00)),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  SizedBox(width: 10.00),
-                                  Expanded(
-                                    child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                        return Row(
-                                          children: [
-                                            Checkbox(
-                                              value: item[itemId]?['available'],
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  if (!item[itemId]?['available']) {
-                                                    item[itemId]?['available'] = true;
-                                                    if(navailableid.contains(itemId)){
-                                                      navailableid.remove(itemId);
+                child: StatefulBuilder(
+                  builder: (context, setState) {
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: SearchBar(
+                            controller: controller,
+                            backgroundColor: WidgetStateProperty.all(Colors.black),
+                            padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10)),
+                            leading: Icon(Icons.search),
+                            hintText: "Enter name to search",
+                            onChanged: (value) async {
+                              if(value.isEmpty){
+                                setState(() {
+                                  searchitems.clear();
+                                });
+                                return;
+                              }
+                              await Future.delayed(Duration(milliseconds: 200));
+                              try {
+                                final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/$value"));
+                                Map<String, dynamic> decodedJson = jsonDecode(response.body);
+                                debugPrint("$decodedJson");
+                                List<dynamic> idList = decodedJson["data"];
+                                setState(() {
+                                  searchitems.clear();
+                                  for (var i in idList) {
+                                    int? itemId = i["item_id"] is int 
+                                        ? i["item_id"] 
+                                        : int.tryParse(i["item_id"].toString());
+                                    
+                                    if (itemId != null) {
+                                      searchitems.add(itemId);
+                                    }
+                                  }
+                                  debugPrint("Search results: $searchitems");
+                                });
+                              } on Exception catch (e) {
+                                if (mounted){
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Error performing search : $e"))
+                                );
+                                }
+                              }
+                            },
+                            trailing: [
+                              IconButton(icon: Icon(Icons.clear),
+                                onPressed: (){
+                                  setState(() {
+                                    controller.clear();
+                                    searchitems.clear();
+                                  });}), SizedBox(width: 10)]
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          ListView.builder(
+                            physics: BouncingScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: searchitems.isNotEmpty ? searchitems.length : items.length,
+                            itemBuilder: (BuildContext context, int index) {
+                            int itemId = searchitems.isNotEmpty ? searchitems.elementAt(index) : items.keys.elementAt(index);
+                              return ListTile(
+                                subtitle: Form(
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          StatefulBuilder(
+                                            builder: (context, setState) {
+                                            return SizedBox( 
+                                              width: 150.00,
+                                              child: TextFormField(
+                                                key: ValueKey(items[itemId]?['name']),
+                                                maxLength: 40,
+                                                initialValue: items[itemId]?['name'],
+                                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    if (value.isEmpty) {
+                                                      errorMap[itemId] = true;
+                                                      err.add('Empty');
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text("Error: Name Cannot be Empty",
+                                                              style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                                          backgroundColor: Colors.redAccent,
+                                                        ),
+                                                      );
+                                                    } else {
+                                                      if (items.values.where((item) => item != items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
+                                                        errorMap[itemId] = true;
+                                                        err.add(value.trim().toLowerCase().replaceAll(" ", ""));
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text("Exception: $value Already Exists, Change the name",
+                                                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                                            backgroundColor: Colors.redAccent,
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        errorMap.remove(itemId);
+                                                        if (!errorMap.containsKey(itemId)){
+                                                        changes[itemId] = {
+                                                          'name': value,
+                                                          'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
+                                                          'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
+                                                          'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
+                                                          'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
+                                                        };
+                                                      }}
                                                     }
-                                                    availableid.add(itemId);
+                                                  });
+                                                },
+                                                decoration: InputDecoration(
+                                                  labelText: "Item Name",
+                                                  counterText: "",
+                                                  errorText: errorMap[itemId] == true ? "Item Exists or Empty" : null,
+                                                  border: OutlineInputBorder(),
+                                                  focusedBorder: OutlineInputBorder(
+                                                    borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
+                                                  ),
+                                                  enabledBorder: OutlineInputBorder(
+                                                    borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.grey, width: 2),
+                                                  ),
+                                                ),
+                                              ),
+                                            );},
+                                          ),
+                                          SizedBox(width: 10.00),
+                                            SizedBox(
+                                              width: 60.00,
+                                              child: TextFormField(
+                                                key: ValueKey(items[itemId]?['price']),
+                                                maxLength: 4,
+                                                initialValue: items[itemId]?['price'].toInt().toString(),
+                                                keyboardType: TextInputType.number,
+                                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                onChanged: (value) {
+                                                  if (value.isEmpty) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text("Error: Price Cannot be Empty",
+                                                            style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                                        backgroundColor: Colors.redAccent,
+                                                      ),
+                                                    );
                                                   } else {
-                                                    item[itemId]?['available'] = false;
-                                                    availableid.remove(itemId);
-                                                    navailableid.add(itemId);
+                                                    changes[itemId] = {
+                                                      'price': int.parse(value).toDouble(),
+                                                      'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
+                                                      'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
+                                                      'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
+                                                      'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
+                                                    };
                                                   }
-                                                });
-                                              },
-                                            ),
-                                            Expanded(
-                                              child: Text(
-                                                item[itemId]?['available'] ? "On Menu" : "Not On Menu",
-                                                style: TextStyle(fontSize: 15),
-                                                textAlign: TextAlign.start,
-                                                overflow: TextOverflow.ellipsis,
+                                                },
+                                                decoration: InputDecoration(
+                                                  labelText: "Price",
+                                                  counterText: "",
+                                                  focusedBorder: OutlineInputBorder(
+                                                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                                                  ),
+                                                  enabledBorder: OutlineInputBorder(
+                                                    borderSide: BorderSide(color: Colors.grey, width: 2),
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ],
-                                        );
-                                      },
-                                    ),
+                                            SizedBox(width: 10.00),
+                                            SizedBox(
+                                              width: 60.00,
+                                              child: TextFormField(
+                                                key: ValueKey(items[itemId]?['stocks']),
+                                                maxLength: 5,
+                                                initialValue: items[itemId]?['stocks'].toString(),
+                                                keyboardType: TextInputType.number,
+                                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
+                                                onChanged: (value) {
+                                                  if (value.isEmpty || value == "-") {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text("Error: Stocks can be either -1 or finite",
+                                                            style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
+                                                        backgroundColor: Colors.redAccent,
+                                                      ),
+                                                    );
+                                                  } else {
+                                                    int? parsedValue = int.tryParse(value);
+                                                    if (parsedValue != null) {
+                                                      if (parsedValue < -1) parsedValue = -1;
+                                                      changes[itemId] = {
+                                                        'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
+                                                        'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
+                                                        'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
+                                                        'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
+                                                        'stocks': parsedValue,
+                                                      };
+                                                    }
+                                                  }
+                                                },
+                                                decoration: InputDecoration(
+                                                  labelText: "Stocks",
+                                                  counterText: "",
+                                                  focusedBorder: OutlineInputBorder(
+                                                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                                                  ),
+                                                  enabledBorder: OutlineInputBorder(
+                                                    borderSide: BorderSide(color: Colors.grey, width: 2),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 10.00),
+                                            SizedBox(
+                                              width: 70.00,
+                                              child: StatefulBuilder(
+                                                builder: (context, setState) {
+                                                  return Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Checkbox(
+                                                        value: item[itemId]?['is_veg'],
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            item[itemId]?['is_veg'] = !(item[itemId]?['is_veg'] ?? false);
+                                                          });
+                                                        },
+                                                      ),
+                                                      Text("Veg", style: TextStyle(fontSize: 15.00)),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            SizedBox(width: 10.00),
+                                            Expanded(
+                                              child: StatefulBuilder(
+                                                builder: (context, setState) {
+                                                  return Row(
+                                                    children: [
+                                                      Checkbox(
+                                                        value: item[itemId]?['available'],
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            if (!item[itemId]?['available']) {
+                                                              item[itemId]?['available'] = true;
+                                                              if(navailableid.contains(itemId)){
+                                                                navailableid.remove(itemId);
+                                                              }
+                                                              availableid.add(itemId);
+                                                            } else {
+                                                              item[itemId]?['available'] = false;
+                                                              availableid.remove(itemId);
+                                                              navailableid.add(itemId);
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          item[itemId]?['available'] ? "On Menu" : "Not On Menu",
+                                                          style: TextStyle(fontSize: 15),
+                                                          textAlign: TextAlign.start,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                        ])
+                                      ]),
                                   ),
-                              ])
-                            ]),
-                        ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     );
-                  },
+                  }
                 ),
               ),
               actions: [
@@ -911,13 +979,11 @@ void getallitems() async{
   if (!mounted) return;
   try{
   final response = await http.get(Uri.parse("https://proj-xs.fly.dev/menu/items"));
-      //'name': 'Chicken Rice', 'price': 120, 'is_veg': false, 'available': true, 'stocks': -1
-      // Map<int, Map<String, dynamic>> item1 = {};
       if (response.statusCode == 200){
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         List<dynamic> dataList = decodedJson["data"];
         setState(() {
-          item.clear(); // Clear previous data
+          item.clear();
           for (var item1 in dataList) {
             item[item1["item_id"]] = {
               "name": item1["name"],
@@ -927,6 +993,7 @@ void getallitems() async{
               "stocks": item1["stock"]
             };
           }
+          // debugPrint("${item.keys}");
           if(mounted){
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Fetched Successfully")));
           }
