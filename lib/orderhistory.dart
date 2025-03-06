@@ -12,8 +12,9 @@
                 //flutter_document_reader_core_fullrfid: ^7.5.887
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:merchant/auto_fetch_mixin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OrderHistory extends StatefulWidget {
   const OrderHistory({super.key});
@@ -22,7 +23,7 @@ class OrderHistory extends StatefulWidget {
   State<OrderHistory> createState() => _OrderHistoryState();
 }
 
-class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
+class _OrderHistoryState extends State<OrderHistory>{
   // Map<int, Map<String, dynamic>> orderhistory = {
   //   1: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [1, 2, 2], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
   //   2: {'name': ['Chicken Rice', 'Veg Fried Rice'], 'count': [2, 1], 'price': [100, 100], 'status': [null, null], 'submitted': false},
@@ -40,9 +41,29 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
   List<int> searchResults = [];
   Set<int> deliveredid = {};
 
-  List<int> get filteredKeys => orderhistory.keys
-    .where((key) => orderhistory[key]?['submitted'] != false)
-    .toList();
+  // List<int> get filteredKeys => orderhistory.keys
+  //   .where((key) => orderhistory[key]?['submitted'] != false)
+  //   .toList();
+
+  @override
+void initState() {
+  super.initState();
+  _clearOrderHistoryIfNewDay();
+}
+
+void _clearOrderHistoryIfNewDay() async {
+  final prefs = await SharedPreferences.getInstance();
+  String lastClearedDate = prefs.getString('lastClearedDate') ?? '';
+  String today = DateTime.now().toIso8601String().split("T")[0];
+  if (lastClearedDate != today) {
+    setState(() {
+      orderhistory.clear();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cleared Yesterday order details successfully"), backgroundColor: Colors.amber,));
+    });
+    await prefs.setString('lastClearedDate', today);
+  }
+}
+
 
   void search(String query) {
     setState(() {
@@ -56,14 +77,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
     });
   }
 
-  @override
-  void fetchData(){
-    getorders(1);
-  }
-
-  void getorders(int value) async{
-    
-  }
+  Set<int> get deliverlater => orderhistory.entries.where((entry) => entry.value['submitted'] == null).map((entry) => entry.key).toSet();
 
   @override
   Widget build(BuildContext context) {
@@ -140,45 +154,50 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
   }
 
   Flexible buildSearchList(List<int>searchResults) {
-    //Remove filteredKeys getter at line 38 for showing all the orders and not the submitted ones
+    //Uncomment filteredKeys getter at line 43 for showing all the orders and not the Deliver later ones
     return Flexible(
               child: ListView.builder(
                 padding: EdgeInsets.symmetric(horizontal: 10.0),
-                // For Showing all items, itemCount: (searchResults.isEmpty)?orderhistory.length:searchResults.length,
-                itemCount: (searchResults.isEmpty)?(filteredKeys.isNotEmpty)?filteredKeys.length:1:(searchResults.isNotEmpty)?searchResults.length:1,
+                // itemCount: (searchResults.isEmpty)?orderhistory.length:searchResults.length,
+                itemCount: (searchResults.isEmpty)?deliverlater.length:searchResults.length,
+                // itemCount: (searchResults.isEmpty)?(filteredKeys.isNotEmpty)?filteredKeys.length:1:(searchResults.isNotEmpty)?searchResults.length:1,
                 itemBuilder: (BuildContext context, int index) {
+                  int orderId = (searchResults.isEmpty)?deliverlater.elementAt(index):searchResults.elementAt(index);
                   // int orderId = (searchResults.isEmpty)?orderhistory.keys.elementAt(index):searchResults.elementAt(index);
-                  int orderId = (searchResults.isEmpty && filteredKeys.isNotEmpty)?filteredKeys[index]:(filteredKeys.isEmpty)?0:(searchResults.isNotEmpty)?searchResults.elementAt(index):0;
+                  // int orderId = (searchResults.isEmpty && filteredKeys.isNotEmpty)?filteredKeys[index]:(filteredKeys.isEmpty)?0:(searchResults.isNotEmpty)?searchResults.elementAt(index):0;
                   return Align(
                     alignment: Alignment.center,
-                    child: Card(
-                      margin: EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      child: Padding(
-                        padding: EdgeInsets.all(25.0),
-                        //Just column thing is enough if we need all items orderhistory to be shown
-                        child: (orderId == 0) ? Text("No order delivered", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)) : 
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Order Items:", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600)),
-                                Row(
-                                  children: [
-                                    Text("Order ID: ", style: TextStyle(fontSize: 19.00, fontWeight: FontWeight.w600)),
-                                    Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w700, color: Colors.cyan)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 10.00),
-                            generateList(orderId),
-                        ]
-                      )
+                    child: SizedBox(
+                      width: (MediaQuery.of(context).size.width)/3,
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        child: Padding(
+                          padding: EdgeInsets.all(25.0),
+                          //Just column thing is enough if we need all items orderhistory to be shown
+                          child: (orderId == 0 || deliverlater.isEmpty) ? Text("No order to be delivered later", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)) : 
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Order Items:", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600)),
+                                  Row(
+                                    children: [
+                                      Text("Order ID: ", style: TextStyle(fontSize: 19.00, fontWeight: FontWeight.w600)),
+                                      Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w700, color: Colors.cyan)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10.00),
+                              generateList(orderId),
+                          ]
                         )
-                      ),
+                          )
+                        ),
+                    ),
                   );
                   }
                 )
@@ -186,7 +205,6 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
   }
 
   Widget generateList(int orderId) {
-    int sum = 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -210,20 +228,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                           SizedBox(width: 120, child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
                           SizedBox(width: 20.00),
                           SizedBox(width: 30, child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
-                          SizedBox(width: 80, child: Text("${orderhistory[orderId]?['count'][i]} x ${orderhistory[orderId]?['price'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
-                          SizedBox(width: 40,
-                            child: (orderhistory[orderId]?['status'][i] == true)
-                                  ? Text(
-                                      () {
-                                        int total = orderhistory[orderId]?['count'][i] * orderhistory[orderId]?['price'][i];
-                                        sum += total;
-                                        return "$total";
-                                      }(),
-                                      style: TextStyle(fontSize: 18.00),
-                                    )
-                                  : Text("0", style: TextStyle(fontSize: 18.00)),
-                          ),
-                              ],
+                            ],
                             ),
                         ),
                       SizedBox(height: 40.00,),
@@ -237,12 +242,33 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text("Total:", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w500)),
-              Text(" $sum", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
+              Text("Total: ", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w500)),
+              Text("100", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
             ],
           ),
       ],
     );
+  }
+
+  void markdelivered(bool submit, int orderId) async{
+    try{
+        final response = await http.put((submit)?Uri.parse("https://proj-xs.fly.dev/orders/$orderId/delivered"):Uri.parse("https://proj-xs.fly.dev/orders/$orderId/cancelled"));
+        if (response.statusCode == 200){
+          if(mounted){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Order $orderId ${(submit)?"Delivered":"Cancelled"} Successfully")));
+            }
+          }
+          else{
+            if(mounted){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Submiting order")));
+            }
+          }
+        } on Exception catch (e){
+          if(mounted){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+            }
+        }
+    
   }
 
   void orderverfication(){
@@ -251,6 +277,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
     List<int> count = [];
     List<int> price = [];
     List<dynamic> status = [];
+    final FocusNode _searchBarFocusNode = FocusNode();
     TextEditingController controller = TextEditingController(); 
     showDialog(context: context, builder: (BuildContext context) {
     return StatefulBuilder(
@@ -265,8 +292,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
           SearchBar(
             backgroundColor: WidgetStateProperty.all(Colors.black),
             autoFocus: true,
+            focusNode: _searchBarFocusNode,
             padding: WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
             controller: controller,
+            keyboardType: TextInputType.number,
             leading : Icon(Icons.verified),
             hintText: "Click here and then Tap the ID",
             trailing: [
@@ -282,19 +311,26 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                     //     });
                     // },
                     // ),
-                    // IconButton(icon: Icon(Icons.restart_alt),
-                    //   onPressed: (){
-                    //     setState(() {
-                    //       controller
-                    //     });
-                    //   }),
+                    IconButton(icon: Icon(Icons.restart_alt),
+                      onPressed: (){
+                        setState(() {
+                          controller.clear();
+                          orderId = 0;
+                          FocusScope.of(context).requestFocus(_searchBarFocusNode);
+                        });
+                      }),
                       SizedBox(width: 10.00)],
                       onChanged: (value) async{
+                        controller.text = value.replaceAll(RegExp(r'[^0-9]'), '');
+                        controller.selection = TextSelection.fromPosition(
+                        TextPosition(offset: controller.text.length));
                         if(value.isEmpty || controller.text.isEmpty || controller.text == ""){
                           return;
                         }
                         try {
+                          await Future.delayed(Duration(milliseconds: 200));
                           final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?user_id=${controller.text}"));
+                          if (response.statusCode == 200){
                           Map<String, dynamic> decodedJson = jsonDecode(response.body);
                           orderId = decodedJson["data"][0]["order_id"]; //hardcoded for only 1 canteen
                           setState((){
@@ -306,7 +342,6 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                                 for (var item in order["items"]) {
                                   names.add(item["name"]);
                                   count.add(item["quantity"]);
-                                  price.add(100);
                                   status.add(null);
                                 }
                                 orderhistory[orderId] = {
@@ -314,10 +349,14 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                                   'count': count,
                                   'price': price,
                                   'status': status,
-                                  'submitted': false
+                                  'submitted': null
                                 };
-                          }});
-                          debugPrint("$orderhistory");
+                          }});}
+                          else{
+                            setState(() {
+                              orderId = 0;
+                            });
+                          }
                           }on Exception catch (e){
                             if(mounted){
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
@@ -335,7 +374,9 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                       children: [
                     SizedBox(height: 20.0),
                     Expanded(
-                      child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) ? Center(child: Text("Not Found", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w600))) : ListView.builder(
+                      child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) 
+                      ? Center(child: Text("Not Found", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w600))) 
+                      : ListView.builder(
                         padding: EdgeInsets.all(10.0),
                         itemCount: 1,
                         itemBuilder: (BuildContext context, int index) {
@@ -510,8 +551,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                                                                           fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
                                                                           overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
                                                                         ),
-                                                                        onPressed: () {
-                                                                          setState(() {
+                                                                        onPressed: (){
+                                                                          setState((){
                                                                             bool isAllTrue = currentStatus.every((e) => e == true);
                                                                             bool isAllFalse = currentStatus.every((e) => e == false);
                                                                             if (isAllTrue == false && isAllFalse == false){
@@ -529,22 +570,18 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
                                                                             orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
                                                                             orderhistory[orderId]?['submitted'] = true;
                                                                             isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
-                                                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                                                content: Text("Rejected the whole order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
-                                                                                backgroundColor: Colors.redAccent,
-                                                                                ));
-                                                                        }else{
+                                                                            markdelivered(false, orderId);
+                                                                        }else if(isAllTrue == true){
                                                                           orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
                                                                             orderhistory[orderId]?['submitted'] = true;
                                                                             isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
-                                                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                                                content: Text("Accepted the whole order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
-                                                                                backgroundColor: Colors.green,
-                                                                                ));
-                                                                        }
-                                                                        });
-                                                                          Navigator.pop(context);
-                                                                          Navigator.pop(context);
+                                                                            // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                                            //     content: Text("Accepted the whole order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
+                                                                            //     backgroundColor: Colors.green,
+                                                                            //     ));
+                                                                            markdelivered(true, orderId);                              
+                                                                        }});
+                                                                          Navigator.pop(context);                     
                                                                           //can remove buildSearchlist when we need to show everything
                                                                           buildSearchList([]);
                                                                         },
@@ -604,3 +641,4 @@ class _OrderHistoryState extends State<OrderHistory> with AutoFetchMixin {
    );
       }
 }
+

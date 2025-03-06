@@ -452,18 +452,7 @@ Set<int> get navailableid =>
                       }
                       else{
                         apipostcall(name, int.parse(priceText).toDouble(), isveg, stocks, available);
-                        // item[] = {
-                        // 'name': name,
-                        // 'price': int.parse(priceText).toDouble(),   ask adi to send the new added item id and use that here
-                        // 'is_veg': isveg,
-                        // 'available': available,
-                        // 'stocks': stocks
-                      // };
-                      // availableid.add(newitemid);
-
-                      // for now im calling to refresh everything
-                      sleep(Duration(seconds: 15));
-                      getallitems();
+                        getallitems();
                       }
                     if (isError){
                       ScaffoldMessenger.of(context).showSnackBar(
