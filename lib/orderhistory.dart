@@ -12,7 +12,6 @@
                 //flutter_document_reader_core_fullrfid: ^7.5.887
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,7 +22,7 @@ class OrderHistory extends StatefulWidget {
   State<OrderHistory> createState() => _OrderHistoryState();
 }
 
-class _OrderHistoryState extends State<OrderHistory>{
+class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClientMixin{
   // Map<int, Map<String, dynamic>> orderhistory = {
   //   1: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken'], 'count': [1, 2, 2], 'price': [100, 100, 150], 'status': [null, null, null], 'submitted': false},
   //   2: {'name': ['Chicken Rice', 'Veg Fried Rice'], 'count': [2, 1], 'price': [100, 100], 'status': [null, null], 'submitted': false},
@@ -39,31 +38,74 @@ class _OrderHistoryState extends State<OrderHistory>{
   Map<int, Map<String, dynamic>> orderhistory = {};
 
   List<int> searchResults = [];
-  Set<int> deliveredid = {};
 
   // List<int> get filteredKeys => orderhistory.keys
   //   .where((key) => orderhistory[key]?['submitted'] != false)
   //   .toList();
 
   @override
-void initState() {
-  super.initState();
-  _clearOrderHistoryIfNewDay();
-}
+  bool get wantKeepAlive => true;
 
-void _clearOrderHistoryIfNewDay() async {
-  final prefs = await SharedPreferences.getInstance();
-  String lastClearedDate = prefs.getString('lastClearedDate') ?? '';
-  String today = DateTime.now().toIso8601String().split("T")[0];
-  if (lastClearedDate != today) {
-    setState(() {
-      orderhistory.clear();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cleared Yesterday order details successfully"), backgroundColor: Colors.amber,));
-    });
-    await prefs.setString('lastClearedDate', today);
+  @override
+  void initState() {
+    super.initState();
+    _loadOrderHistory();
+    _clearOrderHistoryIfNewDay();
   }
-}
 
+  Set<int> get deliverlater => orderhistory.entries
+      .where((entry) => entry.value['submitted'] == null)
+      .map((entry) => entry.key)
+      .toSet();
+
+  Future<void> _loadOrderHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final orderHistoryString = prefs.getString('orderHistory');
+    if (orderHistoryString != null && mounted) {
+      setState(() {
+        Map<String, dynamic> decoded = jsonDecode(orderHistoryString);
+        orderhistory = decoded.map((key, value) =>
+            MapEntry(int.parse(key), Map<String, dynamic>.from(value)));
+      });
+    }
+  }
+
+  Future<void> _saveOrderHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final Map<int, Map<String, dynamic>> deliverlaterOrders = Map.fromEntries(
+      orderhistory.entries.where((entry) => entry.value['submitted'] == null),
+    );
+
+    final encoded = deliverlaterOrders.map(
+        (key, value) => MapEntry(key.toString(), value));
+    final orderHistoryString = json.encode(encoded);
+
+    await prefs.setString('orderHistory', orderHistoryString);
+  }
+
+
+  void _clearOrderHistoryIfNewDay() async {
+    final prefs = await SharedPreferences.getInstance();
+    String lastClearedDate = prefs.getString('lastClearedDate') ?? '';
+    String today = DateTime.now().toIso8601String().split("T")[0];
+
+    if (lastClearedDate != today) {
+      if (mounted) {
+        setState(() {
+          orderhistory.clear();
+        });
+      }
+      await prefs.remove('orderHistory');
+      await prefs.setString('lastClearedDate', today);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Cleared yesterday's order details successfully"),
+          backgroundColor: Colors.amber,
+        ));
+      }
+    }
+  }
 
   void search(String query) {
     setState(() {
@@ -77,19 +119,19 @@ void _clearOrderHistoryIfNewDay() async {
     });
   }
 
-  Set<int> get deliverlater => orderhistory.entries.where((entry) => entry.value['submitted'] == null).map((entry) => entry.key).toSet();
-
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     TextEditingController controller = TextEditingController();
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         elevation: 10.00,
         backgroundColor: Colors.cyan,
         onPressed: (){
           orderverfication();
         },
-        child: Icon(Icons.room_service, color: Colors.black),
+        icon: Icon(Icons.room_service, color: Colors.black),
+        label: Text("Deliver",  style: TextStyle(color: Colors.black)),
       ),
       body: Center(
         child: Padding(
@@ -245,7 +287,7 @@ void _clearOrderHistoryIfNewDay() async {
               Text("Total: ", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w500)),
               Text("100", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
             ],
-          ),
+          )
       ],
     );
   }
@@ -260,7 +302,7 @@ void _clearOrderHistoryIfNewDay() async {
           }
           else{
             if(mounted){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Submiting order")));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Submiting order : ${response.statusCode}")));
             }
           }
         } on Exception catch (e){
@@ -277,7 +319,7 @@ void _clearOrderHistoryIfNewDay() async {
     List<int> count = [];
     List<int> price = [];
     List<dynamic> status = [];
-    final FocusNode _searchBarFocusNode = FocusNode();
+    final FocusNode searchBarFocus = FocusNode();
     TextEditingController controller = TextEditingController(); 
     showDialog(context: context, builder: (BuildContext context) {
     return StatefulBuilder(
@@ -292,7 +334,7 @@ void _clearOrderHistoryIfNewDay() async {
           SearchBar(
             backgroundColor: WidgetStateProperty.all(Colors.black),
             autoFocus: true,
-            focusNode: _searchBarFocusNode,
+            focusNode: searchBarFocus,
             padding: WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
             controller: controller,
             keyboardType: TextInputType.number,
@@ -316,7 +358,7 @@ void _clearOrderHistoryIfNewDay() async {
                         setState(() {
                           controller.clear();
                           orderId = 0;
-                          FocusScope.of(context).requestFocus(_searchBarFocusNode);
+                          FocusScope.of(context).requestFocus(searchBarFocus);
                         });
                       }),
                       SizedBox(width: 10.00)],
@@ -332,9 +374,9 @@ void _clearOrderHistoryIfNewDay() async {
                           final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?user_id=${controller.text}"));
                           if (response.statusCode == 200){
                           Map<String, dynamic> decodedJson = jsonDecode(response.body);
-                          orderId = decodedJson["data"][0]["order_id"]; //hardcoded for only 1 canteen
                           setState((){
                               for (var order in decodedJson["data"]) {
+                                orderId = order["order_id"]; //hardcoded for only 1 canteen
                                 names = [];
                                 count = [];
                                 price = [];
@@ -351,6 +393,7 @@ void _clearOrderHistoryIfNewDay() async {
                                   'status': status,
                                   'submitted': null
                                 };
+                                _saveOrderHistory();
                           }});}
                           else{
                             setState(() {

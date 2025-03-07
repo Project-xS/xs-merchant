@@ -23,7 +23,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String name="PKS";
+  String name="Maaran Parotta Kadai";
   int currentIndex = 1;
   final List<Widget> pages = [
     Center(child: Menupage()),
@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("FoodBoard", style:TextStyle(fontWeight:FontWeight.w500, fontSize: 35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
+      appBar: AppBar(title: Text("Namma Canteen", style:TextStyle(fontWeight:FontWeight.w500, fontSize: 35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
       body: Column(
         children: [Text(name, style:TextStyle(fontWeight:FontWeight.bold, fontSize:50.00),), 
         SizedBox(
@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 NavigationDestination(
                   icon: Icon(Icons.local_shipping_outlined),
-                  label: "Order History and Verification"),
+                  label: "Order Verification"),
                 NavigationDestination(
                   icon: Icon(Icons.pending_actions),
                   label: "Orders"),],
