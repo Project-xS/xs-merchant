@@ -88,7 +88,6 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
     final prefs = await SharedPreferences.getInstance();
     String lastClearedDate = prefs.getString('lastClearedDate') ?? '';
     String today = DateTime.now().toIso8601String().split("T")[0];
-
     if (lastClearedDate != today) {
       if (mounted) {
         setState(() {
@@ -121,6 +120,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
 
   @override
   Widget build(BuildContext context) {
+    // orderhistory.clear();
+    // _saveOrderHistory();
     super.build(context);
     TextEditingController controller = TextEditingController();
     return Scaffold(
@@ -135,7 +136,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
       ),
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((MediaQuery.of(context).size.width)/4)),
+          padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((MediaQuery.of(context).size.width)/3.5)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -210,7 +211,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                   return Align(
                     alignment: Alignment.center,
                     child: SizedBox(
-                      width: (MediaQuery.of(context).size.width)/3,
+                      width: (MediaQuery.of(context).size.width)/2.2,
                       child: Card(
                         margin: EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -285,7 +286,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text("Total: ", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w500)),
-              Text("100", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
+              Text("${orderhistory[orderId]?['price']}", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
             ],
           )
       ],
@@ -315,9 +316,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
 
   void orderverfication(){
     int orderId = 0;
+    // int currentorder = 1;
     List<String> names = [];
     List<int> count = [];
-    List<int> price = [];
+    int price = 0;
     List<dynamic> status = [];
     final FocusNode searchBarFocus = FocusNode();
     TextEditingController controller = TextEditingController(); 
@@ -376,11 +378,12 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                           Map<String, dynamic> decodedJson = jsonDecode(response.body);
                           setState((){
                               for (var order in decodedJson["data"]) {
-                                orderId = order["order_id"]; //hardcoded for only 1 canteen
+                                orderId = order["order_id"];
+                                price = order["price"];
                                 names = [];
                                 count = [];
-                                price = [];
                                 status = [];
+                                // currentorder += 1;
                                 for (var item in order["items"]) {
                                   names.add(item["name"]);
                                   count.add(item["quantity"]);
@@ -396,8 +399,12 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                 _saveOrderHistory();
                           }});}
                           else{
+                            if(mounted){
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Order : ${response.statusCode}")));
+                            }
                             setState(() {
                               orderId = 0;
+                              // currentorder = 0;
                             });
                           }
                           }on Exception catch (e){
@@ -604,8 +611,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                                               isSubmitted = orderhistory[orderId]?['submitted'];
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                               SnackBar(
-                                                                                content: Text("Made order(s) to be delivered later", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
-                                                                                backgroundColor: Colors.yellowAccent,
+                                                                                content: (currentStatus.any((e) => e == null))?Text("Made order(s) to be delivered later", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),):Text("Accepted/Rejected Order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
+                                                                                backgroundColor: (currentStatus.any((e) => e == null))?Colors.yellowAccent:Colors.orangeAccent,
                                                                                 )
                                                                               );
                                                                             }

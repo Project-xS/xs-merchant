@@ -12,6 +12,7 @@ class Menupage extends StatefulWidget {
   State<Menupage> createState() => _MenupageState();
 }
 
+int id = 1;
 
 class _MenupageState extends State<Menupage> with AutoFetchMixin{
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
@@ -451,7 +452,7 @@ Set<int> get navailableid =>
                       }
                       else{
                         apipostcall(name, int.parse(priceText).toDouble(), isveg, stocks, available);
-                        getallitems();
+                        getallitems(id);
                       }
                     if (isError){
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -960,13 +961,13 @@ void apipostcall(String name, double price, bool isveg, int stocks, bool availab
 
  @override
   void fetchData() { //Auto Fetch mixin function
-    getallitems();
+    getallitems(id);
   }
 
-void getallitems() async{
+void getallitems(int id) async{
   if (!mounted) return;
   try{
-  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/menu/items"));
+  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/canteen/$id/items"));
       if (response.statusCode == 200){
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         List<dynamic> dataList = decodedJson["data"];
@@ -989,7 +990,7 @@ void getallitems() async{
 }
 else{
   if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error from DB")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Items : ${response.statusCode}")));
   }}
   } on Exception catch (e){
     if(mounted){
@@ -1022,7 +1023,7 @@ void updateitem(int itemId, Map<int, Map<String, dynamic>> item) async{
   }
   else{
     if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error from DB")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Updating Items : ${response.statusCode}")));
   }
   }
 } on Exception catch (e){
@@ -1043,7 +1044,7 @@ void deleteitem(int itemId) async{
   }
   else{
     if (mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error from DB")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Deleting Item : ${response.statusCode}")));
     }
   } }on Exception catch (e){
     if(mounted){
@@ -1076,7 +1077,7 @@ void deleteitem(int itemId) async{
           elevation: 10.00,
           backgroundColor: Colors.cyan,
             onPressed: (){
-                getallitems();
+                getallitems(id);
             },
             icon: Icon(Icons.refresh,color: Colors.black),
             label: Text("Refresh", style: TextStyle(color: Colors.black)),

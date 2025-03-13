@@ -48,7 +48,7 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
     }
     else{
       if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Received")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Fetching Order Items: ${response.statusCode}")));
     }
     }
     }
