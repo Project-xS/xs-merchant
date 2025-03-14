@@ -16,7 +16,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OrderHistory extends StatefulWidget {
-  const OrderHistory({super.key});
+  final bool portrait;
+  const OrderHistory(this.portrait, {super.key});
 
   @override
   State<OrderHistory> createState() => _OrderHistoryState();
@@ -136,7 +137,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
       ),
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((MediaQuery.of(context).size.width)/3.5)),
+          padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((widget.portrait)?5:(MediaQuery.of(context).size.width)/3.5)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -211,7 +212,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                   return Align(
                     alignment: Alignment.center,
                     child: SizedBox(
-                      width: (MediaQuery.of(context).size.width)/2.2,
+                      width: (widget.portrait)?(MediaQuery.of(context).size.width):(MediaQuery.of(context).size.width)/2.2,
                       child: Card(
                         margin: EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -329,7 +330,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
         return AlertDialog(
           title: Text("Item Delivery:", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)),
           content: SizedBox(
-            width: 500,
+            width: 550,
             height: 500,
             child: Column(
               children: [
@@ -337,7 +338,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
             backgroundColor: WidgetStateProperty.all(Colors.black),
             autoFocus: true,
             focusNode: searchBarFocus,
-            padding: WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
+            padding: (widget.portrait)?WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 5)):WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
             controller: controller,
             keyboardType: TextInputType.number,
             leading : Icon(Icons.verified),
@@ -363,7 +364,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                           FocusScope.of(context).requestFocus(searchBarFocus);
                         });
                       }),
-                      SizedBox(width: 10.00)],
+                    ],
                       onChanged: (value) async{
                         controller.text = value.replaceAll(RegExp(r'[^0-9]'), '');
                         controller.selection = TextSelection.fromPosition(
@@ -415,10 +416,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       }
                       ),
                     SizedBox(
-                      width: 500,
+                      width: (widget.portrait)?550:500,
                       height: 430,
                       child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: (widget.portrait)?EdgeInsets.symmetric(horizontal: 5):EdgeInsets.symmetric(horizontal: 16.0),
                       child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -427,7 +428,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) 
                       ? Center(child: Text("Not Found", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w600))) 
                       : ListView.builder(
-                        padding: EdgeInsets.all(10.0),
+                        padding: (widget.portrait)?EdgeInsets.all(2.00):EdgeInsets.all(10.0),
                         itemCount: 1,
                         itemBuilder: (BuildContext context, int index) {
                           List<bool?> currentStatus = List<bool?>.from(orderhistory[orderId]?['status']);
@@ -435,7 +436,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                           return Card(
                             margin: EdgeInsets.symmetric(vertical: 10),
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10.0),
+                              padding: EdgeInsets.symmetric(horizontal: (widget.portrait)?10:30, vertical: 10.0),
                               child: StatefulBuilder(
                                 builder: (context, setState) {
                                   return Column(
@@ -484,6 +485,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                       mainAxisAlignment: MainAxisAlignment.center,
                                                       children: [
                                                         Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00))),
+                                                        SizedBox(width: 8),
                                                         Expanded(child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00))),
                                                         Checkbox(
                                                           tristate: true,
@@ -553,23 +555,30 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                         setState(() {
                                                             showDialog(context: context, builder:(context) {
                                                               return AlertDialog(
-                                                                title: Text("Are you sure to Accept/Reject/Hold the Order?", style: TextStyle(fontWeight: FontWeight.w700)),
+                                                                title: Text("Are you sure to make changes to the order?", style: TextStyle(fontWeight: FontWeight.w700)),
                                                                 content: SingleChildScrollView(
                                                                   child: Column(
                                                                     mainAxisSize: MainAxisSize.min,
                                                                     children: [
-                                                                      Text("Note: This can be done only once and make it hold to deliver later.", style: TextStyle(color: Colors.red, fontSize: 20.00, fontWeight: FontWeight.w800, backgroundColor: Colors.white)),
+                                                                      Center(child: Text("Note: This can be done only once or make it hold to deliver later.", style: TextStyle(color: Colors.red, fontSize: 20.00, fontWeight: FontWeight.w800, backgroundColor: Colors.white), maxLines: 2,)),
                                                                       SizedBox(height: 10.00),
+                                                                      SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
                                                                       for (int i = 0; i < orderhistory[orderId]?['name'].length; i++)
-                                                                        Row(
-                                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                                        Column(
                                                                           children: [
-                                                                            Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
-                                                                            Expanded(child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
-                                                                            Text((currentStatus[i] == true) ? "Accept" : (currentStatus[i] == null) ? "Deliver Later" : "Reject", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.bold, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red)),
+                                                                            Row(
+                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                              children: [
+                                                                                Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
+                                                                                SizedBox(width: 8),
+                                                                                Expanded(child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
+                                                                                Text((currentStatus[i] == true) ? "Accept" : (currentStatus[i] == null) ? "Deliver Later" : "Reject", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.bold, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red)),
+                                                                              ],
+                                                                            ),
+                                                                            SizedBox(width: 1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
                                                                           ],
                                                                         ),
-                                                                        SizedBox(height: 10.00)
+                                                                      SizedBox(height: 10.00)
                                                                     ],
                                                                   ),
                                                                 ),

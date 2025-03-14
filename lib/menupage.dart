@@ -6,7 +6,8 @@ import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/tristatetoggle.dart';
 
 class Menupage extends StatefulWidget {
-  const Menupage({super.key});
+  final bool portrait;
+  const Menupage(this.portrait, {super.key});
 
   @override
   State<Menupage> createState() => _MenupageState();
@@ -1141,7 +1142,7 @@ void deleteitem(int itemId) async{
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 40.0),
+                  padding: EdgeInsets.only(right: (widget.portrait)?115:40.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1210,7 +1211,7 @@ void deleteitem(int itemId) async{
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 40.0),
+                  padding: EdgeInsets.only(right: (widget.portrait)?115:40.0),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1246,6 +1247,7 @@ void deleteitem(int itemId) async{
             )
           else 
             buildGridSection(navailableid, Colors.grey, Colors.black),
+            SizedBox(height: 70)
           ],
         ),
       ),
@@ -1259,7 +1261,10 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
       LayoutBuilder(
         builder: (context, constraints) {
           int crossAxisCount = 6;
-          if (constraints.maxWidth < 960) {
+          if (widget.portrait){
+            crossAxisCount = 2;
+          }
+          else if (constraints.maxWidth < 960) {
             crossAxisCount = 3;
           } else if (constraints.maxWidth < 1300) {
             crossAxisCount = 4;

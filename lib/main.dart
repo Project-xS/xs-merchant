@@ -1,4 +1,5 @@
 import 'dart:io';
+// import 'package:flutter/services.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
 import 'package:window_size/window_size.dart';
@@ -23,19 +24,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool portrait = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _updatePortrait();
+  }
+
+  void _updatePortrait() {
+    if (Platform.isAndroid) {
+      portrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    }
+    else {
+      portrait = false;
+  }
+  }
+
   String name="Maaran Parotta Kadai";
   int currentIndex = 1;
-  final List<Widget> pages = [
-    Center(child: Menupage()),
-    Center(child: OrderHistory()),
-    Center(child: Orders()),
-  ];
+  List<Widget> getPages(bool portrait) {
+    return [
+      Center(child: Menupage(portrait)),
+      Center(child: OrderHistory(portrait)),
+      Center(child: Orders(portrait)),
+    ];
+  }
   @override
   Widget build(BuildContext context) {
+    _updatePortrait();
     return Scaffold(
-      appBar: AppBar(title: Text("Namma Canteen", style:TextStyle(fontWeight:FontWeight.w500, fontSize: 35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
+      appBar: AppBar(title: Text("Namma Canteen", style:TextStyle(fontWeight:FontWeight.w500, fontSize: (portrait)?20.00:35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
       body: Column(
-        children: [Text(name, style:TextStyle(fontWeight:FontWeight.bold, fontSize:50.00),), 
+        children: [Text(name, style:TextStyle(fontWeight:FontWeight.bold, fontSize:(portrait)?25.00:50.00),), 
         SizedBox(
           width:650,
           child: ClipRRect(
@@ -74,7 +95,7 @@ class _HomePageState extends State<HomePage> {
             )),
         ),
           Expanded(
-            child: pages[currentIndex],
+            child: getPages(portrait)[currentIndex],
           ),
         ],
       ),

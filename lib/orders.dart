@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:merchant/auto_fetch_mixin.dart';
 
 class Orders extends StatefulWidget {
-  const Orders({super.key});
-
+  final bool portrait;
+  const Orders(this.portrait, {super.key});
   @override
   State<Orders> createState() => _OrdersState();
 }
@@ -65,7 +65,7 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 20.00, horizontal: ((MediaQuery.of(context).size.width)/3)),
+            padding: EdgeInsets.symmetric(vertical: 20.00, horizontal: ((widget.portrait)?(MediaQuery.of(context).size.width)/7:(MediaQuery.of(context).size.width)/3)),
             child: Card(
               margin: EdgeInsets.all(16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
