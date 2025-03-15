@@ -13,7 +13,7 @@ class Menupage extends StatefulWidget {
   State<Menupage> createState() => _MenupageState();
 }
 
-int id = 1;
+int canteenId = 1;
 
 class _MenupageState extends State<Menupage> with AutoFetchMixin{
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
@@ -52,7 +52,6 @@ class _MenupageState extends State<Menupage> with AutoFetchMixin{
   //   30: {'name': 'odles', 'price': 90, 'is_veg': false, 'available': false, 'stocks': 100},
   // };
 
-  int newitemid = 31;
   Map<int, Map<String, dynamic>> item = {};
   Map<int, Map<String, dynamic>> get items {
   var sortedEntries = item.entries.toList();
@@ -91,7 +90,7 @@ Set<int> get availableid =>
 Set<int> get navailableid =>
     items.entries.where((entry) => entry.value['available'] == false || (entry.value['stocks'] != -1 && entry.value['stocks'] == 0)).map((entry) => entry.key).toSet();
 
-  void modifyItem(int itemId, String oldName, double oldRate, bool isveg, bool available) {
+  void modifyItem(int itemId, String oldName, int oldRate, bool isveg, bool available) {
     bool isError = false;
     String name = "";
     int stocks = items[itemId]?['stocks']??0;
@@ -165,11 +164,10 @@ Set<int> get navailableid =>
                           ),
                           onChanged: (value) {
                             setState(() {
-                              oldRate = (int.tryParse(value) != null)? int.parse(value).toDouble() : oldRate;
+                              oldRate = (int.tryParse(value) != null)? int.parse(value) : oldRate;
                             });
                           },
                         ),
-                  //Stock rests to 0 need to fix
                         TextFormField(
                           maxLength: 5,
                           initialValue: "${items[itemId]?['stocks']}",
@@ -245,7 +243,7 @@ Set<int> get navailableid =>
                             'available': available,
                             'stocks': stocks
                           };
-                          updateitem(itemId,item);
+                          updateitem(itemId, item[itemId]);
                         });
                         Navigator.pop(context);
                         }
@@ -264,7 +262,7 @@ Set<int> get navailableid =>
         );
   }
 
-  void addNewItem(int newitemid) {
+  void addNewItem() {
     bool isError = false;
     String name = "";
     String priceText = "";
@@ -431,7 +429,7 @@ Set<int> get navailableid =>
                     return;
                   }
                   setState(() {
-                    int olditemid = newitemid;
+                    int olditemid = 0;
                     int foundItemId = items.keys.firstWhere(
                       (key) => items[key]?['name'].trim().toLowerCase().replaceAll(' ', '') ==
                           name.trim().toLowerCase().replaceAll(' ', ''),
@@ -440,26 +438,25 @@ Set<int> get navailableid =>
                     if(foundItemId!=olditemid){
                       item[foundItemId] = {
                         'name': name,
-                        'price': int.parse(priceText).toDouble(),
+                        'price': int.parse(priceText),
                         'is_veg': isveg,
                         'available': available,
                         'stocks': stocks,
                       };
-                      updateitem(foundItemId, item);
+                      updateitem(foundItemId, item[foundItemId]);
                       if (navailableid.contains(foundItemId)){
                         navailableid.remove(foundItemId);
                         availableid.add(foundItemId);
                       }
                       }
                       else{
-                        apipostcall(name, int.parse(priceText).toDouble(), isveg, stocks, available);
-                        getallitems(id);
+                        apipostcall(name, int.parse(priceText), isveg, stocks, available);
                       }
                     if (isError){
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            "Exception: $name Already Exists, Updated its details",
+                            "Item: $name Already Exists, Updated its details",
                             style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),
                           ),
                           backgroundColor: Colors.yellowAccent,
@@ -527,34 +524,19 @@ Set<int> get navailableid =>
                           availableid.remove(itemId);
                           navailableid.add(itemId);
                           item[itemId]?['available'] = false;
-                          updateitem(itemId, item);
+                          updateitem(itemId, item[itemId]);
                         }
                         else {
                             item[itemId]?['available'] = true;
                             availableid.add(itemId);
                             navailableid.remove(itemId);
-                            updateitem(itemId, item);
+                            updateitem(itemId, item[itemId]);
                       }}
                       else{
-                        if (item[itemId]?['available']){
-                          availableid.remove(itemId);
-                        }
-                        else{
-                          navailableid.remove(itemId);
-                        }
-                        item.remove(itemId);
                         deleteitem(itemId);
                       }
                       Navigator.pop(context);
                     });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Item : ${(isAdd && available)?"$name Removed from Menu":((isAdd && !available)?"$name Added to the Menu":"$name Deleted Successfully")}",
-                        style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight: FontWeight.w700),
-                      ),
-                      backgroundColor: (isAdd && available)?Colors.yellowAccent:((isAdd && !available)?Colors.cyanAccent:Colors.redAccent))
-                  );
                 },
                 child: Text((isAdd && available)?"Remove":((isAdd && !available)?"Add":"Delete")),
           )],
@@ -564,14 +546,21 @@ Set<int> get navailableid =>
     },
   );
 }
-  
+
   void massEdit(){
+    if (widget.portrait){
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight
+    ]);
+    }
     Set<int> searchitems = {};
     TextEditingController controller = TextEditingController();
     Map<int, bool> errorMap = {};
     Set<String> err = {};
     Map<int, Map<String, dynamic>> changes = {};
     showDialog(
+      barrierDismissible: (widget.portrait)?false:true,
       context: context,
       builder: (context) {
             return AlertDialog(
@@ -617,12 +606,12 @@ Set<int> get navailableid =>
                                       searchitems.add(itemId);
                                     }
                                   }
-                                  debugPrint("Search results: $searchitems");
                                 });
                               } on Exception catch (e) {
                                 if (mounted){
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("Error performing search : $e"))
+                                  SnackBar(content: Text("Error performing search : $e"),
+                                  backgroundColor: Colors.redAccent)
                                 );
                                 }
                               }
@@ -678,7 +667,7 @@ Set<int> get navailableid =>
                                                         err.add(value.trim().toLowerCase().replaceAll(" ", ""));
                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                           SnackBar(
-                                                            content: Text("Exception: $value Already Exists, Change the name",
+                                                            content: Text("Item: $value Already Exists, Change the name",
                                                                 style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700)),
                                                             backgroundColor: Colors.redAccent,
                                                           ),
@@ -698,7 +687,7 @@ Set<int> get navailableid =>
                                                   });
                                                 },
                                                 decoration: InputDecoration(
-                                                  labelText: "Item Name",
+                                                  labelText: (widget.portrait)?"Name":"Item Name",
                                                   counterText: "",
                                                   errorText: errorMap[itemId] == true ? "Item Exists or Empty" : null,
                                                   border: OutlineInputBorder(),
@@ -718,7 +707,7 @@ Set<int> get navailableid =>
                                               child: TextFormField(
                                                 key: ValueKey(items[itemId]?['price']),
                                                 maxLength: 4,
-                                                initialValue: items[itemId]?['price'].toInt().toString(),
+                                                initialValue: items[itemId]?['price'].toString(),
                                                 keyboardType: TextInputType.number,
                                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                                 onChanged: (value) {
@@ -732,7 +721,7 @@ Set<int> get navailableid =>
                                                     );
                                                   } else {
                                                     changes[itemId] = {
-                                                      'price': int.parse(value).toDouble(),
+                                                      'price': int.parse(value),
                                                       'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
                                                       'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
                                                       'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
@@ -868,6 +857,24 @@ Set<int> get navailableid =>
                 ),
               ),
               actions: [
+                if (widget.portrait)
+                TextButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(Colors.red),
+                  foregroundColor: WidgetStatePropertyAll(Colors.black),
+                  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
+                  fixedSize: WidgetStatePropertyAll(Size(120, 60)),
+                  overlayColor: WidgetStatePropertyAll(Color.fromARGB(255, 37, 113, 255)),
+                ),
+                onPressed: () {
+                  SystemChrome.setPreferredOrientations([
+                    DeviceOrientation.portraitUp,
+                  ]);
+                  Navigator.pop(context);
+                  },
+                child: Text("Cancel")
+              ),
+              SizedBox(width:300),
                 TextButton(
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.all(Colors.black),
@@ -898,7 +905,7 @@ Set<int> get navailableid =>
                                   'available': item[i]?['available'],
                                   'stocks': changes[i]?['stocks']
                                 };
-                                updateitem(i, item);
+                                updateitem(i, item[i]);
                               }
                             }
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -909,13 +916,20 @@ Set<int> get navailableid =>
                               backgroundColor: Colors.cyanAccent,
                             ));
                             errorMap.clear();
+                            SystemChrome.setPreferredOrientations([
+                              DeviceOrientation.portraitUp,
+                            ]);
                             Navigator.pop(context);
                           });}
                         },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [Icon(Icons.check, color: Colors.greenAccent), 
-                    Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [Icon(Icons.check, color: Colors.greenAccent), 
+                        Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+                    ],
+                  ),
                 ),
               ],
             );
@@ -923,7 +937,7 @@ Set<int> get navailableid =>
         );
   }
 
-void apipostcall(String name, double price, bool isveg, int stocks, bool available) async {
+void apipostcall(String name, int price, bool isveg, int stocks, bool available) async {
   try {
   final response = await http.post(
     Uri.parse('https://proj-xs.fly.dev/menu/create'),
@@ -932,7 +946,7 @@ void apipostcall(String name, double price, bool isveg, int stocks, bool availab
       "Content-Type": "application/json"
     },
     body: jsonEncode({
-      "canteen_id": 1,
+      "canteen_id": canteenId,
       // "description": "hi",
       "list": true,
       // "pic_link": "hi",
@@ -945,24 +959,34 @@ void apipostcall(String name, double price, bool isveg, int stocks, bool availab
   );
   
   if (response.statusCode == 200) { 
+    final Map<String, dynamic> decodedJson = jsonDecode(response.body);
+    setState(() {
+      item[decodedJson["item_id"]] = {
+      "name": name,
+      "price": price,
+      "is_veg": isveg,
+      "available": available,
+      "stocks": stocks
+      };
+    });
     if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Created Succesfully")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Created Succesfully"),backgroundColor: Colors.cyanAccent));
     }
   } else {
     if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${response.body}")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${response.body}"), backgroundColor: Colors.redAccent));
     }
   }
 } on Exception catch (e) {
   if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
   }
 }
 }
 
  @override
   void fetchData() { //Auto Fetch mixin function
-    getallitems(id);
+    getallitems(canteenId);
   }
 
 void getallitems(int id) async{
@@ -977,7 +1001,7 @@ void getallitems(int id) async{
           for (var item1 in dataList) {
             item[item1["item_id"]] = {
               "name": item1["name"],
-              "price": item1["price"].toDouble(),
+              "price": item1["price"],
               "is_veg": item1["is_veg"],
               "available": item1["is_available"],
               "stocks": item1["stock"]
@@ -985,51 +1009,50 @@ void getallitems(int id) async{
           }
           // debugPrint("${item.keys}");
           if(mounted){
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Fetched Successfully")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Fetched Successfully"), backgroundColor: Colors.cyanAccent));
           }
     });
 }
 else{
   if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Items : ${response.statusCode}")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Items : ${response.statusCode}"), backgroundColor: Colors.redAccent));
   }}
   } on Exception catch (e){
     if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
   }
   }
   }
 
-void updateitem(int itemId, Map<int, Map<String, dynamic>> item) async{
+void updateitem(int itemId, Map<String, dynamic>? item) async{
   try{
   final response = await http.put(Uri.parse("https://proj-xs.fly.dev/menu/update"),
   headers: {'accept' : 'application/json','Content-Type' : 'application/json'},
   body: jsonEncode({
-    "item_id": itemId as num,
+    "item_id": itemId,
     "update": {
     "description": "string",
-    "is_available": item[itemId]?["available"] as bool,
-    "is_veg": item[itemId]?['is_veg'] as bool,
-    "list": item[itemId]?["available"] as bool,
-    "name": item[itemId]?["name"],
+    "is_available": item?["available"],
+    "is_veg": item?['is_veg'],
+    "name": item?["name"],
     "pic_link": "string",
-    "price": item[itemId]?["price"] as num,
-    "stock": item[itemId]?["stocks"] as num
+    "price": item?["price"],
+    "stock": item?["stocks"]
   }}
   ));
   if (response.statusCode == 200){
     if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Update Successful")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Update Successful"), backgroundColor: Colors.cyanAccent));
     }
   }
   else{
     if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Updating Items : ${response.statusCode}")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Updating Items : ${response.statusCode}"), backgroundColor: Colors.redAccent));
   }
   }
 } on Exception catch (e){
   if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
   }
 }
 }
@@ -1039,17 +1062,26 @@ void deleteitem(int itemId) async{
   final response = await http.delete(Uri.parse("https://proj-xs.fly.dev/menu/delete/$itemId"),
   headers: {'accept' : 'application/json'});
   if(response.statusCode == 200){
+    setState(() {
+       if (item[itemId]?['available']){
+          availableid.remove(itemId);
+        }
+        else{
+          navailableid.remove(itemId);
+        }
+        item.remove(itemId);
+    });
     if (mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Deleted Successfully")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Deleted Successfully"), backgroundColor: Colors.cyanAccent));
     }
   }
   else{
     if (mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Deleting Item : ${response.statusCode}")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Deleting Item : ${response.statusCode}"), backgroundColor: Colors.redAccent));
     }
   } }on Exception catch (e){
     if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent,));
   }
   }
 }
@@ -1078,7 +1110,7 @@ void deleteitem(int itemId) async{
           elevation: 10.00,
           backgroundColor: Colors.cyan,
             onPressed: (){
-                getallitems(id);
+                getallitems(canteenId);
             },
             icon: Icon(Icons.refresh,color: Colors.black),
             label: Text("Refresh", style: TextStyle(color: Colors.black)),
@@ -1098,7 +1130,7 @@ void deleteitem(int itemId) async{
           elevation: 10.00,
           backgroundColor: Colors.cyan,
           onPressed: (){
-              addNewItem(newitemid++);
+              addNewItem();
           },
           icon: Icon(Icons.add,color: Colors.black),
           label: Text("Add New Item", style: TextStyle(color: Colors.black))

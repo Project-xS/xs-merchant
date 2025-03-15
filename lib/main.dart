@@ -52,7 +52,7 @@ class _HomePageState extends State<HomePage> {
   }
   @override
   Widget build(BuildContext context) {
-    _updatePortrait();
+    // _updatePortrait();
     return Scaffold(
       appBar: AppBar(title: Text("Namma Canteen", style:TextStyle(fontWeight:FontWeight.w500, fontSize: (portrait)?20.00:35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
       body: Column(
