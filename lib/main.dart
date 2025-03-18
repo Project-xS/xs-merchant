@@ -1,5 +1,6 @@
 import 'dart:io';
-// import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
 import 'package:window_size/window_size.dart';
@@ -11,14 +12,54 @@ void main(){
   WidgetsFlutterBinding.ensureInitialized();
     setWindowMinSize(const Size(1025,1025));
   }
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme:ThemeData.dark(),
-    home:HomePage()));
+  runApp(MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  MyAppState createState() => MyAppState();
+}
+
+class MyAppState extends State<MyApp> {
+  bool isTamil = false;
+
+  void _changeLanguage(bool value) {
+    setState(() {
+      isTamil = value;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: (isTamil)?"Tamil":null,
+        brightness: Brightness.dark,
+      ),
+      locale: isTamil ? Locale('ta', '') : Locale('en', ''),
+      supportedLocales: [
+        Locale('en', ''), 
+        Locale('ta', ''), 
+      ],
+      localizationsDelegates: [
+        AppLocalizations.delegate, 
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: HomePage(changeLanguage: _changeLanguage, isTamil: isTamil),
+    );
+  }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function(bool) changeLanguage;
+  final bool isTamil;
+
+  const HomePage({super.key, required this.changeLanguage, required this.isTamil});
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -26,6 +67,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool portrait = false;
 
+  
   @override
   void initState() {
     super.initState();
@@ -45,16 +87,39 @@ class _HomePageState extends State<HomePage> {
   int currentIndex = 1;
   List<Widget> getPages(bool portrait) {
     return [
-      Center(child: Menupage(portrait)),
-      Center(child: OrderHistory(portrait)),
-      Center(child: Orders(portrait)),
+      Center(child: Menupage(portrait, widget.isTamil)),
+      Center(child: OrderHistory(portrait, widget.isTamil)),
+      Center(child: Orders(portrait, widget.isTamil)),
     ];
   }
   @override
   Widget build(BuildContext context) {
-    // _updatePortrait();
     return Scaffold(
-      appBar: AppBar(title: Text("Namma Canteen", style:TextStyle(fontWeight:FontWeight.w500, fontSize: (portrait)?20.00:35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), toolbarHeight: 80.00,),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.app_name, 
+        style:TextStyle(fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w500, 
+        fontSize: (portrait)?20.00:35.00)),leading: Image(image: AssetImage('assets/images/logo.png')), 
+        toolbarHeight: 80.00,
+        forceMaterialTransparency: true
+      ),
+      endDrawer: Drawer(
+        child: SafeArea(
+          minimum: EdgeInsets.symmetric(vertical: 50),
+          child: Column(
+            children: [
+              Text(AppLocalizations.of(context)!.language),
+              SizedBox(height: 10),
+              SwitchListTile(
+                title: Text(((widget.isTamil) ? "English" : "தமிழ்"), style: TextStyle(fontWeight: FontWeight.w600)),
+                value: widget.isTamil,
+                onChanged: (value) {
+                  widget.changeLanguage(value);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Column(
         children: [Text(name, style:TextStyle(fontWeight:FontWeight.bold, fontSize:(portrait)?25.00:50.00),), 
         SizedBox(
@@ -77,14 +142,14 @@ class _HomePageState extends State<HomePage> {
               destinations: [
                 NavigationDestination(
                   icon: Icon(Icons.restaurant_menu),
-                  label: "Menu",
+                  label: AppLocalizations.of(context)!.menu,
                   ),
                 NavigationDestination(
                   icon: Icon(Icons.local_shipping_outlined),
-                  label: "Order Verification"),
+                  label: AppLocalizations.of(context)!.verify),
                 NavigationDestination(
                   icon: Icon(Icons.pending_actions),
-                  label: "Orders"),],
+                  label: AppLocalizations.of(context)!.order),],
               onDestinationSelected: (int ind){
                 setState(() {
                   currentIndex=ind;

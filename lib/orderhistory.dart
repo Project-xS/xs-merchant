@@ -13,11 +13,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:merchant/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OrderHistory extends StatefulWidget {
   final bool portrait;
-  const OrderHistory(this.portrait, {super.key});
+  final bool isTamil;
+  const OrderHistory(this.portrait, this.isTamil, {super.key});
 
   @override
   State<OrderHistory> createState() => _OrderHistoryState();
@@ -133,7 +135,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
           orderverfication();
         },
         icon: Icon(Icons.room_service, color: Colors.black),
-        label: Text("Deliver",  style: TextStyle(color: Colors.black)),
+        label: Text(AppLocalizations.of(context)!.deliver,  style: TextStyle(color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
       ),
       body: Center(
         child: Padding(
@@ -150,7 +152,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                   controller: controller,
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.search,
-                  hintText: "Enter Order Number to Search",
+                  hintText: AppLocalizations.of(context)!.s_order,
                   leading: Padding(padding: EdgeInsets.symmetric(vertical: 5.00, horizontal: 12.00), child: Icon(Icons.search, color: Colors.grey,)),
                   trailing: [
                     IconButton(icon: Icon(Icons.clear),
@@ -219,18 +221,18 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         child: Padding(
                           padding: EdgeInsets.all(25.0),
                           //Just column thing is enough if we need all items orderhistory to be shown
-                          child: (orderId == 0 || deliverlater.isEmpty) ? Text("No order to be delivered later", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)) : 
+                          child: (orderId == 0 || deliverlater.isEmpty) ? Text("No order to be delivered later", style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)) : 
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text("Order Items:", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600)),
+                                  Text(AppLocalizations.of(context)!.order_items, style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
                                   Row(
                                     children: [
-                                      Text("Order ID: ", style: TextStyle(fontSize: 19.00, fontWeight: FontWeight.w600)),
-                                      Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w700, color: Colors.cyan)),
+                                      Text("${AppLocalizations.of(context)!.order_id} ", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600)),
+                                      Text("#$orderId", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700, color: Colors.cyan)),
                                     ],
                                   ),
                                 ],
@@ -271,7 +273,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         children: [
                           SizedBox(width: 120, child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
                           SizedBox(width: 20.00),
-                          SizedBox(width: 30, child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
+                          SizedBox(width: 30, child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
                             ],
                             ),
                         ),
@@ -286,8 +288,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text("Total: ", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w500)),
-              Text("${orderhistory[orderId]?['price']}", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
+              Text(AppLocalizations.of(context)!.total, style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500)),
+              Text("${orderhistory[orderId]?['price']}", style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w600, color: Colors.cyan)),
             ],
           )
       ],
@@ -328,7 +330,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
     return StatefulBuilder(
       builder: (context, setState) {
         return AlertDialog(
-          title: Text("Item Delivery:", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w700)),
+          title: Text(AppLocalizations.of(context)!.item_delivery, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
           content: SizedBox(
             width: 550,
             height: 500,
@@ -342,7 +344,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
             controller: controller,
             keyboardType: TextInputType.number,
             leading : Icon(Icons.verified),
-            hintText: "Click here and then Tap the ID",
+            hintText: AppLocalizations.of(context)!.s_tap,
             trailing: [
               IconButton(icon: Icon(Icons.clear),
                 onPressed: (){
@@ -380,7 +382,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                           setState((){
                               for (var order in decodedJson["data"]) {
                                 orderId = order["order_id"];
-                                price = order["price"];
+                                price = order["total_price"];
                                 names = [];
                                 count = [];
                                 status = [];
@@ -426,7 +428,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                     SizedBox(height: 20.0),
                     Expanded(
                       child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) 
-                      ? Center(child: Text("Not Found", style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.w600))) 
+                      ? Center(child: Text(AppLocalizations.of(context)!.not_found, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600))) 
                       : ListView.builder(
                         padding: (widget.portrait)?EdgeInsets.all(2.00):EdgeInsets.all(10.0),
                         itemCount: 1,
@@ -446,8 +448,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text("Order Items:", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600)),
-                                          Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight: FontWeight.w600, color: Colors.cyan)),
+                                          Text("${AppLocalizations.of(context)!.order_id} ", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
+                                          Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600, color: Colors.cyan)),
                                         ],
                                       ),
                                       SizedBox(height: 15.00),
@@ -486,7 +488,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                       children: [
                                                         Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00))),
                                                         SizedBox(width: 8),
-                                                        Expanded(child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00))),
+                                                        Expanded(child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00))),
                                                         Checkbox(
                                                           tristate: true,
                                                           value: currentStatus[i],
@@ -509,14 +511,20 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                         }),
                                       ),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
+                                          Row(
+                                            children: [
+                                              Text("${AppLocalizations.of(context)!.price}: ", style: TextStyle(fontSize: 18.00)),
+                                              Text("${orderhistory[orderId]?['price']}", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600, color: Colors.cyan))
+                                            ],
+                                          ),
                                           Column(
                                             crossAxisAlignment: CrossAxisAlignment.end,
                                             children: [
                                               Row(
                                                 children: [
-                                                  Text("All:", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500)),
+                                                  Text("${AppLocalizations.of(context)!.all}:", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
                                                   Checkbox(
                                                     tristate: true,
                                                     value: currentStatus.every((e) => e == null) ? null : currentStatus.every((e) => e == true) ? true :false,
@@ -555,12 +563,12 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                         setState(() {
                                                             showDialog(context: context, builder:(context) {
                                                               return AlertDialog(
-                                                                title: Text("Are you sure to make changes to the order?", style: TextStyle(fontWeight: FontWeight.w700)),
+                                                                title: Text(AppLocalizations.of(context)!.confirm_order_changes, style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
                                                                 content: SingleChildScrollView(
                                                                   child: Column(
                                                                     mainAxisSize: MainAxisSize.min,
                                                                     children: [
-                                                                      Center(child: Text("Note: This can be done only once or make it hold to deliver later.", style: TextStyle(color: Colors.red, fontSize: 20.00, fontWeight: FontWeight.w800, backgroundColor: Colors.white), maxLines: 2,)),
+                                                                      Center(child: Text(AppLocalizations.of(context)!.note, style: TextStyle(color: Colors.red, fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w800, backgroundColor: Colors.white), maxLines: 2,)),
                                                                       SizedBox(height: 10.00),
                                                                       SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
                                                                       for (int i = 0; i < orderhistory[orderId]?['name'].length; i++)
@@ -569,10 +577,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                                             Row(
                                                                               mainAxisAlignment: MainAxisAlignment.center,
                                                                               children: [
-                                                                                Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
+                                                                                Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
                                                                                 SizedBox(width: 8),
-                                                                                Expanded(child: Text("x${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
-                                                                                Text((currentStatus[i] == true) ? "Accept" : (currentStatus[i] == null) ? "Deliver Later" : "Reject", style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.bold, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red)),
+                                                                                Expanded(child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
+                                                                                Text((currentStatus[i] == true) ? AppLocalizations.of(context)!.accept : (currentStatus[i] == null) ? AppLocalizations.of(context)!.deliver_later : AppLocalizations.of(context)!.reject, style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.bold, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red)),
                                                                               ],
                                                                             ),
                                                                             SizedBox(width: 1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
@@ -600,7 +608,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                                         child: Row(
                                                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                           children: [Icon(Icons.close, color: Colors.black), 
-                                                                          Text("Cancel", style: TextStyle(fontWeight: FontWeight.w600))])
+                                                                          Text(AppLocalizations.of(context)!.cancel, style: TextStyle(fontWeight: FontWeight.w600))])
                                                                       ),
                                                                       TextButton(
                                                                         style: ButtonStyle(
@@ -620,7 +628,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                                               isSubmitted = orderhistory[orderId]?['submitted'];
                                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                               SnackBar(
-                                                                                content: (currentStatus.any((e) => e == null))?Text("Made order(s) to be delivered later", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),):Text("Accepted/Rejected Order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
+                                                                                content: (currentStatus.any((e) => e == null))?Text("Made order(s) to be delivered later", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),):Text("Accepted/Rejected Order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),),
                                                                                 backgroundColor: (currentStatus.any((e) => e == null))?Colors.yellowAccent:Colors.orangeAccent,
                                                                                 )
                                                                               );
@@ -647,7 +655,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                                         child: Row(
                                                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                           children: [Icon(Icons.check, color: Colors.greenAccent), 
-                                                                          Text("Submit", style: TextStyle(fontWeight: FontWeight.w600))]),
+                                                                          Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600))]),
                                                                       ),
                                                                     ],
                                                                   ),
@@ -669,7 +677,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                                   children: [
                                                     Icon(Icons.check, color: Colors.greenAccent),
                                                     SizedBox(width: 5.00),
-                                                    Text("Submit", style: TextStyle(fontWeight: FontWeight.w600)),
+                                                    Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600)),
                                                   ],
                                                 ),
                                               ),

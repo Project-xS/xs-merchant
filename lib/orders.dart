@@ -1,12 +1,13 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/auto_fetch_mixin.dart';
+import 'package:merchant/l10n/app_localizations.dart';
 
 class Orders extends StatefulWidget {
   final bool portrait;
-  const Orders(this.portrait, {super.key});
+  final bool isTamil;
+  const Orders(this.portrait, this.isTamil, {super.key});
   @override
   State<Orders> createState() => _OrdersState();
 }
@@ -35,10 +36,12 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
       Map<String, dynamic> decodedJson = jsonDecode(response.body);
       List<dynamic> dataList = decodedJson["data"];
       setState(() {
+        // String time = decodedJson["time"];
         for (var order in dataList){
         orders[order["item_id"]] = {
           "name": order["item_name"],
           "count": order["num_ordered"],
+          // "time": time
         };
         }
       });
@@ -62,6 +65,12 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
     @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(onPressed: () {
+        getorders();
+      },
+      backgroundColor: Colors.cyan,
+      label: Text(AppLocalizations.of(context)!.refresh, style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w900:FontWeight.w600, color: Colors.black)),
+      icon: Icon(Icons.refresh, color: Colors.black)) ,
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
@@ -75,7 +84,7 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text("Order Items:", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                    Text(AppLocalizations.of(context)!.order_items, style: TextStyle(fontSize: 22, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500)),
                     SizedBox(height: 10),
                     Column(
                       children: List.generate(orders.length, (i) {
@@ -87,7 +96,7 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text("${i+1}. " "${orders[orderId]?['name']}", style: TextStyle(fontSize: 20)),
-                                Text("x${orders[orderId]?['count']}", style: TextStyle(fontSize: 20)),
+                                Text("x ${orders[orderId]?['count']}", style: TextStyle(fontSize: 20)),
                               ],
                             ),
                           ],

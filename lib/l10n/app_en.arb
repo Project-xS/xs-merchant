@@ -1,0 +1,79 @@
+{
+    "@@locale": "en",
+    "app_name" : "Namma Canteen",
+    "menu" : "Menu",
+    "verify" : "Order Verification",
+    "order" : "Orders",
+    "on_menu_head" : "On Menu",
+    "off_menu_head" : "Not on Menu",
+    "on_menu" : "On Menu",
+    "off_menu" : "Not on Menu",
+    "no_item_menu" : "No Item on Menu",
+    "no_item" : "No Items Available",
+    "sort_by" : "Sort by: ",
+    "name" : "Name",
+    "price" : "Price",
+    "stock" : "Stocks",
+    "veg" : "Veg",
+    "low_stock" : "Low_Stocks",
+    "refresh" : "Refresh",
+    "bulk_edit" : "Bulk Edit",
+    "add_item" : "Add Item",
+    "add_item_head" : "Add New Item:",
+    "multiple_item_edit" : "Multiple Item Edit:",
+    "search_name" : "Enter name to search",
+    "cancel" : "Cancel",
+    "submit" : "Submit",
+    "order_items" : "Order Items:",
+    "s_order" : "Enter Order No. to Search",
+    "s_tap" : "Click Here and Tap the ID",
+    "deliver" : "Deliver",
+    "item_delivery" : "Item Delivery:",
+    "not_found" : "Not Found",
+    "order_id" : "Order ID:",
+    "total" : "Total: ",
+    "all" : "All",
+    "modify_item" : "Modify Item - {name} :",
+    "@modify_item": {
+        "placeholders": {
+            "name": {
+            "type": "String"
+            }
+        }
+    },
+    "new_price" : "New Price - ₹",
+    "new_name" : "New Name",
+    "confirm_remove" : "Do you want to Remove \"{name}\" from the Menu?",
+    "@confirm_remove": {
+        "placeholders": {
+            "name": {
+            "type": "String"
+            }
+        }
+    },
+    "confirm_add" : "Do you want to Add \"{name}\" to the Menu?",
+    "@confirm_add": {
+        "placeholders": {
+            "name": {
+            "type": "String"
+            }
+        }
+    },
+    "confirm_delete" : "Do you want to Delete \"{name}\" permanently?",
+    "@confirm_delete": {
+        "placeholders": {
+            "name": {
+            "type": "String"
+            }
+        }
+    },
+    "remove" : "Remove",
+    "add" : "Add",
+    "delete" : "Delete",
+    "language" : "Change Language:-",
+    "confirm_order_changes" : "Are you sure to make changes to the order?",
+    "note" : "Note: This can be done only once or make it hold to deliver later.",
+    "accept" : "Accept",
+    "reject" : "Reject",
+    "deliver_later" : "Deliver Later"
+}
