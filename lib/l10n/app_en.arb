@@ -28,6 +28,7 @@
     "s_order" : "Enter Order No. to Search",
     "s_tap" : "Click Here and Tap the ID",
     "deliver" : "Deliver",
+    "delivery_time" : "Delivery Timing:- ",
     "item_delivery" : "Item Delivery:",
     "not_found" : "Not Found",
     "order_id" : "Order ID:",
@@ -75,5 +76,7 @@
     "note" : "Note: This can be done only once or make it hold to deliver later.",
     "accept" : "Accept",
     "reject" : "Reject",
-    "deliver_later" : "Deliver Later"
+    "deliver_later" : "Deliver Later",
+    "timing" : "Timing: ",
+    "instant" : "Instant"
 }

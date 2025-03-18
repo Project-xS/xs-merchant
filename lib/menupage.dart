@@ -9,13 +9,12 @@ import 'package:merchant/tristatetoggle.dart';
 class Menupage extends StatefulWidget {
   final bool portrait;
   final bool isTamil;
-  const Menupage(this.portrait, this.isTamil, {super.key});
+  final int canteenId;
+  const Menupage(this.portrait, this.isTamil, this.canteenId, {super.key});
 
   @override
   State<Menupage> createState() => _MenupageState();
 }
-
-int canteenId = 1;
 
 class _MenupageState extends State<Menupage> with AutoFetchMixin{
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
@@ -956,7 +955,7 @@ void apipostcall(String name, int price, bool isveg, int stocks, bool available)
       "Content-Type": "application/json"
     },
     body: jsonEncode({
-      "canteen_id": canteenId,
+      "canteen_id": widget.canteenId,
       // "description": "hi",
       "list": true,
       // "pic_link": "hi",
@@ -996,7 +995,7 @@ void apipostcall(String name, int price, bool isveg, int stocks, bool available)
 
  @override
   void fetchData() { //Auto Fetch mixin function
-    getallitems(canteenId);
+    getallitems(widget.canteenId);
   }
 
 void getallitems(int id) async{
@@ -1124,7 +1123,7 @@ void deleteitem(int itemId) async{
           elevation: 10.00,
           backgroundColor: Colors.cyan,
             onPressed: (){
-                getallitems(canteenId);
+                getallitems(widget.canteenId);
             },
             icon: Icon(Icons.refresh,color: Colors.black),
             label: Text(AppLocalizations.of(context)!.refresh, style: TextStyle(color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w600)),

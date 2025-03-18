@@ -19,7 +19,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class OrderHistory extends StatefulWidget {
   final bool portrait;
   final bool isTamil;
-  const OrderHistory(this.portrait, this.isTamil, {super.key});
+  final int canteenId;
+  const OrderHistory(this.portrait, this.isTamil, this.canteenId, {super.key});
 
   @override
   State<OrderHistory> createState() => _OrderHistoryState();

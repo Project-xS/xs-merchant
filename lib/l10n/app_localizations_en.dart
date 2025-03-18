@@ -93,6 +93,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deliver => 'Deliver';
 
   @override
+  String get delivery_time => 'Delivery Timing:- ';
+
+  @override
   String get item_delivery => 'Item Delivery:';
 
   @override
@@ -159,4 +162,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deliver_later => 'Deliver Later';
+
+  @override
+  String get timing => 'Timing: ';
+
+  @override
+  String get instant => 'Instant';
 }

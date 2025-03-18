@@ -263,6 +263,12 @@ abstract class AppLocalizations {
   /// **'Deliver'**
   String get deliver;
 
+  /// No description provided for @delivery_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery Timing:- '**
+  String get delivery_time;
+
   /// No description provided for @item_delivery.
   ///
   /// In en, this message translates to:
@@ -382,6 +388,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deliver Later'**
   String get deliver_later;
+
+  /// No description provided for @timing.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing: '**
+  String get timing;
+
+  /// No description provided for @instant.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant'**
+  String get instant;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

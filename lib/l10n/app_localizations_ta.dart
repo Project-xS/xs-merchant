@@ -93,6 +93,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get deliver => 'விநியோகம்';
 
   @override
+  String get delivery_time => 'விநியோக நேரம்:-';
+
+  @override
   String get item_delivery => 'உணவு விநியோகம்:';
 
   @override
@@ -159,4 +162,10 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get deliver_later => 'பின்னர் வழங்கவும்';
+
+  @override
+  String get timing => 'நேரம்: ';
+
+  @override
+  String get instant => 'உடனடி';
 }

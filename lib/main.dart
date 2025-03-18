@@ -50,7 +50,7 @@ class MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: HomePage(changeLanguage: _changeLanguage, isTamil: isTamil),
+      home: HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: 1),
     );
   }
 }
@@ -58,8 +58,9 @@ class MyAppState extends State<MyApp> {
 class HomePage extends StatefulWidget {
   final Function(bool) changeLanguage;
   final bool isTamil;
+  final int canteenId;
 
-  const HomePage({super.key, required this.changeLanguage, required this.isTamil});
+  const HomePage({super.key, required this.changeLanguage, required this.isTamil, required this.canteenId});
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -87,9 +88,9 @@ class _HomePageState extends State<HomePage> {
   int currentIndex = 1;
   List<Widget> getPages(bool portrait) {
     return [
-      Center(child: Menupage(portrait, widget.isTamil)),
-      Center(child: OrderHistory(portrait, widget.isTamil)),
-      Center(child: Orders(portrait, widget.isTamil)),
+      Center(child: Menupage(portrait, widget.isTamil, widget.canteenId)),
+      Center(child: OrderHistory(portrait, widget.isTamil, widget.canteenId)),
+      Center(child: Orders(portrait, widget.isTamil, widget.canteenId)),
     ];
   }
   @override
