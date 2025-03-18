@@ -573,7 +573,7 @@ Set<int> get navailableid =>
               titleTextStyle: TextStyle(fontSize: 25.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500),
               content: SizedBox(
                 height: 400.00,
-                width: (widget.isTamil)?660.00:550,
+                width: (widget.isTamil && widget.portrait)?670:(widget.portrait)?660:(widget.isTamil)?665:550,
                 child: StatefulBuilder(
                   builder: (context, setState) {
                     return SingleChildScrollView(
@@ -865,6 +865,9 @@ Set<int> get navailableid =>
               actionsPadding: EdgeInsets.only(left: 10, bottom: 10, right: 10), 
               actionsOverflowButtonSpacing: 0,
               actions: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                 TextButton(
                 style: ButtonStyle(
                   backgroundColor: WidgetStatePropertyAll(Colors.red),
@@ -881,7 +884,6 @@ Set<int> get navailableid =>
                   },
                 child: Text(AppLocalizations.of(context)!.cancel)
               ),
-              SizedBox(width: 370),
                 TextButton(
                   style: ButtonStyle(
                     backgroundColor: WidgetStateProperty.all(Colors.black),
@@ -938,6 +940,7 @@ Set<int> get navailableid =>
                     ],
                   ),
                 ),
+                ],)
               ],
             );
           },
