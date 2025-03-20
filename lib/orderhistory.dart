@@ -320,6 +320,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
 
   void orderverfication(){
     int orderId = 0;
+    bool rfid = true;
     // int currentorder = 1;
     List<String> names = [];
     List<int> count = [];
@@ -377,7 +378,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         }
                         try {
                           await Future.delayed(Duration(milliseconds: 200));
-                          final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?user_id=${controller.text}"));
+                          final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?${rfid?"rfid=${controller.text}":"user_id=${controller.text}"}"));
                           if (response.statusCode == 200){
                           Map<String, dynamic> decodedJson = jsonDecode(response.body);
                           setState((){
@@ -387,7 +388,6 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                 names = [];
                                 count = [];
                                 status = [];
-                                // currentorder += 1;
                                 for (var item in order["items"]) {
                                   names.add(item["name"]);
                                   count.add(item["quantity"]);
@@ -419,6 +419,29 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       }
                       ),
                     SizedBox(
+                      width: 200,
+                      height: 50,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("User ID", style: TextStyle(fontSize: 18.00)),
+                            Switch(
+                              value: rfid,
+                              onChanged: (value){
+                                setState(() {
+                                  rfid = value;
+                                  controller.clear();
+                                  orderId = 0;
+                                  FocusScope.of(context).requestFocus(searchBarFocus);
+                                });
+                            },),
+                            Text("RFID", style: TextStyle(fontSize: 18.00))
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(
                       width: (widget.portrait)?550:500,
                       height: 430,
                       child: Padding(
@@ -426,7 +449,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    SizedBox(height: 20.0),
+                    SizedBox(height: 5.0),
                     Expanded(
                       child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) 
                       ? Center(child: Text(AppLocalizations.of(context)!.not_found, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600))) 

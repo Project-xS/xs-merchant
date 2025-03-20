@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/l10n/app_localizations.dart';
-import 'package:merchant/menupage.dart';
 
 class Orders extends StatefulWidget {
   final bool portrait;
@@ -143,7 +142,7 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          SizedBox(width: 120, child: Text("${orders[orderTime]?['name'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
+                          SizedBox(width: 200, child: Text("${orders[orderTime]?['name'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis, maxLines: 2,)),
                           SizedBox(width: 20.00),
                           SizedBox(width: 50, child: Text("x${orders[orderTime]?['count'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
                           ],

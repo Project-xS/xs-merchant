@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:merchant/login.dart';
 import 'l10n/app_localizations.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
@@ -24,10 +25,19 @@ class MyApp extends StatefulWidget {
 
 class MyAppState extends State<MyApp> {
   bool isTamil = false;
+  bool isLoggedin = false;
+  int canteenId = 0;
 
   void _changeLanguage(bool value) {
     setState(() {
       isTamil = value;
+    });
+  }
+
+  void updateLoginState(bool loggedIn, int id) {
+    setState(() {
+      isLoggedin = loggedIn;
+      canteenId = id;
     });
   }
 
@@ -50,7 +60,9 @@ class MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: 1),
+      home: isLoggedin
+          ? HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: canteenId, isLoggedin: isLoggedin)
+          : Login(updateLoginState: updateLoginState),
     );
   }
 }
@@ -58,9 +70,10 @@ class MyAppState extends State<MyApp> {
 class HomePage extends StatefulWidget {
   final Function(bool) changeLanguage;
   final bool isTamil;
+  final bool isLoggedin;
   final int canteenId;
 
-  const HomePage({super.key, required this.changeLanguage, required this.isTamil, required this.canteenId});
+  const HomePage({super.key, required this.isLoggedin, required this.changeLanguage, required this.isTamil, required this.canteenId});
   @override
   State<HomePage> createState() => _HomePageState();
 }
