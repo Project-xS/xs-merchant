@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:merchant/billing.dart';
 import 'package:merchant/login.dart';
 import 'l10n/app_localizations.dart';
 import 'package:merchant/orderhistory.dart';
@@ -79,12 +80,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool portrait = false;
+  bool portrait = isAndroid;
 
-  
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _updatePortrait();
   }
 
@@ -130,6 +131,11 @@ class _HomePageState extends State<HomePage> {
                   widget.changeLanguage(value);
                 },
               ),
+              SizedBox(height: 20),
+              IconButton(icon: Icon(Icons.devices), onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                Billing(name, portrait, widget.isTamil, widget.canteenId)));
+              }),
             ],
           ),
         ),

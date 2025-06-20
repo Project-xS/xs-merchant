@@ -333,397 +333,399 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
       builder: (context, setState) {
         return AlertDialog(
           title: Text(AppLocalizations.of(context)!.item_delivery, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
-          content: SizedBox(
-            width: 550,
-            height: 500,
-            child: Column(
-              children: [
-          SearchBar(
-            backgroundColor: WidgetStateProperty.all(Colors.black),
-            autoFocus: true,
-            focusNode: searchBarFocus,
-            padding: (widget.portrait)?WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 5)):WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
-            controller: controller,
-            keyboardType: TextInputType.number,
-            leading : Icon(Icons.verified),
-            hintText: AppLocalizations.of(context)!.s_tap,
-            trailing: [
-              IconButton(icon: Icon(Icons.clear),
-                onPressed: (){
-                    controller.clear();
-                    },
-                    ),
-                    // IconButton(icon: Icon(Icons.done), 
-                    //   onPressed:() {
-                    //     setState(() {
-                    //     to = int.tryParse(controller.text) ?? 0;    
-                    //     });
-                    // },
-                    // ),
-                    IconButton(icon: Icon(Icons.restart_alt),
-                      onPressed: (){
-                        setState(() {
-                          controller.clear();
-                          orderId = 0;
-                          FocusScope.of(context).requestFocus(searchBarFocus);
-                        });
-                      }),
-                    ],
-                      onChanged: (value) async{
-                        controller.text = value.replaceAll(RegExp(r'[^0-9]'), '');
-                        controller.selection = TextSelection.fromPosition(
-                        TextPosition(offset: controller.text.length));
-                        if(value.isEmpty || controller.text.isEmpty || controller.text == ""){
-                          return;
-                        }
-                        try {
-                          await Future.delayed(Duration(milliseconds: 200));
-                          final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?${rfid?"rfid=${controller.text}":"user_id=${controller.text}"}"));
-                          if (response.statusCode == 200){
-                          Map<String, dynamic> decodedJson = jsonDecode(response.body);
-                          setState((){
-                              for (var order in decodedJson["data"]) {
-                                orderId = order["order_id"];
-                                price = order["total_price"];
-                                names = [];
-                                count = [];
-                                status = [];
-                                for (var item in order["items"]) {
-                                  names.add(item["name"]);
-                                  count.add(item["quantity"]);
-                                  status.add(null);
-                                }
-                                orderhistory[orderId] = {
-                                  'name': names,
-                                  'count': count,
-                                  'price': price,
-                                  'status': status,
-                                  'submitted': null
-                                };
-                                _saveOrderHistory();
-                          }});}
-                          else{
-                            if(mounted){
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Order : ${response.statusCode}")));
-                            }
-                            setState(() {
-                              orderId = 0;
-                              // currentorder = 0;
-                            });
-                          }
-                          }on Exception catch (e){
-                            if(mounted){
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
-                            }
-                          }
-                      }
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 550,
+              height: 550,
+              child: Column(
+                children: [
+            SearchBar(
+              backgroundColor: WidgetStateProperty.all(Colors.black),
+              autoFocus: true,
+              focusNode: searchBarFocus,
+              padding: (widget.portrait)?WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 5)):WidgetStateProperty.all(EdgeInsets.symmetric(horizontal: 10.0)),
+              controller: controller,
+              keyboardType: TextInputType.number,
+              leading : Icon(Icons.verified),
+              hintText: AppLocalizations.of(context)!.s_tap,
+              trailing: [
+                IconButton(icon: Icon(Icons.clear),
+                  onPressed: (){
+                      controller.clear();
+                      },
                       ),
-                    SizedBox(
-                      width: 200,
-                      height: 50,
-                      child: Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text("User ID", style: TextStyle(fontSize: 18.00)),
-                            Switch(
-                              value: rfid,
-                              onChanged: (value){
-                                setState(() {
-                                  rfid = value;
-                                  controller.clear();
-                                  orderId = 0;
-                                  FocusScope.of(context).requestFocus(searchBarFocus);
-                                });
-                            },),
-                            Text("RFID", style: TextStyle(fontSize: 18.00))
-                          ],
+                      // IconButton(icon: Icon(Icons.done),
+                      //   onPressed:() {
+                      //     setState(() {
+                      //     to = int.tryParse(controller.text) ?? 0;
+                      //     });
+                      // },
+                      // ),
+                      IconButton(icon: Icon(Icons.restart_alt),
+                        onPressed: (){
+                          setState(() {
+                            controller.clear();
+                            orderId = 0;
+                            FocusScope.of(context).requestFocus(searchBarFocus);
+                          });
+                        }),
+                      ],
+                        onChanged: (value) async{
+                          controller.text = value.replaceAll(RegExp(r'[^0-9]'), '');
+                          controller.selection = TextSelection.fromPosition(
+                          TextPosition(offset: controller.text.length));
+                          if(value.isEmpty || controller.text.isEmpty || controller.text == ""){
+                            return;
+                          }
+                          try {
+                            await Future.delayed(Duration(milliseconds: 200));
+                            final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders/by_user?${rfid?"rfid=${controller.text}":"user_id=${controller.text}"}"));
+                            if (response.statusCode == 200){
+                            Map<String, dynamic> decodedJson = jsonDecode(response.body);
+                            setState((){
+                                for (var order in decodedJson["data"]) {
+                                  orderId = order["order_id"];
+                                  price = order["total_price"];
+                                  names = [];
+                                  count = [];
+                                  status = [];
+                                  for (var item in order["items"]) {
+                                    names.add(item["name"]);
+                                    count.add(item["quantity"]);
+                                    status.add(null);
+                                  }
+                                  orderhistory[orderId] = {
+                                    'name': names,
+                                    'count': count,
+                                    'price': price,
+                                    'status': status,
+                                    'submitted': null
+                                  };
+                                  _saveOrderHistory();
+                            }});}
+                            else{
+                              if(mounted){
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Order : ${response.statusCode}")));
+                              }
+                              setState(() {
+                                orderId = 0;
+                                // currentorder = 0;
+                              });
+                            }
+                            }on Exception catch (e){
+                              if(mounted){
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+                              }
+                            }
+                        }
+                        ),
+                      SizedBox(
+                        width: 200,
+                        height: 50,
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("User ID", style: TextStyle(fontSize: 18.00)),
+                              Switch(
+                                value: rfid,
+                                onChanged: (value){
+                                  setState(() {
+                                    rfid = value;
+                                    controller.clear();
+                                    orderId = 0;
+                                    FocusScope.of(context).requestFocus(searchBarFocus);
+                                  });
+                              },),
+                              Text("RFID", style: TextStyle(fontSize: 18.00))
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      width: (widget.portrait)?550:500,
-                      height: 430,
-                      child: Padding(
-                      padding: (widget.portrait)?EdgeInsets.symmetric(horizontal: 5):EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    SizedBox(height: 5.0),
-                    Expanded(
-                      child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId)) 
-                      ? Center(child: Text(AppLocalizations.of(context)!.not_found, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600))) 
-                      : ListView.builder(
-                        padding: (widget.portrait)?EdgeInsets.all(2.00):EdgeInsets.all(10.0),
-                        itemCount: 1,
-                        itemBuilder: (BuildContext context, int index) {
-                          List<bool?> currentStatus = List<bool?>.from(orderhistory[orderId]?['status']);
-                          bool? isSubmitted = (orderhistory[orderId]?['submitted'] == null) ? null : false;
-                          return Card(
-                            margin: EdgeInsets.symmetric(vertical: 10),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: (widget.portrait)?10:30, vertical: 10.0),
-                              child: StatefulBuilder(
-                                builder: (context, setState) {
-                                  return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(height: 10),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text("${AppLocalizations.of(context)!.order_id} ", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
-                                          Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600, color: Colors.cyan)),
-                                        ],
-                                      ),
-                                      SizedBox(height: 15.00),
-                                      SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
-                                      Column(
-                                        children: List.generate(orderhistory[orderId]?['name'].length, (i) {
-                                          return Column(
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  IconButton(
-                                                    onPressed: isSubmitted == true
-                                                        ? null
-                                                        : () {
-                                                            setState(() {
-                                                              if (currentStatus[i] == null || currentStatus[i] == false) {
-                                                                currentStatus[i] = true;
-                                                              } else if (currentStatus[i] == true) {
-                                                                currentStatus[i] = false;
-                                                              }
-                                                              else{
-                                                                currentStatus[i] = null;
-                                                              }
-                                                            });
-                                                          },
-                                                    icon: currentStatus[i] == null
-                                                        ? Icon(Icons.question_mark, color: Colors.yellow)
-                                                        : currentStatus[i] == true
-                                                            ? Icon(Icons.verified, color: Colors.green)
-                                                            : Icon(Icons.cancel, color: Colors.red),
-                                                  ),
-                                                  Expanded(
-                                                    child: Row(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00))),
-                                                        SizedBox(width: 8),
-                                                        Expanded(child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00))),
-                                                        Checkbox(
-                                                          tristate: true,
-                                                          value: currentStatus[i],
-                                                          onChanged: isSubmitted == true
-                                                              ? null
-                                                              : (value) {
-                                                                  setState(() {
-                                                                    currentStatus[i] = value;
-                                                                  });
-                                                                },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
-                                            ],
-                                          );
-                                        }),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text("${AppLocalizations.of(context)!.price}: ", style: TextStyle(fontSize: 18.00)),
-                                              Text("${orderhistory[orderId]?['price']}", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600, color: Colors.cyan))
-                                            ],
-                                          ),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text("${AppLocalizations.of(context)!.all}:", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
-                                                  Checkbox(
-                                                    tristate: true,
-                                                    value: currentStatus.every((e) => e == null) ? null : currentStatus.every((e) => e == true) ? true :false,
-                                                    onChanged: isSubmitted == true
-                                                        ? null
-                                                        : (value) {
-                                                            setState(() {
-                                                              bool isAllTrue = currentStatus.every((e) => e == true);
-                                                              bool isAllFalse = currentStatus.every((e) => e == false);
-                                                              if (isAllTrue == false && isAllFalse == false){
-                                                                currentStatus = List.filled(currentStatus.length, false);
-                                                              } else if (isAllTrue) {
-                                                                currentStatus = List.filled(currentStatus.length, null);
-                                                              } else if (isAllFalse) {
-                                                                currentStatus = List.filled(currentStatus.length, true);
-                                                              } else {
-                                                                currentStatus = List.filled(currentStatus.length, false);
-                                                              }
-                                                            });
-                                                          },
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 15.00),
-                                              TextButton(
-                                                style: ButtonStyle(
-                                                  backgroundColor: WidgetStateProperty.all(Colors.black),
-                                                  foregroundColor: WidgetStateProperty.all(Colors.white),
-                                                  padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                                                  fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                                                  overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
-                                                ),
-                                                onPressed: isSubmitted == true
-                                                    ? null
-                                                    : () {
-                                                        setState(() {
-                                                            showDialog(context: context, builder:(context) {
-                                                              return AlertDialog(
-                                                                title: Text(AppLocalizations.of(context)!.confirm_order_changes, style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
-                                                                content: SingleChildScrollView(
-                                                                  child: Column(
-                                                                    mainAxisSize: MainAxisSize.min,
-                                                                    children: [
-                                                                      Center(child: Text(AppLocalizations.of(context)!.note, style: TextStyle(color: Colors.red, fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w800, backgroundColor: Colors.white), maxLines: 2,)),
-                                                                      SizedBox(height: 10.00),
-                                                                      SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
-                                                                      for (int i = 0; i < orderhistory[orderId]?['name'].length; i++)
-                                                                        Column(
-                                                                          children: [
-                                                                            Row(
-                                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                                              children: [
-                                                                                Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
-                                                                                SizedBox(width: 8),
-                                                                                Expanded(child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
-                                                                                Text((currentStatus[i] == true) ? AppLocalizations.of(context)!.accept : (currentStatus[i] == null) ? AppLocalizations.of(context)!.deliver_later : AppLocalizations.of(context)!.reject, style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.bold, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red)),
-                                                                              ],
-                                                                            ),
-                                                                            SizedBox(width: 1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
-                                                                          ],
-                                                                        ),
-                                                                      SizedBox(height: 10.00)
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                                actions: [
-                                                                  Row(
-                                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                    children: [
-                                                                      TextButton(
-                                                                        style: ButtonStyle(
-                                                                          backgroundColor: WidgetStatePropertyAll(Colors.red),
-                                                                          foregroundColor: WidgetStatePropertyAll(Colors.black),
-                                                                          padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                                                                          fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                                                                          overlayColor: WidgetStatePropertyAll(Colors.redAccent),
-                                                                        ),
-                                                                        onPressed: () {
-                                                                          Navigator.pop(context, false);
-                                                                        },
-                                                                        child: Row(
-                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                          children: [Icon(Icons.close, color: Colors.black), 
-                                                                          Text(AppLocalizations.of(context)!.cancel, style: TextStyle(fontWeight: FontWeight.w600))])
-                                                                      ),
-                                                                      TextButton(
-                                                                        style: ButtonStyle(
-                                                                          backgroundColor: WidgetStateProperty.all(Colors.black),
-                                                                          foregroundColor: WidgetStateProperty.all(Colors.white),
-                                                                          padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                                                                          fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                                                                          overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
-                                                                        ),
-                                                                        onPressed: (){
-                                                                          setState((){
-                                                                            bool isAllTrue = currentStatus.every((e) => e == true);
-                                                                            bool isAllFalse = currentStatus.every((e) => e == false);
-                                                                            if (isAllTrue == false && isAllFalse == false){
-                                                                              orderhistory[orderId]?['submitted'] = null;
-                                                                              orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
-                                                                              isSubmitted = orderhistory[orderId]?['submitted'];
-                                                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                                              SnackBar(
-                                                                                content: (currentStatus.any((e) => e == null))?Text("Made order(s) to be delivered later", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),):Text("Accepted/Rejected Order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),),
-                                                                                backgroundColor: (currentStatus.any((e) => e == null))?Colors.yellowAccent:Colors.orangeAccent,
-                                                                                )
-                                                                              );
-                                                                            }
-                                                                            else if (isAllFalse){
-                                                                            orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
-                                                                            orderhistory[orderId]?['submitted'] = true;
-                                                                            isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
-                                                                            markdelivered(false, orderId);
-                                                                        }else if(isAllTrue == true){
-                                                                          orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
-                                                                            orderhistory[orderId]?['submitted'] = true;
-                                                                            isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
-                                                                            // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                                                            //     content: Text("Accepted the whole order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
-                                                                            //     backgroundColor: Colors.green,
-                                                                            //     ));
-                                                                            markdelivered(true, orderId);                              
-                                                                        }});
-                                                                          Navigator.pop(context);                     
-                                                                          //can remove buildSearchlist when we need to show everything
-                                                                          buildSearchList([]);
-                                                                        },
-                                                                        child: Row(
-                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                          children: [Icon(Icons.check, color: Colors.greenAccent), 
-                                                                          Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600))]),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ],
-                                                              );
-                                                            });
-                                                          // else{
-                                                          //   ScaffoldMessenger.of(context).showSnackBar(
-                                                          //     SnackBar(
-                                                          //       content: Text("Make the order #$orderId either Accept or Reject", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
-                                                          //       backgroundColor: Colors.redAccent,
-                                                          //       )
-                                                          //     );
-                                                          // }
-                                                        });
-                                                      },
-                                                child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      SizedBox(
+                        width: (widget.portrait)?550:500,
+                        height: 430,
+                        child: Padding(
+                        padding: (widget.portrait)?EdgeInsets.symmetric(horizontal: 5):EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      SizedBox(height: 5.0),
+                      Expanded(
+                        child: (orderId == 0 || !orderhistory.keys.any((e) => e == orderId))
+                        ? Center(child: Text(AppLocalizations.of(context)!.not_found, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)))
+                        : ListView.builder(
+                          padding: (widget.portrait)?EdgeInsets.all(2.00):EdgeInsets.all(10.0),
+                          itemCount: 1,
+                          itemBuilder: (BuildContext context, int index) {
+                            List<bool?> currentStatus = List<bool?>.from(orderhistory[orderId]?['status']);
+                            bool? isSubmitted = (orderhistory[orderId]?['submitted'] == null) ? null : false;
+                            return Card(
+                              margin: EdgeInsets.symmetric(vertical: 10),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: (widget.portrait)?10:30, vertical: 10.0),
+                                child: StatefulBuilder(
+                                  builder: (context, setState) {
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(height: 10),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text("${AppLocalizations.of(context)!.order_id} ", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
+                                            Text("#$orderId", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600, color: Colors.cyan)),
+                                          ],
+                                        ),
+                                        SizedBox(height: 15.00),
+                                        SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
+                                        Column(
+                                          children: List.generate(orderhistory[orderId]?['name'].length, (i) {
+                                            return Column(
+                                              children: [
+                                                Row(
                                                   children: [
-                                                    Icon(Icons.check, color: Colors.greenAccent),
-                                                    SizedBox(width: 5.00),
-                                                    Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600)),
+                                                    IconButton(
+                                                      onPressed: isSubmitted == true
+                                                          ? null
+                                                          : () {
+                                                              setState(() {
+                                                                if (currentStatus[i] == null || currentStatus[i] == false) {
+                                                                  currentStatus[i] = true;
+                                                                } else if (currentStatus[i] == true) {
+                                                                  currentStatus[i] = false;
+                                                                }
+                                                                else{
+                                                                  currentStatus[i] = null;
+                                                                }
+                                                              });
+                                                            },
+                                                      icon: currentStatus[i] == null
+                                                          ? Icon(Icons.question_mark, color: Colors.yellow)
+                                                          : currentStatus[i] == true
+                                                              ? Icon(Icons.verified, color: Colors.green)
+                                                              : Icon(Icons.cancel, color: Colors.red),
+                                                    ),
+                                                    Expanded(
+                                                      child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00))),
+                                                          SizedBox(width: 8),
+                                                          Expanded(child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00))),
+                                                          Checkbox(
+                                                            tristate: true,
+                                                            value: currentStatus[i],
+                                                            onChanged: isSubmitted == true
+                                                                ? null
+                                                                : (value) {
+                                                                    setState(() {
+                                                                      currentStatus[i] = value;
+                                                                    });
+                                                                  },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  );
-                                },
+                                                SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
+                                              ],
+                                            );
+                                          }),
+                                        ),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text("${AppLocalizations.of(context)!.price}: ", style: TextStyle(fontSize: 18.00)),
+                                                Text("${orderhistory[orderId]?['price']}", style: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600, color: Colors.cyan))
+                                              ],
+                                            ),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Text("${AppLocalizations.of(context)!.all}:", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
+                                                    Checkbox(
+                                                      tristate: true,
+                                                      value: currentStatus.every((e) => e == null) ? null : currentStatus.every((e) => e == true) ? true :false,
+                                                      onChanged: isSubmitted == true
+                                                          ? null
+                                                          : (value) {
+                                                              setState(() {
+                                                                bool isAllTrue = currentStatus.every((e) => e == true);
+                                                                bool isAllFalse = currentStatus.every((e) => e == false);
+                                                                if (isAllTrue == false && isAllFalse == false){
+                                                                  currentStatus = List.filled(currentStatus.length, false);
+                                                                } else if (isAllTrue) {
+                                                                  currentStatus = List.filled(currentStatus.length, null);
+                                                                } else if (isAllFalse) {
+                                                                  currentStatus = List.filled(currentStatus.length, true);
+                                                                } else {
+                                                                  currentStatus = List.filled(currentStatus.length, false);
+                                                                }
+                                                              });
+                                                            },
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 15.00),
+                                                TextButton(
+                                                  style: ButtonStyle(
+                                                    backgroundColor: WidgetStateProperty.all(Colors.black),
+                                                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                                                    padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
+                                                    fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
+                                                    overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+                                                  ),
+                                                  onPressed: isSubmitted == true
+                                                      ? null
+                                                      : () {
+                                                          setState(() {
+                                                              showDialog(context: context, builder:(context) {
+                                                                return AlertDialog(
+                                                                  title: Text(AppLocalizations.of(context)!.confirm_order_changes, style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w600)),
+                                                                  content: SingleChildScrollView(
+                                                                    child: Column(
+                                                                      mainAxisSize: MainAxisSize.min,
+                                                                      children: [
+                                                                        Center(child: Text(AppLocalizations.of(context)!.note, style: TextStyle(color: Colors.red, fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w800, backgroundColor: Colors.white), maxLines: 2,)),
+                                                                        SizedBox(height: 10.00),
+                                                                        SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
+                                                                        for (int i = 0; i < orderhistory[orderId]?['name'].length; i++)
+                                                                          Column(
+                                                                            children: [
+                                                                              Row(
+                                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                                children: [
+                                                                                  Expanded(child: Text("${orderhistory[orderId]?['name'][i]}", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
+                                                                                  SizedBox(width: 8),
+                                                                                  Expanded(child: Text("x ${orderhistory[orderId]?['count'][i]}", style: TextStyle(fontSize: 18.00, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red))),
+                                                                                  Text((currentStatus[i] == true) ? AppLocalizations.of(context)!.accept : (currentStatus[i] == null) ? AppLocalizations.of(context)!.deliver_later : AppLocalizations.of(context)!.reject, style: TextStyle(fontSize: 18.00, fontWeight: FontWeight.bold, color: (currentStatus[i] == true) ? Colors.green : (currentStatus[i] == null) ? Colors.yellow : Colors.red)),
+                                                                                ],
+                                                                              ),
+                                                                              SizedBox(width: 1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
+                                                                            ],
+                                                                          ),
+                                                                        SizedBox(height: 10.00)
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                  actions: [
+                                                                    Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                      children: [
+                                                                        TextButton(
+                                                                          style: ButtonStyle(
+                                                                            backgroundColor: WidgetStatePropertyAll(Colors.red),
+                                                                            foregroundColor: WidgetStatePropertyAll(Colors.black),
+                                                                            padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
+                                                                            fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
+                                                                            overlayColor: WidgetStatePropertyAll(Colors.redAccent),
+                                                                          ),
+                                                                          onPressed: () {
+                                                                            Navigator.pop(context, false);
+                                                                          },
+                                                                          child: Row(
+                                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                            children: [Icon(Icons.close, color: Colors.black),
+                                                                            Text(AppLocalizations.of(context)!.cancel, style: TextStyle(fontWeight: FontWeight.w600))])
+                                                                        ),
+                                                                        TextButton(
+                                                                          style: ButtonStyle(
+                                                                            backgroundColor: WidgetStateProperty.all(Colors.black),
+                                                                            foregroundColor: WidgetStateProperty.all(Colors.white),
+                                                                            padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
+                                                                            fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
+                                                                            overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+                                                                          ),
+                                                                          onPressed: (){
+                                                                            setState((){
+                                                                              bool isAllTrue = currentStatus.every((e) => e == true);
+                                                                              bool isAllFalse = currentStatus.every((e) => e == false);
+                                                                              if (isAllTrue == false && isAllFalse == false){
+                                                                                orderhistory[orderId]?['submitted'] = null;
+                                                                                orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
+                                                                                isSubmitted = orderhistory[orderId]?['submitted'];
+                                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                                SnackBar(
+                                                                                  content: (currentStatus.any((e) => e == null))?Text("Made order(s) to be delivered later", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),):Text("Accepted/Rejected Order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),),
+                                                                                  backgroundColor: (currentStatus.any((e) => e == null))?Colors.yellowAccent:Colors.orangeAccent,
+                                                                                  )
+                                                                                );
+                                                                              }
+                                                                              else if (isAllFalse){
+                                                                              orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
+                                                                              orderhistory[orderId]?['submitted'] = true;
+                                                                              isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
+                                                                              markdelivered(false, orderId);
+                                                                          }else if(isAllTrue == true){
+                                                                            orderhistory[orderId]?['status'] = List<bool?>.from(currentStatus);
+                                                                              orderhistory[orderId]?['submitted'] = true;
+                                                                              isSubmitted = orderhistory[orderId]?['submitted'] ?? false;
+                                                                              // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                                              //     content: Text("Accepted the whole order", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
+                                                                              //     backgroundColor: Colors.green,
+                                                                              //     ));
+                                                                              markdelivered(true, orderId);
+                                                                          }});
+                                                                            Navigator.pop(context);
+                                                                            //can remove buildSearchlist when we need to show everything
+                                                                            buildSearchList([]);
+                                                                          },
+                                                                          child: Row(
+                                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                            children: [Icon(Icons.check, color: Colors.greenAccent),
+                                                                            Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600))]),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
+                                                                );
+                                                              });
+                                                            // else{
+                                                            //   ScaffoldMessenger.of(context).showSnackBar(
+                                                            //     SnackBar(
+                                                            //       content: Text("Make the order #$orderId either Accept or Reject", style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight: FontWeight.w700),),
+                                                            //       backgroundColor: Colors.redAccent,
+                                                            //       )
+                                                            //     );
+                                                            // }
+                                                          });
+                                                        },
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    children: [
+                                                      Icon(Icons.check, color: Colors.greenAccent),
+                                                      SizedBox(width: 5.00),
+                                                      Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600)),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
+            
+              ],),
             ),
-                    
-            ],),
           )
         );
       }
@@ -732,4 +734,3 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
    );
       }
 }
-

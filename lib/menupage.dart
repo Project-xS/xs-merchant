@@ -13,10 +13,10 @@ class Menupage extends StatefulWidget {
   const Menupage(this.portrait, this.isTamil, this.canteenId, {super.key});
 
   @override
-  State<Menupage> createState() => _MenupageState();
+  State<Menupage> createState() => MenupageState();
 }
 
-class _MenupageState extends State<Menupage> with AutoFetchMixin{
+class MenupageState extends State<Menupage> with AutoFetchMixin{
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
   Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
   int sort = 1;
@@ -1302,6 +1302,7 @@ void deleteitem(int itemId) async{
 Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
     children: [
       LayoutBuilder(
         builder: (context, constraints) {
@@ -1318,13 +1319,13 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
               crossAxisCount = 5;
           }
           return GridView.builder(
+            shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
               childAspectRatio: 1,
             ),
-            shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: menuSet.length,
             itemBuilder: (BuildContext context, int index) {
