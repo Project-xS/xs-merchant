@@ -1,6 +1,10 @@
+import 'dart:collection';
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/billing.dart';
+import 'package:merchant/login.dart' as login;
 import 'package:merchant/login.dart';
 import 'l10n/app_localizations.dart';
 import 'package:merchant/orderhistory.dart';
@@ -17,17 +21,69 @@ void main(){
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatefulWidget{
   const MyApp({super.key});
 
   @override
   MyAppState createState() => MyAppState();
 }
 
-class MyAppState extends State<MyApp> {
+final storage = FlutterSecureStorage(aOptions: (login.isAndroid)
+      ? AndroidOptions(encryptedSharedPreferences: true)
+      : AndroidOptions.defaultOptions);
+
+
+class GlobalMenuCache {
+  static Map<int, Map<String, dynamic>> items = {};
+  static LinkedHashSet<int> availableid = LinkedHashSet();
+  static LinkedHashSet<int> navailableid = LinkedHashSet();
+}
+
+class MyAppState extends State<MyApp>  with AutoFetchMixin<MyApp>{
   bool isTamil = false;
-  bool isLoggedin = false;
-  int canteenId = 0;
+  bool isLoggedin = login.isLoggedin;
+  int canteenId = login.canteenId;
+  String name = "";
+
+  @override
+  void initState() {
+    GlobalMenuCache.items.clear();
+    GlobalMenuCache.availableid.clear();
+    GlobalMenuCache.navailableid.clear();
+    initApp();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    GlobalMenuCache.items.clear();
+    GlobalMenuCache.availableid.clear();
+    GlobalMenuCache.navailableid.clear();
+    timer?.cancel();
+    super.dispose();
+  }
+
+
+  @override
+  int get canteenIdToFetch => canteenId;
+
+  Future<void> initApp() async {
+    await firstTimeloggedin();
+  }
+
+  Future<void> firstTimeloggedin() async{
+      int id = int.parse(await storage.read(key: "CanteenId") ?? "0");
+      String uname = await storage.read(key: "Username") ?? "";
+      String c;
+      [_, _, c] = await LoginState().details();
+      if(id != 0){
+        setState(() {
+          isLoggedin = true;
+          canteenId = int.parse(c);
+          name = uname;
+          });
+      }
+  }
 
   void _changeLanguage(bool value) {
     setState(() {
@@ -61,10 +117,19 @@ class MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: isLoggedin
-          ? HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: canteenId, isLoggedin: isLoggedin)
-          : Login(updateLoginState: updateLoginState),
+      home: (isLoggedin == true)? HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: canteenId, isLoggedin: isLoggedin)
+          : login.Login(updateLoginState: updateLoginState),
     );
+  }
+  
+  
+  @override
+  void onDataUpdated(Map<int, Map<String, dynamic>> items, LinkedHashSet<int> available, LinkedHashSet<int> notAvailable) {
+  }
+  
+  @override
+  void onFetchError(error) {
+    debugPrint("in main: MenupageState Fetch Error: $error");
   }
 }
 
@@ -80,7 +145,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool portrait = isAndroid;
+  bool portrait = login.isAndroid;
 
 
   @override
@@ -132,10 +197,15 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               SizedBox(height: 20),
-              IconButton(icon: Icon(Icons.devices), onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                Billing(name, portrait, widget.isTamil, widget.canteenId)));
-              }),
+              (login.isAndroid)?Text(""):ListTile(
+                leading: Icon(Icons.receipt_long),
+                horizontalTitleGap: 30,
+                title: Text(AppLocalizations.of(context)!.billing, style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                  Billing(name, portrait, widget.isTamil, widget.canteenId)));
+                },
+              ),
             ],
           ),
         ),

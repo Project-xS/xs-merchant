@@ -168,4 +168,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get instant => 'Instant';
+
+  @override
+  String get billing => 'Generate Bill';
 }

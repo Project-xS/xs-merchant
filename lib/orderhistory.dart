@@ -222,7 +222,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         child: Padding(
                           padding: EdgeInsets.all(25.0),
                           //Just column thing is enough if we need all items orderhistory to be shown
-                          child: (orderId == 0 || deliverlater.isEmpty) ? Text("No order to be delivered later", style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)) : 
+                          child: (deliverlater.isEmpty) ? Text("No order to be delivered later", style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)) : 
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

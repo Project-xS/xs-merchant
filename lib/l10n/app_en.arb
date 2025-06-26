@@ -78,5 +78,6 @@
     "reject" : "Reject",
     "deliver_later" : "Deliver Later",
     "timing" : "Timing: ",
-    "instant" : "Instant"
+    "instant" : "Instant",
+    "billing": "Generate Bill"
 }

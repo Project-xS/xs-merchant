@@ -13,7 +13,7 @@ class Orders extends StatefulWidget {
   State<Orders> createState() => _OrdersState();
 }
 
-class _OrdersState extends State<Orders> with AutoFetchMixin{
+class _OrdersState extends State<Orders> with OrderFetchMixin<Orders>{
   // Map<int, Map<String, dynamic>> orders = {
   //   1: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken', 'Rasam'], 'time':'07:00', 'count': [10,500,20,70]},
   //   2: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken', 'Sambar'], 'time':'11:15', 'count': [30,500,20,90]},
@@ -23,10 +23,20 @@ class _OrdersState extends State<Orders> with AutoFetchMixin{
   Map<String, Map<String, dynamic>> orders = {};
 
   @override
-  void fetchData(){
-    getorders();
+  int get canteenIdForOrders => widget.canteenId;
+
+  @override
+  void onOrdersUpdated(Map<String, Map<String, dynamic>> orders) {
+    if (!mounted) return;
+    setState(() {
+      orders = orders;
+    });
   }
 
+  @override
+  void onOrderFetchError(dynamic error) {
+    debugPrint("OrdersState Fetch Error: $error");
+  }
 
   void getorders() async{
     if(!mounted) return;

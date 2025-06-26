@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/menu_grid.dart';
+import 'package:merchant/posprint.dart';
 
 class Billing extends StatefulWidget {
   final String name;
@@ -36,9 +37,14 @@ class _BillingState extends State<Billing> {
         bill = updatedBill;
       });
     }
+    int subtotal = 0;
+    bill.forEach((key, value) {
+      subtotal += (value['price'] ?? 0) as int;
+    });
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: "close",
         backgroundColor: Colors.cyan,
         label: Text("Close", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18)),
         icon: Icon(Icons.close, color: Colors.black),
@@ -90,7 +96,7 @@ class _BillingState extends State<Billing> {
                                 }
                                 await Future.delayed(Duration(milliseconds: 300));
                                 try {
-                                  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/$value"));
+                                  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/${widget.canteenId}/$value"));
                                   Map<String, dynamic> decodedJson = jsonDecode(response.body);
                                   List<dynamic> idList = decodedJson["data"];
                                   setState(() {
@@ -256,7 +262,23 @@ class _BillingState extends State<Billing> {
                         },
                       ),
                     ),
-                    Row(children: [],)
+                    Divider(),
+                    SizedBox(width: 10, height: 20),
+                    Center(child: Text("Total: ₹$subtotal", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+                    SizedBox(width: 10, height: 20),
+                    Divider(),
+                    Center(
+                      child: TextButton(style: ButtonStyle(
+                        padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                        backgroundColor: WidgetStateProperty.all(Colors.cyan)),
+                        onPressed: (){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PrintBill(bill: bill)
+                              ));},
+                        child: Text("Print", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold))),
+                    )
                   ],
                 ),
               )

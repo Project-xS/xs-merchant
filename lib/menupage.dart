@@ -1,9 +1,12 @@
+import 'dart:collection' show LinkedHashSet;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/login.dart';
+import 'package:merchant/main.dart';
 import 'package:merchant/tristatetoggle.dart';
 
 class Menupage extends StatefulWidget {
@@ -16,85 +19,70 @@ class Menupage extends StatefulWidget {
   State<Menupage> createState() => MenupageState();
 }
 
+
 class MenupageState extends State<Menupage> with AutoFetchMixin{
+  int sortmenu = 1;
   Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
   Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
-  int sort = 1;
-  // Map<int, Map<String, dynamic>> item1 = {
-  //   1: {'name': 'Chicken Rice', 'price': 120, 'is_veg': false, 'available': true, 'stocks': -1},
-  //   2: {'name': 'Veg Fried Rice', 'price': 100, 'is_veg': true, 'available': true, 'stocks': -1},
-  //   3: {'name': 'Chilli Chicken', 'price': 150, 'is_veg': false, 'available': true, 'stocks': 100},
-  //   4: {'name': 'Rice', 'price': 50, 'is_veg': true, 'available': true, 'stocks': 0},
-  //   5: {'name': 'Rasam', 'price': 40, 'is_veg': true, 'available': true, 'stocks': 500},
-  //   6: {'name': 'Sambar', 'price': 60, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   7: {'name': 'V Parotta', 'price': 30, 'is_veg': true, 'available': true, 'stocks': 100},
-  //   8: {'name': 'N Parotta', 'price': 35, 'is_veg': false, 'available': false, 'stocks': 500},
-  //   9: {'name': 'Noodles', 'price': 80, 'is_veg': false, 'available': false, 'stocks': 500},
-  //   10: {'name': 'special', 'price': 9999, 'is_veg': true, 'available': true, 'stocks': 100},
-  //   11: {'name': 'Chcken Rice', 'price': 120, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   12: {'name': 'Veg Frie Rice', 'price': 100, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   13: {'name': 'Chlli Chicken', 'price': 150, 'is_veg': false, 'available': true, 'stocks': 500},
-  //   14: {'name': 'ice', 'price': 50, 'is_veg': true, 'available': false, 'stocks': 500},
-  //   15: {'name': 'asam', 'price': 40, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   16: {'name': 'Sabar', 'price': 60, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   17: {'name': 'V arotta', 'price': 30, 'is_veg': false, 'available': false, 'stocks': 500},
-  //   18: {'name': 'N arotta', 'price': 35, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   19: {'name': 'Nodles', 'price': 80, 'is_veg': true, 'available': true, 'stocks': 100},
-  //   20: {'name': 'oodles', 'price': 90, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   21: {'name': 'Chicen Rice', 'price': 120, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   22: {'name': 'Veg Fied Rice', 'price': 100, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   23: {'name': 'Chili Chicken', 'price': 150, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   24: {'name': 'Rie', 'price': 50, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   25: {'name': 'Raam', 'price': 40, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   26: {'name': 'Sambr', 'price': 60, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   27: {'name': 'V Paotta', 'price': 30, 'is_veg': true, 'available': false, 'stocks': 100},
-  //   28: {'name': 'N Paotta', 'price': 35, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   29: {'name': 'Noodes', 'price': 80, 'is_veg': false, 'available': false, 'stocks': 100},
-  //   30: {'name': 'odles', 'price': 90, 'is_veg': false, 'available': false, 'stocks': 100},
-  // };
+  // Map<int, Map<String, dynamic>> itemData = {};
+  // LinkedHashSet<int> availableIdData = LinkedHashSet();
+  // LinkedHashSet<int> notAvailableIdData = LinkedHashSet();
 
-  Map<int, Map<String, dynamic>> item = {};
-  Map<int, Map<String, dynamic>> get items {
-  var sortedEntries = item.entries.toList();
+  @override
+  int get canteenIdToFetch => widget.canteenId;
 
-  if (sort == 1) {
-    sortedEntries.sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ', '').compareTo(b.value["name"].toLowerCase().replaceAll(' ', '')));
-  } else if (sort == 2) {
-    sortedEntries.sort((a, b) => b.value["price"].compareTo(a.value["price"]));
-  } else if (sort == 3) {
-    sortedEntries.sort((a, b) {
-      int getPriority(Map<String, dynamic> item) {
-        if (item["stocks"] == 0 && item["available"] == true) return 0;
-        if (item["stocks"] == 0 && item["available"] == false) return 1;
-        if (item["stocks"] == -1) return 3;
-        return 2;
-      }
-      int priorityA = getPriority(a.value);
-      int priorityB = getPriority(b.value);
-
-      if (priorityA != priorityB) {
-        return priorityA.compareTo(priorityB);
-      }
-      if (priorityA == 2) {
-        return a.value["stocks"].compareTo(b.value["stocks"]);
-      }
-      return 0;
-    });
+  @override
+  void onDataUpdated(Map<int, Map<String, dynamic>> itemsgot, LinkedHashSet<int> available, LinkedHashSet<int> notAvailable) {
+    // setState(() {
+    //   itemData = itemsgot;
+    //   availableIdData = available;
+    //   notAvailableIdData = notAvailable;
+    // });
   }
 
-  return {for (var entry in sortedEntries) entry.key: entry.value};
-}
+  @override
+  void onFetchError(error) {
+    debugPrint("MenupageState Fetch Error: $error");
+  }
 
-Set<int> get availableid =>
-    items.entries.where((entry) => entry.value['available'] == true && (entry.value['stocks'] == -1 || entry.value['stocks'] >= 1)).map((entry) => entry.key).toSet();
+  // Set<int> get GlobalMenuCache.availableid => availableIdData;
+  // Set<int> get GlobalMenuCache.navailableid => notAvailableIdData;
+  // Map<int, Map<String, dynamic>> get GlobalMenuCache.items => itemData;
 
-Set<int> get navailableid =>
-    items.entries.where((entry) => entry.value['available'] == false || (entry.value['stocks'] != -1 && entry.value['stocks'] == 0)).map((entry) => entry.key).toSet();
+  // Map<int, Map<String, dynamic>> _applySorting(Map<int, Map<String, dynamic>> dataToSort) {
+  //   debugPrint("Sorting");
+  //   var sortedEntries = dataToSort.entries.toList();
+  //   if (sort == 1) {
+  //     sortedEntries.sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ', '').compareTo(b.value["name"].toLowerCase().replaceAll(' ', '')));
+  //   } else if (sort == 2) {
+  //     sortedEntries.sort((a, b) => b.value["price"].compareTo(a.value["price"]));
+  //   } else if (sort == 3) {
+  //     sortedEntries.sort((a, b) {
+  //       int getPriority(Map<String, dynamic> item) {
+  //         if (item["stocks"] == 0 && item["available"] == true) return 0;
+  //         if (item["stocks"] == 0 && item["available"] == false) return 1;
+  //         if (item["stocks"] == -1) return 3;
+  //         return 2;
+  //       }
+  //       int priorityA = getPriority(a.value);
+  //       int priorityB = getPriority(b.value);
+
+  //       if (priorityA != priorityB) {
+  //         return priorityA.compareTo(priorityB);
+  //       }
+  //       if (priorityA == 2) {
+  //         return a.value["stocks"].compareTo(b.value["stocks"]);
+  //       }
+  //       return 0;
+  //     });
+  //   }
+  //   return {for (var entry in sortedEntries) entry.key: entry.value};
+  // }
 
   void modifyItem(int itemId, String oldName, int oldRate, bool isveg, bool available) {
     bool isError = false;
     String name = "";
-    int stocks = items[itemId]?['stocks']??0;
+    int stocks = GlobalMenuCache.items[itemId]?['stocks']??0;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -133,7 +121,7 @@ Set<int> get navailableid =>
                             ),
                             onChanged: (value) {
                               setState(() {
-                                if (items.values.where((item) => item != items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
+                                if (GlobalMenuCache.items.values.where((item) => item != GlobalMenuCache.items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
                                   isError = true;
                                 } else {
                                   isError = false;
@@ -172,7 +160,7 @@ Set<int> get navailableid =>
                         SizedBox(height: 5.00),
                         TextFormField(
                           maxLength: 5,
-                          initialValue: "${items[itemId]?['stocks']}",
+                          initialValue: "${GlobalMenuCache.items[itemId]?['stocks']}",
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
                           onChanged: (value) {
@@ -222,7 +210,8 @@ Set<int> get navailableid =>
                               );},
                             ),
                           ],
-                        )
+                        ),
+                        
                       ],
                     ),
                   ),
@@ -240,14 +229,14 @@ Set<int> get navailableid =>
                   onPressed: isError ? null : () {
                     if(!isError){
                         setState(() {
-                          item[itemId] = {
+                          GlobalMenuCache.items[itemId] = {
                             'name': name.isNotEmpty?name:oldName,
                             'price': oldRate,
                             'is_veg': isveg,
                             'available': available,
                             'stocks': stocks
                           };
-                          updateitem(itemId, item[itemId]);
+                          updateitem(itemId, GlobalMenuCache.items[itemId]);
                         });
                         Navigator.pop(context);
                         }
@@ -309,7 +298,7 @@ Set<int> get navailableid =>
                         onChanged: (value) {
                           setState(() {
                             name = value;
-                            isError = items.values.any(
+                            isError = GlobalMenuCache.items.values.any(
                               (item) => item['name'].trim().toLowerCase().replaceAll(' ', '') ==
                                   value.trim().toLowerCase().replaceAll(' ', ''),
                             );
@@ -434,23 +423,23 @@ Set<int> get navailableid =>
                   }
                   setState(() {
                     int olditemid = 0;
-                    int foundItemId = items.keys.firstWhere(
-                      (key) => items[key]?['name'].trim().toLowerCase().replaceAll(' ', '') ==
+                    int foundItemId = GlobalMenuCache.items.keys.firstWhere(
+                      (key) => GlobalMenuCache.items[key]?['name'].trim().toLowerCase().replaceAll(' ', '') ==
                           name.trim().toLowerCase().replaceAll(' ', ''),
                           orElse: () => olditemid,
                     );
                     if(foundItemId!=olditemid){
-                      item[foundItemId] = {
+                      GlobalMenuCache.items[foundItemId] = {
                         'name': name,
                         'price': int.parse(priceText),
                         'is_veg': isveg,
                         'available': available,
                         'stocks': stocks,
                       };
-                      updateitem(foundItemId, item[foundItemId]);
-                      if (navailableid.contains(foundItemId)){
-                        navailableid.remove(foundItemId);
-                        availableid.add(foundItemId);
+                      updateitem(foundItemId, GlobalMenuCache.items[foundItemId]);
+                      if (GlobalMenuCache.navailableid.contains(foundItemId)){
+                        GlobalMenuCache.navailableid.remove(foundItemId);
+                        GlobalMenuCache.availableid.add(foundItemId);
                       }
                       }
                       else{
@@ -524,17 +513,17 @@ Set<int> get navailableid =>
                 onPressed: () {
                     setState(() {
                       if (isAdd == true){
-                        if (item[itemId]?['available']) {
-                          availableid.remove(itemId);
-                          navailableid.add(itemId);
-                          item[itemId]?['available'] = false;
-                          updateitem(itemId, item[itemId]);
+                        if (GlobalMenuCache.items[itemId]?['available']) {
+                          GlobalMenuCache.availableid.remove(itemId);
+                          GlobalMenuCache.navailableid.add(itemId);
+                          GlobalMenuCache.items[itemId]?['available'] = false;
+                          updateitem(itemId, GlobalMenuCache.items[itemId]);
                         }
                         else {
-                            item[itemId]?['available'] = true;
-                            availableid.add(itemId);
-                            navailableid.remove(itemId);
-                            updateitem(itemId, item[itemId]);
+                            GlobalMenuCache.items[itemId]?['available'] = true;
+                            GlobalMenuCache.availableid.add(itemId);
+                            GlobalMenuCache.navailableid.remove(itemId);
+                            updateitem(itemId, GlobalMenuCache.items[itemId]);
                       }}
                       else{
                         deleteitem(itemId);
@@ -595,7 +584,7 @@ Set<int> get navailableid =>
                               }
                               await Future.delayed(Duration(milliseconds: 200));
                               try {
-                                final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/$value"));
+                                final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/$canteenId/$value"));
                                 Map<String, dynamic> decodedJson = jsonDecode(response.body);
                                 // debugPrint("$decodedJson");
                                 List<dynamic> idList = decodedJson["data"];
@@ -633,9 +622,9 @@ Set<int> get navailableid =>
                           ListView.builder(
                             physics: BouncingScrollPhysics(),
                             shrinkWrap: true,
-                            itemCount: searchitems.isNotEmpty ? searchitems.length : items.length,
+                            itemCount: searchitems.isNotEmpty ? searchitems.length : GlobalMenuCache.items.length,
                             itemBuilder: (BuildContext context, int index) {
-                            int itemId = searchitems.isNotEmpty ? searchitems.elementAt(index) : items.keys.elementAt(index);
+                            int itemId = searchitems.isNotEmpty ? searchitems.elementAt(index) : GlobalMenuCache.items.keys.elementAt(index);
                               return ListTile(
                                 subtitle: Form(
                                   child: Column(
@@ -649,9 +638,9 @@ Set<int> get navailableid =>
                                             return SizedBox( 
                                               width: (widget.isTamil)?140.00:150.00,
                                               child: TextFormField(
-                                                key: ValueKey(items[itemId]?['name']),
+                                                key: ValueKey(GlobalMenuCache.items[itemId]?['name']),
                                                 maxLength: 40,
-                                                initialValue: items[itemId]?['name'],
+                                                initialValue: GlobalMenuCache.items[itemId]?['name'],
                                                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
                                                 onChanged: (value) {
                                                   setState(() {
@@ -666,7 +655,7 @@ Set<int> get navailableid =>
                                                         ),
                                                       );
                                                     } else {
-                                                      if (items.values.where((item) => item != items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
+                                                      if (GlobalMenuCache.items.values.where((item) => item != GlobalMenuCache.items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
                                                         errorMap[itemId] = true;
                                                         err.add(value.trim().toLowerCase().replaceAll(" ", ""));
                                                         ScaffoldMessenger.of(context).showSnackBar(
@@ -681,10 +670,10 @@ Set<int> get navailableid =>
                                                         if (!errorMap.containsKey(itemId)){
                                                         changes[itemId] = {
                                                           'name': value,
-                                                          'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                                          'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
-                                                          'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
-                                                          'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
+                                                          'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (GlobalMenuCache.items[itemId]?['price']),
+                                                          'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (GlobalMenuCache.items[itemId]?['is_veg']),
+                                                          'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (GlobalMenuCache.items[itemId]?['available']),
+                                                          'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (GlobalMenuCache.items[itemId]?['stocks'])
                                                         };
                                                       }}
                                                     }
@@ -709,9 +698,9 @@ Set<int> get navailableid =>
                                             SizedBox(
                                               width: (widget.isTamil)?75.00:60.00,
                                               child: TextFormField(
-                                                key: ValueKey(items[itemId]?['price']),
+                                                key: ValueKey(GlobalMenuCache.items[itemId]?['price']),
                                                 maxLength: 4,
-                                                initialValue: items[itemId]?['price'].toString(),
+                                                initialValue: GlobalMenuCache.items[itemId]?['price'].toString(),
                                                 keyboardType: TextInputType.number,
                                                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                                 onChanged: (value) {
@@ -726,10 +715,10 @@ Set<int> get navailableid =>
                                                   } else {
                                                     changes[itemId] = {
                                                       'price': int.parse(value),
-                                                      'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                                      'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
-                                                      'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
-                                                      'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (items[itemId]?['stocks'])
+                                                      'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (GlobalMenuCache.items[itemId]?['name']),
+                                                      'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (GlobalMenuCache.items[itemId]?['is_veg']),
+                                                      'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (GlobalMenuCache.items[itemId]?['available']),
+                                                      'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (GlobalMenuCache.items[itemId]?['stocks'])
                                                     };
                                                   }
                                                 },
@@ -749,9 +738,9 @@ Set<int> get navailableid =>
                                             SizedBox(
                                               width: (widget.isTamil)?75.00:60.00,
                                               child: TextFormField(
-                                                key: ValueKey(items[itemId]?['stocks']),
+                                                key: ValueKey(GlobalMenuCache.items[itemId]?['stocks']),
                                                 maxLength: 5,
-                                                initialValue: items[itemId]?['stocks'].toString(),
+                                                initialValue: GlobalMenuCache.items[itemId]?['stocks'].toString(),
                                                 keyboardType: TextInputType.number,
                                                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
                                                 onChanged: (value) {
@@ -768,10 +757,10 @@ Set<int> get navailableid =>
                                                     if (parsedValue != null) {
                                                       if (parsedValue < -1) parsedValue = -1;
                                                       changes[itemId] = {
-                                                        'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (items[itemId]?['price']),
-                                                        'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (items[itemId]?['name']),
-                                                        'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (items[itemId]?['is_veg']),
-                                                        'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (items[itemId]?['available']),
+                                                        'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (GlobalMenuCache.items[itemId]?['price']),
+                                                        'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (GlobalMenuCache.items[itemId]?['name']),
+                                                        'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (GlobalMenuCache.items[itemId]?['is_veg']),
+                                                        'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (GlobalMenuCache.items[itemId]?['available']),
                                                         'stocks': parsedValue,
                                                       };
                                                     }
@@ -798,10 +787,10 @@ Set<int> get navailableid =>
                                                     mainAxisSize: MainAxisSize.min,
                                                     children: [
                                                       Checkbox(
-                                                        value: item[itemId]?['is_veg'],
+                                                        value: GlobalMenuCache.items[itemId]?['is_veg'],
                                                         onChanged: (value) {
                                                           setState(() {
-                                                            item[itemId]?['is_veg'] = !(item[itemId]?['is_veg'] ?? false);
+                                                            GlobalMenuCache.items[itemId]?['is_veg'] = !(GlobalMenuCache.items[itemId]?['is_veg'] ?? false);
                                                           });
                                                         },
                                                       ),
@@ -818,26 +807,26 @@ Set<int> get navailableid =>
                                                   return Row(
                                                     children: [
                                                       Checkbox(
-                                                        value: item[itemId]?['available'],
+                                                        value: GlobalMenuCache.items[itemId]?['available'],
                                                         onChanged: (value) {
                                                           setState(() {
-                                                            if (!item[itemId]?['available']) {
-                                                              item[itemId]?['available'] = true;
-                                                              if(navailableid.contains(itemId)){
-                                                                navailableid.remove(itemId);
+                                                            if (!GlobalMenuCache.items[itemId]?['available']) {
+                                                              GlobalMenuCache.items[itemId]?['available'] = true;
+                                                              if(GlobalMenuCache.navailableid.contains(itemId)){
+                                                                GlobalMenuCache.navailableid.remove(itemId);
                                                               }
-                                                              availableid.add(itemId);
+                                                              GlobalMenuCache.availableid.add(itemId);
                                                             } else {
-                                                              item[itemId]?['available'] = false;
-                                                              availableid.remove(itemId);
-                                                              navailableid.add(itemId);
+                                                              GlobalMenuCache.items[itemId]?['available'] = false;
+                                                              GlobalMenuCache.availableid.remove(itemId);
+                                                              GlobalMenuCache.navailableid.add(itemId);
                                                             }
                                                           });
                                                         },
                                                       ),
                                                       Expanded(
                                                         child: Text(
-                                                          item[itemId]?['available'] ? AppLocalizations.of(context)!.on_menu : AppLocalizations.of(context)!.off_menu,
+                                                          GlobalMenuCache.items[itemId]?['available'] ? AppLocalizations.of(context)!.on_menu : AppLocalizations.of(context)!.off_menu,
                                                           style: TextStyle(fontSize: 15),
                                                           textAlign: TextAlign.start,
                                                           overflow: TextOverflow.ellipsis,
@@ -905,15 +894,15 @@ Set<int> get navailableid =>
                         if(errorMap.isEmpty){
                           setState(() {
                             for (int i in changes.keys) {
-                              if (changes[i]?['name'] != items[i]?['name'] || changes[i]?['price'] != items[i]?['price'] || changes[i]?['stocks'] != items[i]?['stocks']) {
-                                item[i] = {
+                              if (changes[i]?['name'] != GlobalMenuCache.items[i]?['name'] || changes[i]?['price'] != GlobalMenuCache.items[i]?['price'] || changes[i]?['stocks'] != GlobalMenuCache.items[i]?['stocks']) {
+                                GlobalMenuCache.items[i] = {
                                   'name': changes[i]?['name'],
                                   'price': changes[i]?['price'],
-                                  'is_veg': item[i]?['is_veg'],
-                                  'available': item[i]?['available'],
+                                  'is_veg': GlobalMenuCache.items[i]?['is_veg'],
+                                  'available': GlobalMenuCache.items[i]?['available'],
                                   'stocks': changes[i]?['stocks']
                                 };
-                                updateitem(i, item[i]);
+                                updateitem(i, GlobalMenuCache.items[i]);
                               }
                             }
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -970,7 +959,7 @@ void apipostcall(String name, int price, bool isveg, int stocks, bool available)
   if (response.statusCode == 200) { 
     final Map<String, dynamic> decodedJson = jsonDecode(response.body);
     setState(() {
-      item[decodedJson["item_id"]] = {
+      GlobalMenuCache.items[decodedJson["item_id"]] = {
       "name": name,
       "price": price,
       "is_veg": isveg,
@@ -993,47 +982,42 @@ void apipostcall(String name, int price, bool isveg, int stocks, bool available)
 }
 }
 
- @override
-  void fetchData() { //Auto Fetch mixin function
-    getallitems(widget.canteenId);
-  }
-
-void getallitems(int id) async{
-  if (!mounted) return;
-  try{
-  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/canteen/$id/items"));
-      if (response.statusCode == 200){
-        Map<String, dynamic> decodedJson = jsonDecode(response.body);
-        List<dynamic> dataList = decodedJson["data"];
-        if (mounted){
-        setState(() {
-          item.clear();
-          for (var item1 in dataList) {
-            item[item1["item_id"]] = {
-              "name": item1["name"],
-              "price": item1["price"],
-              "is_veg": item1["is_veg"],
-              "available": item1["is_available"],
-              "stocks": item1["stock"]
-            };
-          }
-          // debugPrint("${item.keys}");
-          if(mounted){
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Fetched Successfully"), backgroundColor: Colors.cyanAccent));
-          }
-    });
-  }
-}
-else{
-  if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Items : ${response.statusCode}"), backgroundColor: Colors.redAccent));
-  }}
-  } on Exception catch (e){
-    if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
-  }
-  }
-  }
+// void getallitems(int id) async{
+//   if (!mounted) return;
+//   try{
+//   final response = await http.get(Uri.parse("https://proj-xs.fly.dev/canteen/$id/GlobalMenuCache.items"));
+//       if (response.statusCode == 200){
+//         Map<String, dynamic> decodedJson = jsonDecode(response.body);
+//         List<dynamic> dataList = decodedJson["data"];
+//         if (mounted){
+//         setState(() {
+//           item.clear();
+//           for (var item1 in dataList) {
+//             item[item1["item_id"]] = {
+//               "name": item1["name"],
+//               "price": item1["price"],
+//               "is_veg": item1["is_veg"],
+//               "available": item1["is_available"],
+//               "stocks": item1["stock"]
+//             };
+//           }
+//           // debugPrint("${item.keys}");
+//           if(mounted){
+//           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Fetched Successfully"), backgroundColor: Colors.cyanAccent));
+//           }
+//     });
+//   }
+// }
+// else{
+//   if(mounted){
+//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Getting Items : ${response.statusCode}"), backgroundColor: Colors.redAccent));
+//   }}
+//   } on Exception catch (e){
+//     if(mounted){
+//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
+//   }
+//   }
+//   }
 
 void updateitem(int itemId, Map<String, dynamic>? item) async{
   try{
@@ -1074,13 +1058,13 @@ void deleteitem(int itemId) async{
   headers: {'accept' : 'application/json'});
   if(response.statusCode == 200){
     setState(() {
-       if (item[itemId]?['available']){
-          availableid.remove(itemId);
+       if (GlobalMenuCache.items[itemId]?['available']){
+          GlobalMenuCache.availableid.remove(itemId);
         }
         else{
-          navailableid.remove(itemId);
+          GlobalMenuCache.navailableid.remove(itemId);
         }
-        item.remove(itemId);
+        GlobalMenuCache.items.remove(itemId);
     });
     if (mounted){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Deleted Successfully"), backgroundColor: Colors.cyanAccent));
@@ -1112,6 +1096,7 @@ void deleteitem(int itemId) async{
 
   @override
   Widget build(BuildContext context) {
+    setState(() => {});
     return Scaffold(
       floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
       floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
@@ -1123,7 +1108,10 @@ void deleteitem(int itemId) async{
           elevation: 10.00,
           backgroundColor: Colors.cyan,
             onPressed: (){
-                getallitems(widget.canteenId);
+              GlobalMenuCache.items.clear();
+              GlobalMenuCache.availableid.clear();
+              GlobalMenuCache.navailableid.clear();
+              fetchAndCacheAndNotify(widget.canteenId);
             },
             icon: Icon(Icons.refresh,color: Colors.black),
             label: Text(AppLocalizations.of(context)!.refresh, style: TextStyle(color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w600)),
@@ -1196,12 +1184,13 @@ void deleteitem(int itemId) async{
                         onChanged: (switchState) {
                           setState(() {
                             if (switchState == SwitchState.inactive) {  
-                              sort = 1;
+                              sortmenu = 1;
                             } else if (switchState == SwitchState.dual) {  
-                              sort = 2;
+                              sortmenu = 2;
                             } else {  
-                              sort = 3;
+                              sortmenu = 3;
                             }
+                            applySorting(GlobalMenuCache.items, sortmenu, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
                           });
                         },
                       ),
@@ -1213,7 +1202,7 @@ void deleteitem(int itemId) async{
            SizedBox(height: 10),
             ],
           ),
-          if (availableid.isEmpty)
+          if (GlobalMenuCache.availableid.isEmpty)
             Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -1224,7 +1213,7 @@ void deleteitem(int itemId) async{
               ),
             )
           else 
-            buildGridSection(availableid, Colors.green, Colors.white),
+            buildGridSection(GlobalMenuCache.availableid, Colors.green, Colors.white),
           SizedBox(height: 25.00),
           Align(
                 alignment: Alignment.center,
@@ -1271,6 +1260,7 @@ void deleteitem(int itemId) async{
                             } else {  
                               sort = 3;
                             }
+                            applySorting(GlobalMenuCache.items, sortmenu, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
                           });
                         },
                       ),
@@ -1280,7 +1270,7 @@ void deleteitem(int itemId) async{
               ],
             ),
             SizedBox(height: 10.00),
-          if (navailableid.isEmpty) 
+          if (GlobalMenuCache.navailableid.isEmpty) 
             Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -1291,7 +1281,7 @@ void deleteitem(int itemId) async{
               ),
             )
           else 
-            buildGridSection(navailableid, Colors.grey, Colors.black),
+            buildGridSection(GlobalMenuCache.navailableid, Colors.grey, Colors.black),
             SizedBox(height: 70)
           ],
         ),
@@ -1334,7 +1324,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                 child: Stack(
                   children: [
                     InkWell(
-                        onTap: () => delAddItem(itemId, items[itemId]?['name'], true, items[itemId]?['available']),
+                        onTap: () => delAddItem(itemId, GlobalMenuCache.items[itemId]?['name'], true, GlobalMenuCache.items[itemId]?['available']),
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           height: 285,
@@ -1354,12 +1344,12 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        items[itemId]?['name'] ?? "Unknown Item",
+                                        GlobalMenuCache.items[itemId]?['name'] ?? "Unknown Item",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold,
-                                          color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red,
+                                          color: (GlobalMenuCache.items[itemId]?['stocks'] == -1 || GlobalMenuCache.items[itemId]?['stocks'] >= 300)?textColor:(GlobalMenuCache.items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         maxLines: 1,
@@ -1369,14 +1359,14 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                                   ],
                                 ),
                                 Text(
-                                  "₹${items[itemId]?['price'] ?? 'N/A'}",
+                                  "₹${GlobalMenuCache.items[itemId]?['price'] ?? 'N/A'}",
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold, color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
+                                  style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold, color: (GlobalMenuCache.items[itemId]?['stocks'] == -1 || GlobalMenuCache.items[itemId]?['stocks'] >= 300)?textColor:(GlobalMenuCache.items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
                                 ),
                               Text(
-                                  "${AppLocalizations.of(context)!.stock}: ${items[itemId]?['stocks'] == -1 ? 'Unlimited' : '${items[itemId]?['stocks']}'}",
+                                  "${AppLocalizations.of(context)!.stock}: ${GlobalMenuCache.items[itemId]?['stocks'] == -1 ? 'Unlimited' : '${GlobalMenuCache.items[itemId]?['stocks']}'}",
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold, color: (items[itemId]?['stocks'] == -1 || items[itemId]?['stocks'] >= 300)?textColor:(items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
+                                  style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold, color: (GlobalMenuCache.items[itemId]?['stocks'] == -1 || GlobalMenuCache.items[itemId]?['stocks'] >= 300)?textColor:(GlobalMenuCache.items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
                                 ),
                             ],
                           ),
@@ -1389,7 +1379,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                         hoverColor: Colors.blue,
                         icon: Icon(Icons.edit, color: Colors.black),
                         onPressed: () {
-                          modifyItem(itemId, items[itemId]?['name'], items[itemId]?['price'], items[itemId]?['is_veg'], items[itemId]?['available']);
+                          modifyItem(itemId, GlobalMenuCache.items[itemId]?['name'], GlobalMenuCache.items[itemId]?['price'], GlobalMenuCache.items[itemId]?['is_veg'], GlobalMenuCache.items[itemId]?['available']);
                         },
                       ),
                     ),
@@ -1400,14 +1390,14 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                         hoverColor: Colors.red,
                         icon: Icon(Icons.delete, color: Colors.black),
                         onPressed: () {
-                          delAddItem(itemId, items[itemId]?['name'], false, false);
+                          delAddItem(itemId, GlobalMenuCache.items[itemId]?['name'], false, false);
                         },
                       ),
                     ),
                     Positioned(
                       right: 45,
                       bottom: 80,
-                      child: Image.asset((items[itemId]?['is_veg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
+                      child: Image.asset((GlobalMenuCache.items[itemId]?['is_veg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
                     )
                   ],
                 ),

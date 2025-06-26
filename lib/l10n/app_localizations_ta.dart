@@ -168,4 +168,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get instant => 'உடனடி';
+
+  @override
+  String get billing => 'பில் உருவாக்கம்';
 }

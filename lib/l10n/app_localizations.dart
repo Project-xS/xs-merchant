@@ -400,6 +400,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Instant'**
   String get instant;
+
+  /// No description provided for @billing.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Bill'**
+  String get billing;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
