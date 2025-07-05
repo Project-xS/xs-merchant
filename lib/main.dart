@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -6,6 +7,7 @@ import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/billing.dart';
 import 'package:merchant/login.dart' as login;
 import 'package:merchant/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/app_localizations.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
@@ -13,11 +15,37 @@ import 'package:window_size/window_size.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/menupage.dart';
 
-void main(){
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+late SharedPreferences cache;
+
+ void imageexpired(Map<String,String> updatedimage) async{
+    cache.setString('time', DateTime.now().toString());
+    cache.setString('piclink', jsonEncode(updatedimage));
+}
+
+  void changeimage(int id, String url) async{
+    final list = jsonDecode(cache.getString("piclink")!) as Map<String, dynamic>;
+    list.map((itemId, url)=> MapEntry(itemId.toString(), url));
+    list[id.toString()] = url;
+    cache.setString("piclink", jsonEncode(list));
+    GlobalMenuCache.items[id]?['pic'] = url;
+  }
+
+  String name = "";
+
+  final storage = FlutterSecureStorage(aOptions: (isAndroid)
+      ? AndroidOptions(encryptedSharedPreferences: true)
+      : AndroidOptions.defaultOptions);
+
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowMinSize(const Size(1025,1025));
   }
+  cache = await SharedPreferences.getInstance();
+  //Delete the cache of Username and Password along with Canteenid
+    // storage.deleteAll(aOptions: (isAndroid)
+    // ? AndroidOptions(encryptedSharedPreferences: true)
+    // : AndroidOptions.defaultOptions);
   runApp(MyApp());
 }
 
@@ -28,11 +56,6 @@ class MyApp extends StatefulWidget{
   MyAppState createState() => MyAppState();
 }
 
-final storage = FlutterSecureStorage(aOptions: (login.isAndroid)
-      ? AndroidOptions(encryptedSharedPreferences: true)
-      : AndroidOptions.defaultOptions);
-
-
 class GlobalMenuCache {
   static Map<int, Map<String, dynamic>> items = {};
   static LinkedHashSet<int> availableid = LinkedHashSet();
@@ -42,11 +65,10 @@ class GlobalMenuCache {
 class MyAppState extends State<MyApp>  with AutoFetchMixin<MyApp>{
   bool isTamil = false;
   bool isLoggedin = login.isLoggedin;
-  int canteenId = login.canteenId;
-  String name = "";
 
   @override
   void initState() {
+    WidgetsFlutterBinding.ensureInitialized();
     GlobalMenuCache.items.clear();
     GlobalMenuCache.availableid.clear();
     GlobalMenuCache.navailableid.clear();
@@ -91,10 +113,11 @@ class MyAppState extends State<MyApp>  with AutoFetchMixin<MyApp>{
     });
   }
 
-  void updateLoginState(bool loggedIn, int id) {
+  void updateLoginState(bool loggedIn, int id, String canteenname) {
     setState(() {
       isLoggedin = loggedIn;
       canteenId = id;
+      name = canteenname;
     });
   }
 
@@ -120,17 +143,7 @@ class MyAppState extends State<MyApp>  with AutoFetchMixin<MyApp>{
       home: (isLoggedin == true)? HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: canteenId, isLoggedin: isLoggedin)
           : login.Login(updateLoginState: updateLoginState),
     );
-  }
-  
-  
-  @override
-  void onDataUpdated(Map<int, Map<String, dynamic>> items, LinkedHashSet<int> available, LinkedHashSet<int> notAvailable) {
-  }
-  
-  @override
-  void onFetchError(error) {
-    debugPrint("in main: MenupageState Fetch Error: $error");
-  }
+  } 
 }
 
 class HomePage extends StatefulWidget {
@@ -163,7 +176,6 @@ class _HomePageState extends State<HomePage> {
   }
   }
 
-  String name="Maaran Parotta Kadai";
   int currentIndex = 1;
   List<Widget> getPages(bool portrait) {
     return [

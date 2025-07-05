@@ -149,10 +149,12 @@ class AppLocalizationsTa extends AppLocalizations {
   String get language => 'மொழியை மாற்ற :-';
 
   @override
-  String get confirm_order_changes => 'நீங்கள் ஆர்டரில் மாற்றங்களை செய்ய உறுதியாக இருக்கிறீர்களா?';
+  String get confirm_order_changes =>
+      'நீங்கள் ஆர்டரில் மாற்றங்களை செய்ய உறுதியாக இருக்கிறீர்களா?';
 
   @override
-  String get note => 'குறிப்பு: கொடுக்க விரும்புகிறீர்களா அல்லது பிறகு வழங்க நிலுவையிலிருத்தலாம். இது ஒரே முறையே செய்யலாம்.';
+  String get note =>
+      'குறிப்பு: கொடுக்க விரும்புகிறீர்களா அல்லது பிறகு வழங்க நிலுவையிலிருத்தலாம். இது ஒரே முறையே செய்யலாம்.';
 
   @override
   String get accept => 'ஏற்றுக்கொள்';

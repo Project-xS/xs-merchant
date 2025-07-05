@@ -149,10 +149,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Change Language:-';
 
   @override
-  String get confirm_order_changes => 'Are you sure to make changes to the order?';
+  String get confirm_order_changes =>
+      'Are you sure to make changes to the order?';
 
   @override
-  String get note => 'Note: This can be done only once or make it hold to deliver later.';
+  String get note =>
+      'Note: This can be done only once or make it hold to deliver later.';
 
   @override
   String get accept => 'Accept';

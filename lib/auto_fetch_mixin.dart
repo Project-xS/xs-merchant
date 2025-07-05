@@ -13,8 +13,6 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   LinkedHashSet<int> fetchedNaid = LinkedHashSet();
   int sort = 1;
   int get canteenIdToFetch;
-  void onDataUpdated(Map<int, Map<String, dynamic>> items, LinkedHashSet<int> available, LinkedHashSet<int> notAvailable);
-  void onFetchError(dynamic error);
 
 
   @override
@@ -37,10 +35,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   void startAutoFetch() {
     timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
       debugPrint("Timer over, fetching");
-      GlobalMenuCache.items.clear();
-      GlobalMenuCache.availableid.clear();
-      GlobalMenuCache.navailableid.clear();
-      fetchAndCacheAndNotify((canteenIdToFetch==0)?canteenId:canteenIdToFetch);
+      fetchAndCacheAndNotify(canteenId);
     });
   }
   // uncomment below for caching
@@ -68,15 +63,17 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             "price": item1["price"],
             "is_veg": item1["is_veg"],
             "available": item1["is_available"],
-            "stocks": item1["stock"]
+            "stocks": item1["stock"],
+            "pic": item1["pic_url"]
           };
         }
-        GlobalMenuCache.items = fetchedItems;
-        GlobalMenuCache.availableid = fetchedAid;
-        GlobalMenuCache.navailableid = fetchedNaid;
-        applySorting(GlobalMenuCache.items, sort, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
-        onDataUpdated(GlobalMenuCache.items, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
-        // onDataUpdated(fetchedItems, fetchedNaid);
+        setState((){
+          GlobalMenuCache.items = fetchedItems;
+          GlobalMenuCache.availableid = fetchedAid;
+          GlobalMenuCache.navailableid = fetchedNaid;
+          applySorting(GlobalMenuCache.items, sort, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
+          // onDataUpdated(GlobalMenuCache.items, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
+        });
 
         // combinedJson = jsonEncode({
         //   "items": fetchedItems.map((key, value) => MapEntry(key.toString(), value)),
@@ -107,7 +104,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             ),
           );
         }
-        onFetchError("Failed to load data: ${response.statusCode}");
+        debugPrint("Failed to load data: ${response.statusCode}");
         return;
       }
     } catch (e) {
@@ -119,7 +116,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
           ),
         );
       }
-      onFetchError(e);
+      debugPrint("$e");
     }
   }
 
@@ -165,13 +162,12 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
     setState(() {
       fetchedAid = LinkedHashSet<int>.from(avail);
       fetchedNaid = LinkedHashSet<int>.from(navail);
-      onDataUpdated(fetchedItems, fetchedAid, fetchedNaid);
+      GlobalMenuCache.items = fetchedItems;
+      GlobalMenuCache.availableid = fetchedAid;
+      GlobalMenuCache.navailableid = fetchedNaid;
       sort = s;
     });
   }
-  GlobalMenuCache.items = fetchedItems;
-  GlobalMenuCache.availableid = fetchedAid;
-  GlobalMenuCache.navailableid = fetchedNaid;
 }
 }
 
@@ -260,206 +256,4 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
     }
   }
 }
-//   Map<int, Map<String, dynamic>> itemfetch = {};
-//   Set<int> aid = {}, naid = {};
-// mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
-//   Timer? timer;
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     startAutoFetch();
-//   }
-
-//   @override
-//   void dispose() {
-//     timer?.cancel();
-//     super.dispose();
-//   }
-
-//   void startAutoFetch() {
-//     timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
-//       getallitems(canteenId??main.MyAppState().canteenId);
-//     });
-//   }
-
-// Future<void> getallitems(int id) async {
-//   debugPrint(id.toString());
-//   if (!mounted) return;
-//   final url = "https://proj-xs.fly.dev/canteen/$id/items";
-//   final cacheManager = JsonCacheManager.instance;
-//   dynamic combinedJson;
-
-//   try {
-//     final response = await http.get(Uri.parse(url));
-//     if (response.statusCode == 200) {
-//       Map<String, dynamic> decodedJson = jsonDecode(response.body);
-//       List<dynamic> dataList = decodedJson["data"];
-//       setState(() {
-//         itemfetch.clear();
-//         aid.clear();
-//         naid.clear();
-//         for (var item1 in dataList) {
-//           if (item1["is_available"] == true && (item1["stock"] == -1 || item1["stock"] >= 1)) {
-//             aid.add(item1["item_id"]);
-//           } else {
-//             naid.add(item1["item_id"]);
-//           }
-//           itemfetch[item1["item_id"]] = {
-//             "name": item1["name"],
-//             "price": item1["price"],
-//             "is_veg": item1["is_veg"],
-//             "available": item1["is_available"],
-//             "stocks": item1["stock"]
-//           };
-//         }
-//       combinedJson = jsonEncode({
-//         "items": itemfetch.map((key, value) => MapEntry(key.toString(), value)),
-//         "availableid": aid.toList(),
-//         "navailableid": naid.toList(),
-//       });
-//       debugPrint("$combinedJson");
-//         if (mounted && Scaffold.maybeOf(context) != null) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             SnackBar(
-//               content: Text("Item Fetched Successfully"),
-//               backgroundColor: Colors.cyanAccent,
-//             ),
-//           );
-//         }
-//       });
-//       await cacheManager.putFile(
-//         id.toString(),
-//         Uint8List.fromList(utf8.encode(combinedJson)),
-//         fileExtension: "json",
-//       );
-//       } else {
-//         if (mounted && Scaffold.maybeOf(context) != null) {
-//           ScaffoldMessenger.of(context).showSnackBar(
-//             SnackBar(
-//               content: Text("Error Getting Items : ${response.statusCode}"),
-//               backgroundColor: Colors.redAccent,
-//             ),
-//           );
-//         }
-//         return;
-//       }
-
-//   } catch (e) {
-//     if (mounted && Scaffold.maybeOf(context) != null) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text("Not Connected, $e"),
-//           backgroundColor: Colors.redAccent,
-//         ),
-//       );
-//     }
-//   }
-// }
-
-// Future<void> loadItemsFromCache(int id) async {
-//   final cacheManager = JsonCacheManager.instance;
-
-//   try {
-//     FileInfo? cachedFile = await cacheManager.getFileFromCache(id.toString());
-//     if (cachedFile == null) return;
-
-//     String jsonStr = await cachedFile.file.readAsString();
-//     Map<String, dynamic> decodedJson = jsonDecode(jsonStr);
-//     Map<int, Map<String, dynamic>> datalist = decodedJson["items"];
-
-//     if (mounted) {
-//       setState(() {
-//         itemfetch.clear();
-//         itemfetch = datalist;
-//         naid = Set<int>.from(decodedJson["navailableid"]);
-//         aid = Set<int>.from(decodedJson["availableid"]);
-//       });
-//     }
-//   } catch (e) {
-//     debugPrint("Error loading items from cache: $e");
-//   }
-// }
-// }
-
-// class JsonCacheManager {
-//   static final CacheManager instance = CacheManager(
-//     Config(
-//       'itemCache',
-//       stalePeriod: const Duration(minutes: 10),
-//       maxNrOfCacheObjects: 1000,
-//     ),
-//   );
-
-// }
-  // Map<int, Map<String, dynamic>> applySorting(Map<int, Map<String, dynamic>> dataToSort, int s) {
-  //     setState((){
-  //       sort = s;
-  //     });
-  //   var sortedEntries = dataToSort.entries.toList();
-  //   if (sort == 1) {
-  //     sortedEntries.sort((a, b) => a.value["name"].toLowerCase().replaceAll(' ', '').compareTo(b.value["name"].toLowerCase().replaceAll(' ', '')));
-  //   } else if (sort == 2) {
-  //     sortedEntries.sort((a, b) => b.value["price"].compareTo(a.value["price"]));
-  //   } else if (sort == 3) {
-  //     sortedEntries.sort((a, b) {
-  //       int getPriority(Map<String, dynamic> item) {
-  //         if (item["stocks"] == 0 && item["available"] == true) return 0;
-  //         if (item["stocks"] == 0 && item["available"] == false) return 1;
-  //         if (item["stocks"] == -1) return 3;
-  //         return 2;
-  //       }
-  //       int priorityA = getPriority(a.value);
-  //       int priorityB = getPriority(b.value);
-
-  //       if (priorityA != priorityB) {
-  //         return priorityA.compareTo(priorityB);
-  //       }
-  //       if (priorityA == 2) {
-  //         return a.value["stocks"].compareTo(b.value["stocks"]);
-  //       }
-  //       return 0;
-  //     });
-  //   }
-  //   Map<int, Map<String, dynamic>> data = {for (var entry in sortedEntries) entry.key: entry.value};
-  //   setState(() {
-  //     fetchedItems = data;
-  //     debugPrint("fetchedItems: ${fetchedItems.toString()}");
-  //   });
-  //   return fetchedItems;
-  // }
-
-  // Future<void> loadItemsFromCache(int id) async {
-  //   final cacheManager = JsonCacheManager.instance;
-
-  //   try {
-  //     FileInfo? cachedFile = await cacheManager.getFileFromCache(id.toString());
-  //     if (cachedFile == null) return;
-
-  //     String jsonStr = await cachedFile.file.readAsString();
-  //     Map<String, dynamic> decodedJson = jsonDecode(jsonStr);
-  //     Map<int, Map<String, dynamic>> datalist = Map<int, Map<String, dynamic>>.from(
-  //       decodedJson["items"].map((key, value) => MapEntry(int.parse(key), Map<String, dynamic>.from(value))),
-  //     );
-
-  //     Set<int> cachedNaid = Set<int>.from(decodedJson["navailableid"]);
-  //     Set<int> cachedAid = Set<int>.from(decodedJson["availableid"]);
-
-  //     if (mounted) {
-  //       onDataUpdated(datalist, cachedAid, cachedNaid);
-  //     }
-  //   } catch (e) {
-  //     debugPrint("Error loading items from cache: $e");
-  //     onFetchError("Error loading from cache: $e");
-  //   }
-  // }
-
-// class JsonCacheManager {
-//   static final CacheManager instance = CacheManager(
-//     Config(
-//       'itemCache',
-//       stalePeriod: const Duration(minutes: 10),
-//       maxNrOfCacheObjects: 1000,
-//     ),
-//   );
-// }

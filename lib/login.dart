@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/main.dart';
 
 class Login extends StatefulWidget {
-  final Function(bool, int) updateLoginState;
+  final Function(bool, int, String) updateLoginState;
   const Login({super.key, required this.updateLoginState});
 
   @override
@@ -15,24 +14,21 @@ class Login extends StatefulWidget {
 
 bool isLoggedin = false, isLoading = false;
 int canteenId = 0;
+int? error;
+String uName = "", pass = "", canteen = "";
 bool isAndroid = Platform.isAndroid;
 
 class LoginState extends State<Login> {
   bool isPasswordVisible = false;
   final textFieldFocusNode = FocusNode();
-  TextEditingController controller1 = TextEditingController();
-  TextEditingController controller2 = TextEditingController();
-  final storage = FlutterSecureStorage(aOptions: (isAndroid)
-      ? AndroidOptions(encryptedSharedPreferences: true)
-      : AndroidOptions.defaultOptions);
+  TextEditingController controller1 = TextEditingController(text: uName);
+  TextEditingController controller2 = TextEditingController(text: pass);
 
   Future<List<String>> details() async {
-  String uName = await storage.read(key: "Username") ?? "";
-  String pass = await storage.read(key: "Password") ?? "";
-  String canteen = await storage.read(key: "CanteenId") ?? "0";
-  canteenId = int.parse(canteen);
-  MyAppState().canteenId = canteenId;
-  return [uName, pass, canteen];
+    uName = await storage.read(key: "Username") ?? "";
+    pass = await storage.read(key: "Password") ?? "";
+    canteen = await storage.read(key: "CanteenId") ?? "$canteenId";
+    return [uName, pass, canteen];
 }
   @override
   void initState(){
@@ -60,24 +56,30 @@ class LoginState extends State<Login> {
       );
 
       if (response.statusCode == 200) {
-        // final Map<String, dynamic> responseData = json.decode(response.body);
-        // final String canteenId = responseData['canteenId'].toString();
-        // final String name = responseData['name'];
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final int canteenId = int.parse(responseData['data']['canteen_id'].toString());
+        final String name = responseData['data']['canteen_name'];
 
-        await storage.write(key: "Username", value: username); //Just place username for now, replace with "name" we get from response
+        await storage.write(key: "Username", value: name);
         await storage.write(key: "Password", value: password);
-        await storage.write(key: "CanteenId", value: "1"); //canteenId
+        await storage.write(key: "CanteenId", value: canteenId.toString());
         setState(() {
-          canteenId = int.parse("1");//canteenID
           isLoggedin = true;
           isLoading = false;
-          widget.updateLoginState(isLoggedin, canteenId);
+          widget.updateLoginState(isLoggedin, canteenId, name);
         });
         debugPrint('Login successful. Canteen ID: $canteenId');
+      }else if(response.statusCode == 401){
+        setState(() {
+          isLoggedin = false;
+          isLoading = false;
+          error = 401;
+        });
       } else {
         debugPrint('Login failed: ${response.statusCode}');
         debugPrint('Response body: ${response.body}');
         setState(() {
+          error = 0;
           isLoggedin = false;
            isLoading = false;
         });
@@ -140,6 +142,13 @@ class LoginState extends State<Login> {
                               child: TextFormField(
                                 controller: controller1,
                                 decoration: InputDecoration(
+                                  errorText: (error == 401)?
+                                    "ID or Password Wrong"
+                                  :(error == null)?
+                                    null
+                                :(error==0)?"Check Internet Connection, Error Code: $error":"Login Failed",
+                                  errorMaxLines: 2,
+                                  errorStyle: TextStyle(fontSize: 18, color: Colors.redAccent) ,
                                   prefixIcon: Icon(Icons.person),
                                   labelText: "UserName",
                                   hintText: "Enter Your UserName",
@@ -153,7 +162,6 @@ class LoginState extends State<Login> {
                               child: TextFormField(
                                 controller: controller2,
                                 obscureText: !isPasswordVisible,
-                                focusNode: textFieldFocusNode,
                                 decoration: InputDecoration(
                                   prefixIcon: Icon(Icons.lock),
                                   suffixIcon: IconButton(
@@ -188,9 +196,8 @@ class LoginState extends State<Login> {
                                       setState(() {
                                         isLoading = true;
                                       },);
-                                    } else {
-                                      
-                                  }
+                                    } //Error during login: FormatException: Invalid radix-10 number (at character 1)
+                                      //null 
                                 },
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,

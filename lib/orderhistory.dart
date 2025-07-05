@@ -140,7 +140,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
       ),
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((widget.portrait)?5:(MediaQuery.of(context).size.width)/3.5)),
+          padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((widget.portrait)?5:(MediaQuery.of(context).size.width)/5)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

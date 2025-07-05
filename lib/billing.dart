@@ -155,132 +155,135 @@ class _BillingState extends State<Billing> {
                   ],
                 ),
               ),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(" Bill: ", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(width: 10),
-                        Expanded(flex: 3, child: Text("Item", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),                        
-                        Expanded(flex: 2, child: Text("Count", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
-                        Expanded(flex: 2, child: Text("Price", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
-                        Flexible(flex: 1, child: Text("")) //to match formatting
-                      ]
-                    ),
-                    Expanded(
-                      child: (bill.isEmpty)?Center(child: Text("No Items", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))):ListView.builder(
-                        itemCount: bill.length,
-                        itemBuilder: (context, index) {
-                          int i = bill.keys.elementAt(index);
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-                            child: Row(
-                              children: [
-                                Text("${index+1}. "),
-                                Expanded(flex: 3, child: Text(bill[i]?['name'], overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18))),          
-                                Expanded(flex: 2, child: Text(bill[i]?['count'].toString()??"", textAlign: TextAlign.center, style: TextStyle(fontSize: 18))),
-                                Expanded(flex: 2, child: Text("₹${bill[i]?['price']}", style: TextStyle(fontSize: 18))),
-                                IconButton(
-                                  onPressed: (){
-                                    showDialog(
-                                      context: context, 
-                                      builder: (context){
-                                        return AlertDialog(
-                                          title: Text("Edit Bill Item: ", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold,)),
-                                          content: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Center(child: Text("Item: ${bill[i]?['name']}")),
-                                              Center(child: Text("Quantity:", style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold))),
-                                              SizedBox(height: 10),
-                                              TextFormField(
-                                                initialValue: bill[i]?['count'].toString()??"1",
-                                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                                decoration: InputDecoration(labelText: "Enter Quantity", hintText: "Greater than or equal to 1"),
-                                                onChanged: (value) {
-                                                  if (int.parse(value)>=1){
-                                                  setState(() {
-                                                    bill[i] = {                                                      
-                                                    'price' : (bill[i]?['price']/bill[i]?['count']).toInt()*int.parse(value),
-                                                    'count' : int.parse(value),
-                                                    'id' : i,
-                                                    'name' : bill[i]?['name']                                                            
-                                                    };
-                                                    updateBillItems(bill);
-                                                  });
-                                                }else{
-                                                  setState(() {
-                                                    bill[i]?['count'] = 1;
-                                                    updateBillItems(bill);
-                                                  });
-                                                }
-                                                // Navigator.pop(context);
-                                                }
-                                              ),
-                                              SizedBox(height: 20),
-                                              TextButton(onPressed: (){
-                                                setState(() {
-                                                  Navigator.pop(context);
-                                                });                              
-                                              }, 
-                                              style: ButtonStyle(
-                                                padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
-                                                backgroundColor: WidgetStateProperty.all(Colors.greenAccent)),
-                                              child: Text("Change", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold)),
-                                              ),
-                                              SizedBox(height: 20),
-                                              Text("Or", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                              SizedBox(height: 20),
-                                              Text("Delete Bill Item: ", style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold)),
-                                              SizedBox(height: 20),
-                                              TextButton(onPressed: (){
-                                                setState(() {
-                                                  if (bill.keys.contains(i)){
-                                                    bill.removeWhere((key, value) => key == i);
-                                                    updateBillItems(bill);
-                                                    Navigator.pop(context);
-                                                  }
-                                                });                                  
-                                              }, 
-                                              style: ButtonStyle(
-                                                padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
-                                                backgroundColor: WidgetStateProperty.all(Colors.redAccent)),
-                                              child: Text("Delete", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold)),
-                                              )
-                                            ])
-                                        );
-                                      }
-                                      );},                                   
-                                  icon: Icon(Icons.edit)),
-                              ],
-                            ),
-                          );
-                        },
+              StatefulBuilder(
+                builder: (context, stateset) {
+                return Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(" Bill: ", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: 10),
+                          Expanded(flex: 3, child: Text("Item", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),                        
+                          Expanded(flex: 2, child: Text("Count", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+                          Expanded(flex: 2, child: Text("Price", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
+                          Flexible(flex: 1, child: Text(""))
+                        ]
                       ),
-                    ),
-                    Divider(),
-                    SizedBox(width: 10, height: 20),
-                    Center(child: Text("Total: ₹$subtotal", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-                    SizedBox(width: 10, height: 20),
-                    Divider(),
-                    Center(
-                      child: TextButton(style: ButtonStyle(
-                        padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
-                        backgroundColor: WidgetStateProperty.all(Colors.cyan)),
-                        onPressed: (){
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PrintBill(bill: bill)
-                              ));},
-                        child: Text("Print", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold))),
-                    )
-                  ],
-                ),
+                      Expanded(
+                        child: (bill.isEmpty)?Center(child: Text("No Items", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))):ListView.builder(
+                          itemCount: bill.length,
+                          itemBuilder: (context, index) {
+                            int i = bill.keys.elementAt(index);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                              child: Row(
+                                children: [
+                                  Text("${index+1}. "),
+                                  Expanded(flex: 3, child: Text(bill[i]?['name'], overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18))),          
+                                  Expanded(flex: 2, child: Text(bill[i]?['count'].toString()??"", textAlign: TextAlign.center, style: TextStyle(fontSize: 18))),
+                                  Expanded(flex: 2, child: Text("₹${bill[i]?['price']}", style: TextStyle(fontSize: 18))),
+                                  IconButton(
+                                    onPressed: (){
+                                      showDialog(
+                                        context: context, 
+                                        builder: (context){
+                                          return AlertDialog(
+                                            title: Text("Edit Bill Item: ", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold,)),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Center(child: Text("Item: ${bill[i]?['name']}")),
+                                                Center(child: Text("Quantity:", style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold))),
+                                                SizedBox(height: 10),
+                                                TextFormField(
+                                                  initialValue: bill[i]?['count'].toString()??"1",
+                                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                  decoration: InputDecoration(labelText: "Enter Quantity", hintText: "Greater than or equal to 1"),
+                                                  onChanged: (value) {
+                                                    if (int.parse(value)>=1){
+                                                    stateset(() {
+                                                      bill[i] = {                                                      
+                                                      'price' : (bill[i]?['price']/bill[i]?['count']).toInt()*int.parse(value),
+                                                      'count' : int.parse(value),
+                                                      'id' : i,
+                                                      'name' : bill[i]?['name']                                                            
+                                                      };
+                                                      updateBillItems(bill);
+                                                    });
+                                                  }else{
+                                                    stateset(() {
+                                                      bill[i]?['count'] = 1;
+                                                      updateBillItems(bill);
+                                                    });
+                                                  }
+                                                  }
+                                                ),
+                                                SizedBox(height: 20),
+                                                TextButton(onPressed: (){
+                                                  stateset(() {
+                                                    Navigator.pop(context);
+                                                  });                              
+                                                }, 
+                                                style: ButtonStyle(
+                                                  padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                                                  backgroundColor: WidgetStateProperty.all(Colors.greenAccent)),
+                                                child: Text("Change", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold)),
+                                                ),
+                                                SizedBox(height: 20),
+                                                Text("Or", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                                                SizedBox(height: 20),
+                                                Text("Delete Bill Item: ", style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold)),
+                                                SizedBox(height: 20),
+                                                TextButton(onPressed: (){
+                                                  stateset(() {
+                                                    if (bill.keys.contains(i)){
+                                                      bill.removeWhere((key, value) => key == i);
+                                                      updateBillItems(bill);
+                                                      Navigator.pop(context);
+                                                    }
+                                                  });                                  
+                                                }, 
+                                                style: ButtonStyle(
+                                                  padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                                                  backgroundColor: WidgetStateProperty.all(Colors.redAccent)),
+                                                child: Text("Delete", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold)),
+                                                )
+                                              ])
+                                          );
+                                        }
+                                        );},                                   
+                                    icon: Icon(Icons.edit)),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Divider(),
+                      SizedBox(width: 10, height: 20),
+                      Center(child: Text("Total: ₹$subtotal", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+                      SizedBox(width: 10, height: 20),
+                      Divider(),
+                      Center(
+                        child: TextButton(style: ButtonStyle(
+                          padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                          backgroundColor: WidgetStateProperty.all(Colors.cyan)),
+                          onPressed: (){
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PrintBill(bill: bill)
+                                ));},
+                          child: Text("Print", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold))),
+                      )
+                    ],
+                  ),
+                );
+              },
               )
             ],
           ),
