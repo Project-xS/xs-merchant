@@ -40,7 +40,6 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   }
   // uncomment below for caching
   Future<void> fetchAndCacheAndNotify(int id) async {    
-    debugPrint(id.toString());
     if (!mounted) return;
     final url = "https://proj-xs.fly.dev/canteen/$id/items";
     // final cacheManager = JsonCacheManager.instance;
@@ -64,7 +63,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             "is_veg": item1["is_veg"],
             "available": item1["is_available"],
             "stocks": item1["stock"],
-            "pic": item1["pic_url"]
+            "pic": item1["pic_link"]
           };
         }
         setState((){

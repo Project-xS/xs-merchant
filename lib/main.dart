@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/billing.dart';
+import 'package:merchant/image_upload.dart';
 import 'package:merchant/login.dart' as login;
 import 'package:merchant/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -196,7 +197,7 @@ class _HomePageState extends State<HomePage> {
       ),
       endDrawer: Drawer(
         child: SafeArea(
-          minimum: EdgeInsets.symmetric(vertical: 50),
+          minimum: EdgeInsets.only(top: 50, bottom: 5),
           child: Column(
             children: [
               Text(AppLocalizations.of(context)!.language),
@@ -216,6 +217,26 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) =>
                   Billing(name, portrait, widget.isTamil, widget.canteenId)));
+                },
+              ),
+              SizedBox(height: 20),
+              (currentIndex != 0)?Text(""):ListTile(
+                leading: Icon(Icons.refresh),
+                horizontalTitleGap: 30,
+                title: Text("Force Refresh Images", style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  setState((){                    
+                    ImageUploadState().getallimage(imageexpired);
+                  });
+                },
+              ),
+              Expanded(child: Container()),
+              ListTile(
+                leading: Icon(Icons.logout),
+                horizontalTitleGap: 30,
+                title: Text("Log Out", style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  isLoggedin = false;
                 },
               ),
             ],

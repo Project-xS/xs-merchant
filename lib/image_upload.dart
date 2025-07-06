@@ -297,6 +297,10 @@ dynamic getallimage(Function(Map<String, String>) imageexpired) async{
   Set<int> item = GlobalMenuCache.availableid;
   item.addAll(GlobalMenuCache.navailableid);
   for(int i in item){
+    debugPrint("${GlobalMenuCache.items}");
+    if(GlobalMenuCache.items[i]?['pic'] != true){
+      continue;
+    }
     final response = await http.get(
     Uri.parse("https://proj-xs.fly.dev/assets/$i"),
     headers: {'Content-Type': 'application/json'});
@@ -305,7 +309,7 @@ dynamic getallimage(Function(Map<String, String>) imageexpired) async{
         updated['$i'] = data1['url'];
     }
   }
-  debugPrint("Updated Expired Image");
+  // debugPrint("Updated Expired Image");
   imagecalled = false;
   imageexpired(updated);
   return;
@@ -337,7 +341,7 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
   final Map<String, dynamic> link = jsonDecode(picLinkString);
   final imageUrl = link[itemId];
 
-  if (imageUrl != null) {
+  if (imageUrl != null && GlobalMenuCache.items[int.parse(itemId)]?['pic'] == true ) {
     return ExtendedImage.network(
       imageUrl,
       filterQuality: FilterQuality.high,
@@ -357,7 +361,7 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
             );
           case LoadState.failed:
             return const Center(
-              child: Icon(Icons.fastfood, color: Colors.red, size: 50),
+              child: Icon(Icons.fastfood, size: 50),
             );
         }
       },
@@ -376,14 +380,16 @@ Future<void> removeImageFromCache(String url,String itemId) async {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
+        Flexible(child: Text("Picture: ", style: TextStyle(fontSize: 20.00))),
+        SizedBox(height: 10),
         ElevatedButton(
           child: (isAndroid)?Text("Open Gallery"):Text("Open File Explorer"),
           onPressed: () => pickImage()
         ),
         SizedBox(height: 16),
-        previewImages(),
-        if (pickImageError != null) Text('Error: $pickImageError', style: TextStyle(color: Colors.red)),
+        Flexible(child: previewImages()),
       ],
     );
   }
