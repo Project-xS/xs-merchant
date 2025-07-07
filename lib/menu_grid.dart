@@ -71,7 +71,7 @@ class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu>{
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(58, 0, 255, 64),
+                      color: const Color.fromARGB(45, 0, 234, 255),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(

@@ -25,7 +25,7 @@ class LoginState extends State<Login> {
   TextEditingController controller2 = TextEditingController(text: pass);
 
   Future<List<String>> details() async {
-    uName = await storage.read(key: "Username") ?? "";
+    uName = (await storage.read(key: "Username") ?? "").toLowerCase();
     pass = await storage.read(key: "Password") ?? "";
     canteen = await storage.read(key: "CanteenId") ?? "$canteenId";
     return [uName, pass, canteen];

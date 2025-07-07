@@ -96,7 +96,7 @@ class MyAppState extends State<MyApp>  with AutoFetchMixin<MyApp>{
 
   Future<void> firstTimeloggedin() async{
       int id = int.parse(await storage.read(key: "CanteenId") ?? "0");
-      String uname = await storage.read(key: "Username") ?? "";
+      String uname = (await storage.read(key: "Username") ?? "").toUpperCase();
       String c;
       [_, _, c] = await LoginState().details();
       if(id != 0){
@@ -141,7 +141,7 @@ class MyAppState extends State<MyApp>  with AutoFetchMixin<MyApp>{
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: (isLoggedin == true)? HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: canteenId, isLoggedin: isLoggedin)
+      home: (isLoggedin == true)? HomePage(changeLanguage: _changeLanguage, isTamil: isTamil, canteenId: canteenId, isLoggedin: isLoggedin, updateLoginState: updateLoginState)
           : login.Login(updateLoginState: updateLoginState),
     );
   } 
@@ -152,8 +152,9 @@ class HomePage extends StatefulWidget {
   final bool isTamil;
   final bool isLoggedin;
   final int canteenId;
+  final Function(bool, int, String) updateLoginState;
 
-  const HomePage({super.key, required this.isLoggedin, required this.changeLanguage, required this.isTamil, required this.canteenId});
+  const HomePage({super.key, required this.isLoggedin, required this.changeLanguage, required this.isTamil, required this.canteenId, required this.updateLoginState});
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -210,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               SizedBox(height: 20),
-              (login.isAndroid)?Text(""):ListTile(
+              (portrait)?SizedBox.shrink():ListTile(
                 leading: Icon(Icons.receipt_long),
                 horizontalTitleGap: 30,
                 title: Text(AppLocalizations.of(context)!.billing, style: TextStyle(fontWeight: FontWeight.w600)),
@@ -236,7 +237,9 @@ class _HomePageState extends State<HomePage> {
                 horizontalTitleGap: 30,
                 title: Text("Log Out", style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
-                  isLoggedin = false;
+                  setState((){
+                    widget.updateLoginState(false, widget.canteenId, name.toLowerCase());
+                  });
                 },
               ),
             ],

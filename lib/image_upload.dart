@@ -295,9 +295,20 @@ Future<String> imageupload(int id, Uint8List? image) async{
 dynamic getallimage(Function(Map<String, String>) imageexpired) async{
   Map<String, String> updated = {};
   Set<int> item = GlobalMenuCache.availableid;
-  item.addAll(GlobalMenuCache.navailableid);
+  Set<int> item1 = GlobalMenuCache.availableid;
   for(int i in item){
-    debugPrint("${GlobalMenuCache.items}");
+    if(GlobalMenuCache.items[i]?['pic'] != true){
+      continue;
+    }
+    final response = await http.get(
+    Uri.parse("https://proj-xs.fly.dev/assets/$i"),
+    headers: {'Content-Type': 'application/json'});
+    if (response.statusCode == 200){
+      final data1 = jsonDecode(response.body);
+        updated['$i'] = data1['url'];
+    }
+  }
+  for(int i in item1){
     if(GlobalMenuCache.items[i]?['pic'] != true){
       continue;
     }
@@ -326,6 +337,7 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
           await getallimage(imageexpired);
         }
         else{
+          debugPrint("!imagecalled, ${GlobalMenuCache.items[int.parse(itemId)]?['name']}");
           return const Center(
             child: Icon(Icons.fastfood, size: 50),
           );
@@ -346,10 +358,9 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
       imageUrl,
       filterQuality: FilterQuality.high,
       cache: true,
-      borderRadius: BorderRadius.circular(10),
       cacheKey: itemId,
-      width: (isAndroid)?130:(MenupageState().axisCount+1)*20.5,
-      height: (isAndroid)?130:(MenupageState().axisCount+1)*20.5,
+      width: (isAndroid)?115:(MenupageState().axisCount+1)*20.5,
+      height: (isAndroid)?115:(MenupageState().axisCount+1)*20.5,
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
@@ -360,6 +371,7 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
               fit: BoxFit.scaleDown,
             );
           case LoadState.failed:
+            debugPrint("No image loadstate failed, ${GlobalMenuCache.items[int.parse(itemId)]?['name']}");
             return const Center(
               child: Icon(Icons.fastfood, size: 50),
             );
@@ -388,7 +400,7 @@ Future<void> removeImageFromCache(String url,String itemId) async {
           child: (isAndroid)?Text("Open Gallery"):Text("Open File Explorer"),
           onPressed: () => pickImage()
         ),
-        SizedBox(height: 16),
+        SizedBox(height: 10),
         Flexible(child: previewImages()),
       ],
     );

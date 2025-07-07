@@ -251,6 +251,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
                             }
                             await updateitem(itemId, GlobalMenuCache.items[itemId]);
                             setState((){
+                              png = null;
                               loading = false;
                             });
                             if(mounted){
@@ -501,7 +502,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
                       }
                   });
                     if (found == false) {
-                    id = await apipostcall(name, int.parse(priceText), isveg, stocks, available);
+                    id = await addnewitem(name, int.parse(priceText), isveg, stocks, available);
                     }                        
                     if (id != null){
                       String url = await ImageUploadState().imageupload(id!, pngn);
@@ -965,21 +966,23 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
                             ),
                           );
                         }
-                      : () {
+                      : () async{
                         if(errorMap.isEmpty){
-                          setState(() {
-                            for (int i in changes.keys) {
-                              if (changes[i]?['name'] != GlobalMenuCache.items[i]?['name'] || changes[i]?['price'] != GlobalMenuCache.items[i]?['price'] || changes[i]?['stocks'] != GlobalMenuCache.items[i]?['stocks']) {
-                                GlobalMenuCache.items[i] = {
-                                  'name': changes[i]?['name'],
-                                  'price': changes[i]?['price'],
-                                  'is_veg': GlobalMenuCache.items[i]?['is_veg'],
-                                  'available': GlobalMenuCache.items[i]?['available'],
-                                  'stocks': changes[i]?['stocks']
-                                };
-                                updateitem(i, GlobalMenuCache.items[i]);
-                              }
+                            for (int i in changes.keys){
+                              if (changes[i]?['name'] != GlobalMenuCache.items[i]?['name'] || changes[i]?['price'] != GlobalMenuCache.items[i]?['price'] || changes[i]?['stocks'] != GlobalMenuCache.items[i]?['stocks']){
+                                setState(() {
+                                  GlobalMenuCache.items[i] = {
+                                    'name': changes[i]?['name'],
+                                    'price': changes[i]?['price'],
+                                    'is_veg': GlobalMenuCache.items[i]?['is_veg'],
+                                    'available': GlobalMenuCache.items[i]?['available'],
+                                    'stocks': changes[i]?['stocks'],
+                                    'pic': GlobalMenuCache.items[i]?['pic']
+                                  };
+                              });
+                            await updateitem(i, GlobalMenuCache.items[i]);
                             }
+                          }
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(
                                 "Item Changes are Successful",
@@ -992,7 +995,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
                               DeviceOrientation.portraitUp,
                             ]);
                             Navigator.pop(context);
-                          });}
+                          }
                         },
                   child: Row(
                     children: [
@@ -1010,7 +1013,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
         );
   }
 
-Future<int?> apipostcall(String name, int price, bool isveg, int stocks, bool available) async {
+Future<int?> addnewitem(String name, int price, bool isveg, int stocks, bool available) async {
   try {
   final response = await http.post(
     Uri.parse('https://proj-xs.fly.dev/menu/create'),
@@ -1020,7 +1023,7 @@ Future<int?> apipostcall(String name, int price, bool isveg, int stocks, bool av
     },
     body: jsonEncode({
       "canteen_id": widget.canteenId,
-      "pic_link": (pngn!=null)?true:false,
+      "pic_link": (pngn != null)?true:false,
       "name": name,
       "price": price,
       "is_veg": isveg,       
@@ -1072,7 +1075,7 @@ dynamic updateitem(int itemId, Map<String, dynamic>? item) async{
     "is_available": item?["available"],
     "is_veg": item?['is_veg'],
     "name": item?["name"],
-    "pic_link": true,
+    "pic_link": (png != null || GlobalMenuCache.items[itemId]?['pic'] == true)?true:false,
     "price": item?["price"],
     "stock": item?["stocks"]
   }}
@@ -1080,6 +1083,16 @@ dynamic updateitem(int itemId, Map<String, dynamic>? item) async{
   if (response.statusCode == 200){
     if(mounted){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Update Successful"), backgroundColor: Colors.cyanAccent));
+      setState((){
+        GlobalMenuCache.items[itemId] = {
+          "available": item?["available"],
+          "is_veg": item?['is_veg'],
+          "name": item?["name"],
+          "pic": (png != null)?true:false,
+          "price": item?["price"],
+          "stocks": item?["stocks"]
+        };
+      });
     }
   }
   else{
@@ -1237,7 +1250,7 @@ void deleteitem(int itemId) async{
             ),
           )
         else 
-          buildGridSection(GlobalMenuCache.availableid, const Color.fromARGB(58, 0, 255, 64), Colors.white),
+          buildGridSection(GlobalMenuCache.availableid, const Color.fromARGB(45, 0, 234, 255), Colors.white),
         SizedBox(height: 45.00),
         Align(
               alignment: Alignment.center,
@@ -1288,7 +1301,7 @@ void deleteitem(int itemId) async{
             ),
           )
         else 
-          buildGridSection(GlobalMenuCache.navailableid, const Color.fromARGB(55, 253, 76, 0), Colors.black),
+          buildGridSection(GlobalMenuCache.navailableid, const Color.fromARGB(55, 253, 143, 0), Colors.black),
           SizedBox(height: 70),
       ])
     ));
@@ -1340,7 +1353,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
               crossAxisCount: crossAxisCount,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: (isAndroid)?0.95:1,
+              childAspectRatio: (isAndroid)?0.93:1,
             ),
             physics: const NeverScrollableScrollPhysics(),
             itemCount: menuSet.length,
@@ -1371,7 +1384,6 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // SizedBox(height:5),
                               showImage(itemId),
                               Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1411,7 +1423,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                       top: 5,
                       child: IconButton(
                         hoverColor: Colors.blue,
-                        icon: Icon(Icons.edit, color: Colors.black),
+                        icon: Icon(Icons.edit, color: Colors.white54),
                         onPressed: () {
                           modifyItem(itemId, GlobalMenuCache.items[itemId]?['name'], GlobalMenuCache.items[itemId]?['price'], GlobalMenuCache.items[itemId]?['is_veg'], GlobalMenuCache.items[itemId]?['available']);
                         },
@@ -1422,7 +1434,7 @@ Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
                       top: 5,
                       child: IconButton(
                         hoverColor: Colors.red,
-                        icon: Icon(Icons.delete, color: Colors.black),
+                        icon: Icon(Icons.delete, color: Colors.white54),
                         onPressed: () {
                           delAddItem(itemId, GlobalMenuCache.items[itemId]?['name'], false, false);
                         },

@@ -50,7 +50,11 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         List<dynamic> dataList = decodedJson["data"];
-
+        setState((){
+          GlobalMenuCache.availableid.clear();
+          GlobalMenuCache.navailableid.clear();
+          GlobalMenuCache.items.clear();          
+        });
         for (var item1 in dataList) {
           if (item1["is_available"] == true && (item1["stock"] == -1 || item1["stock"] >= 1)) {
             fetchedAid.add(item1["item_id"]);
