@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/login.dart';
 import 'package:merchant/main.dart';
-
 
 class Menupage extends StatefulWidget {
   final bool portrait;
@@ -19,268 +19,311 @@ class Menupage extends StatefulWidget {
   State<Menupage> createState() => MenupageState();
 }
 
-
-class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
+class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   int sortmenu = 1;
   Uint8List? png, pngn;
   int? pngid;
   bool isLoading = false;
   Map<String, String> piclink = {};
-  Image icon = Image(image: AssetImage("assets/images/logo.png"), width: 256.00, height: 256.00);
-  Image itemicon = Image(image: AssetImage("assets/images/friedrice.png"));
 
   @override
   int get canteenIdToFetch => widget.canteenId;
 
   @override
-  void initState(){
-    if((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty){
+  void initState() {
+    if ((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty) {
       fetchAndCacheAndNotify(widget.canteenId);
     }
     super.initState();
   }
 
-  dynamic onImageUpdate(int id, Uint8List? image, bool loading){
-    setState((){
+  dynamic onImageUpdate(int id, Uint8List? image, bool loading) {
+    if (!mounted) return;
+    setState(() {
       png = image;
       pngid = id;
       isLoading = loading;
     });
   }
 
-  dynamic onImageUpdate1(int id, Uint8List? image, bool loading){
-    setState((){
+  dynamic onImageUpdate1(int id, Uint8List? image, bool loading) {
+    if (!mounted) return;
+    setState(() {
       pngn = image;
       isLoading = loading;
     });
   }
 
-  void modifyItem(int itemId, String oldName, int oldRate, bool isveg, bool available){
-    bool loading = false;
+  ButtonStyle _getButtonStyle(BuildContext context, bool isPrimary,
+      {bool isYellow = false}) {
+    final theme = Theme.of(context);
+    Color color;
+    if (isYellow) {
+      color = Colors.yellowAccent;
+    } else {
+      color = isPrimary ? theme.colorScheme.primary : theme.colorScheme.error;
+    }
+
+    return ButtonStyle(
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(
+            horizontal: 24, vertical: 22),
+      ),
+      backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.hovered)) return Colors.black;
+          return color;
+        },
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.hovered)) return color;
+          return Colors.black;
+        },
+      ),
+      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          side: const BorderSide(color: Colors.black, width: 2),
+        ),
+      ),
+    );
+  }
+
+  void modifyItem(
+      int itemId, String oldName, int oldRate, bool isveg, bool available) {
     bool isError = false;
     String name = "";
-    int stocks = GlobalMenuCache.items[itemId]?['stocks']??0;
+    int stocks = GlobalMenuCache.items[itemId]?['stocks'] ?? 0;
     showDialog(
       barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text(AppLocalizations.of(context)!.modify_item(oldName) , style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
-              content: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.all(10.00),
-                  child: Form(
-                    child: Column(
-                      children: [
-                        StatefulBuilder(
-                          builder: (context, setState) {
-                          return TextFormField(
-                            maxLength: 40,
-                            initialValue: oldName,
-                            autofocus: true,
-                            autocorrect: false,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context)!.new_name,
-                              labelStyle: TextStyle(fontSize: 15.00),
-                              floatingLabelStyle: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                              counterText: "",
-                              errorText: isError ? "Item Already Present" : null,
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: isError ? Colors.red : Colors.blue, width: 2),
+        bool loading = false;
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            title: Text(
+              AppLocalizations.of(context)!.modify_item(oldName),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            content: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Form(
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        maxLength: 40,
+                        initialValue: oldName,
+                        autofocus: true,
+                        autocorrect: false,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))
+                        ],
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.new_name,
+                          counterText: "",
+                          errorText: isError ? "Item Already Present" : null,
+                        ),
+                        onChanged: (value) {
+                          if (!mounted) return;
+                          setState(() {
+                            if (GlobalMenuCache.items.values
+                                .where((item) =>
+                                    item != GlobalMenuCache.items[itemId])
+                                .any((item) =>
+                                    item['name']
+                                        .trim()
+                                        .toLowerCase()
+                                        .replaceAll(' ', '') ==
+                                    value
+                                        .trim()
+                                        .toLowerCase()
+                                        .replaceAll(' ', '')))
+                            {
+                              isError = true;
+                            } else {
+                              isError = false;
+                              name = value;
+                            }
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 20.0),
+                      TextFormField(
+                        maxLength: 4,
+                        initialValue: oldRate.toInt().toString(),
+                        autofocus: true,
+                        autocorrect: false,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.new_price,
+                        ),
+                        onChanged: (value) {
+                          if (!mounted) return;
+                          setState(() {
+                            oldRate = (int.tryParse(value) != null)
+                                ? int.parse(value)
+                                : oldRate;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 5.0),
+                      TextFormField(
+                        maxLength: 5,
+                        initialValue:
+                            "${GlobalMenuCache.items[itemId]?['stocks']}",
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^-?([1-9][0-9]*|0)?$'))
+                        ],
+                        onChanged: (value) {
+                          if (value.isEmpty || value == "-") {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    "Error: Stocks can be either -1 or finite"),
+                                backgroundColor: Colors.redAccent,
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: isError ? Colors.red : Colors.grey, width: 2),
-                              ),
-                            ),
+                            );
+                          } else {
+                            int parsedValue = int.tryParse(value) ?? stocks;
+                            if (parsedValue < -1) {
+                              stocks = 1;
+                            } else {
+                              stocks = parsedValue;
+                            }
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.stock,
+                          hintText: "Enter -1 for Unlimited",
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text("${AppLocalizations.of(context)!.veg} : "),
+                          Checkbox(
+                            value: isveg,
                             onChanged: (value) {
+                              if (!mounted) return;
                               setState(() {
-                                if (GlobalMenuCache.items.values.where((item) => item != GlobalMenuCache.items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
-                                  isError = true;
-                                } else {
-                                  isError = false;
-                                  name = value;
-                                }
+                                isveg = value ?? false;
                               });
                             },
-                          );}
-                        ),
-                        SizedBox(height: 20.00),
-                        TextFormField(
-                          maxLength: 4,
-                          initialValue: oldRate.toInt().toString(),
-                          autofocus: true,
-                          autocorrect: false,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.new_price,
-                            labelStyle: TextStyle(fontSize: 15.00),
-                            floatingLabelStyle: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                            border: OutlineInputBorder(),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey, width: 2),
-                            ),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              oldRate = (int.tryParse(value) != null)? int.parse(value) : oldRate;
-                            });
-                          },
-                        ),
-                        SizedBox(height: 5.00),
-                        TextFormField(
-                          maxLength: 5,
-                          initialValue: "${GlobalMenuCache.items[itemId]?['stocks']}",
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
-                          onChanged: (value) {
-                            if (value.isEmpty || value == "-") {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Error: Stocks can be either -1 or finite",
-                                      style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                            } else {
-                              int parsedValue = int.tryParse(value)??stocks;
-                                if (parsedValue < -1){
-                                  stocks = 1;
-                                }
-                                else{
-                                  stocks = parsedValue;
-                                }
-                              }
-                          },
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.stock,
-                            labelStyle: TextStyle(fontSize: 15.00),
-                            floatingLabelStyle: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                            hintText: "Enter -1 for Unlimited",
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey, width: 2),
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text("${AppLocalizations.of(context)!.veg} : ", style: TextStyle(fontSize: 15.00)),
-                            StatefulBuilder(
-                              builder:(context, setState) {
-                              return Checkbox(
-                                value: isveg,
-                                onChanged: (value) {
-                                  setState(() {
-                                    isveg = value ?? false;
-                                  });
-                                },
-                              );},
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 15),
-                        ImageUpload(widget.canteenId, widget.portrait, onImageUpdate)
-                      ],
-                    ),
+                        ],
+                      ),
+                      const SizedBox(height: 0),
+                      ImageUpload(
+                          widget.canteenId, widget.portrait, onImageUpdate)
+                    ],
                   ),
                 ),
               ),
-              actions: [
-                StatefulBuilder(
-                  builder: (context, setState) {
-                   return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all(Colors.redAccent),
-                          foregroundColor: WidgetStateProperty.all(Colors.black),
-                          padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                          fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                          overlayColor: WidgetStateProperty.all(const Color.fromARGB(227, 237, 74, 14)),
-                        ),
-                        onPressed: () {
-                          setState((){
-                            loading = false;
-                          });
-                          Navigator.pop(context);
-                        },
-                        child:Text(AppLocalizations.of(context)!.cancel, style: TextStyle(fontWeight: FontWeight.w600)),                  
-                      ),
-                    TextButton(
-                      style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all((loading)?Colors.grey:Colors.black),
-                      foregroundColor: WidgetStateProperty.all(Colors.white),
-                      padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                      fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                      overlayColor: WidgetStateProperty.all((isLoading)?Colors.grey:Color.fromARGB(255, 37, 113, 255)),
-                    ),
-                    onPressed: (loading) ? null : () async{
-                      setState((){
-                        loading = true;
-                      });
-                      if(!isError){
-                          setState(() {
-                            GlobalMenuCache.items[itemId] = {
-                              'name': name.isNotEmpty?name:oldName,
-                              'price': oldRate,
-                              'is_veg': isveg,
-                              'available': available,
-                              'stocks': stocks,
-                              'pic': GlobalMenuCache.items[itemId]?['pic']
-                            };
-                          });
-                            String url = await ImageUploadState().imageupload(itemId, png);
-                            if(url.isNotEmpty){
-                              setState(() {                              
-                                GlobalMenuCache.items[itemId]?['pic'] = url;
-                                final Map<String, dynamic> list = jsonDecode(cache.getString("piclink")!);
-                                list.map((itemId, url)=> MapEntry(itemId.toString(), url));
-                                list[itemId.toString()] = url;
-                                changeimage(itemId, url);
-                              });
-                            }
-                            await updateitem(itemId, GlobalMenuCache.items[itemId]);
-                            setState((){
-                              png = null;
-                              loading = false;
-                            });
-                            if(mounted){
-                              Navigator.pop(context);
-                            }
-                          }
-                          else{
-                            setState(() {
-                              loading = false;
-                            });
-                          }
-                        },
+            ),
+            actions: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    style: _getButtonStyle(context, false),
+                    onPressed: () => Navigator.pop(context),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                      (loading)?Flexible(child: SizedBox(height: 20.00, width: 20.00, child: CircularProgressIndicator())):Icon(Icons.check, color: Colors.greenAccent),
-                      SizedBox(width: 5.00),
-                      Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600)),
-                    ]),
+                        const Icon(Icons.close),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.cancel),
+                      ],
                     ),
-                    ],
-                  );},
-                )]);
-          },
-        );
+                  ),
+                  ElevatedButton(
+                    style: _getButtonStyle(context, true),
+                    onPressed: (loading)
+                        ? null
+                        : () async {
+                            setState(() {
+                              loading = true;
+                            });
+                            try {
+                              if (!isError) {
+                                if (png != null) {
+                                  String url = await imageupload(itemId, png);
+                                  if (url.isNotEmpty) {
+                                    this.setState(() {
+                                      GlobalMenuCache.items[itemId]?['pic'] =
+                                          url;
+                                      final Map<String, dynamic> list =
+                                          jsonDecode(
+                                              cache.getString("piclink")!);
+                                      list.map((itemId, url) => MapEntry(
+                                          itemId.toString(), url));
+                                      list[itemId.toString()] = url;
+                                      changeimage(itemId, url);
+                                    });
+                                  }
+                                }
+                                this.setState(() {
+                                  GlobalMenuCache.items[itemId] = {
+                                    'name': name.isNotEmpty ? name : oldName,
+                                    'price': oldRate,
+                                    'is_veg': isveg,
+                                    'available': available,
+                                    'stocks': stocks,
+                                    'pic':
+                                        GlobalMenuCache.items[itemId]?['pic']
+                                  };
+                                });
+                                await updateitem(
+                                    itemId, GlobalMenuCache.items[itemId]);
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  png = null;
+                                  loading = false;
+                                });
+                                Navigator.pop(context);
+                              }
+                            }
+                          },
+                    child: (loading)
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white)),
+                              SizedBox(width: 8),
+                              Text("Submitting..."),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              const Icon(Icons.check),
+                              const SizedBox(width: 8),
+                              Text(AppLocalizations.of(context)!.submit),
+                            ],
+                          ),
+                  ),
+                ],
+              )
+            ],
+          );
+        });
+      },
+    );
   }
 
-  void addNewItem() async{
-    bool isError = false, loading = false;
+  void addNewItem() async {
+    bool isError = false;
     String name = "";
     String priceText = "";
     int stocks = 0;
@@ -291,102 +334,93 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
       barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
+        bool loading = false;
+        return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text(AppLocalizations.of(context)!.add_item_head, style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            title: Text(AppLocalizations.of(context)!.add_item_head,
+                style: Theme.of(context).textTheme.titleLarge),
             content: SingleChildScrollView(
               child: Padding(
-                padding: EdgeInsets.only(top: 10.00, right: 10.00, left: 10.00),
+                padding: const EdgeInsets.all(10.0),
                 child: Form(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      StatefulBuilder(
-                        builder: (context, setState) {
-                        return Padding(
-                          padding: EdgeInsets.only(right: 5.0, left: 5.00, top: 5.00),
-                          child: TextFormField(
-                            maxLength: 40,
-                            autocorrect: false,
-                            textCapitalization: TextCapitalization.words,
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context)!.name,
-                              labelStyle: TextStyle(fontSize: 15.00),
-                              floatingLabelStyle: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                              errorText: isError ? "Item Already Exists, this Updates the existing item" : null,
-                              errorMaxLines: 2,
-                              border: OutlineInputBorder(),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: isError ? Colors.red : Colors.blue, width: 2),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: isError ? Colors.red : Colors.grey, width: 2),
-                              ),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                name = value;
-                                isError = GlobalMenuCache.items.values.any(
-                                  (item) => item['name'].trim().toLowerCase().replaceAll(' ', '') ==
-                                      value.trim().toLowerCase().replaceAll(' ', ''),
-                                );
-                              });
-                            },
-                          )
-                        );},
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(5.0),
-                        child: TextFormField(
-                          maxLength: 4,
-                          autocorrect: false,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.price,
-                            labelStyle: TextStyle(fontSize: 15.00),
-                            floatingLabelStyle: TextStyle(fontSize: 20.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                            border: OutlineInputBorder(),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey, width: 2),
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              priceText = value;
-                            });
-                          },
+                      TextFormField(
+                        maxLength: 40,
+                        autocorrect: false,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))
+                        ],
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.name,
+                          errorText: isError
+                              ? "Item Already Exists, this Updates the existing item"
+                              : null,
+                          errorMaxLines: 2,
                         ),
+                        onChanged: (value) {
+                          if (!mounted) return;
+                          setState(() {
+                            name = value;
+                            isError = GlobalMenuCache.items.values.any(
+                              (item) =>
+                                  item['name']
+                                      .trim()
+                                      .toLowerCase()
+                                      .replaceAll(' ', '') ==
+                                  value
+                                      .trim()
+                                      .toLowerCase()
+                                      .replaceAll(' ', ''),
+                            );
+                          });
+                        },
                       ),
-                    Padding(
-                      padding: EdgeInsets.all(5.0),
-                      child: TextFormField(
+                      TextFormField(
+                        maxLength: 4,
+                        autocorrect: false,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.price,
+                        ),
+                        onChanged: (value) {
+                          if (!mounted) return;
+                          setState(() {
+                            priceText = value;
+                          });
+                        },
+                      ),
+                      TextFormField(
                         maxLength: 5,
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^-?([1-9][0-9]*|0)?$'))
+                        ],
                         onChanged: (value) {
                           if (value.isEmpty || value == "-") {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Error: Stocks can be either -1 or finite",
-                                    style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
+                              const SnackBar(
+                                content: Text(
+                                    "Error: Stocks can be either -1 or finite"),
                                 backgroundColor: Colors.redAccent,
                               ),
                             );
                           } else {
                             int? parsedValue = int.tryParse(value);
-                            if(parsedValue != null){
-                              if (parsedValue < -1){
+                            if (parsedValue != null) {
+                              if (parsedValue < -1) {
                                 stocks = 1;
-                              }
-                              else{
+                              } else {
                                 stocks = parsedValue;
                               }
-                            }
-                            else{
+                            } else {
                               stocks = 0;
                             }
                           }
@@ -394,925 +428,971 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage>{
                         decoration: InputDecoration(
                           labelText: AppLocalizations.of(context)!.stock,
                           hintText: "Enter -1 for Unlimited",
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue, width: 2),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey, width: 2),
-                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 15.00),
-                    StatefulBuilder(builder: (context, setState) {
-                      return Row(
-                        children: [
-                          Text("${AppLocalizations.of(context)!.veg} : ", style: TextStyle(fontSize: 15.00)),
-                          Checkbox(
-                            value: isveg,
-                            onChanged: (value) {
-                              setState(() {
-                                isveg = value ?? false;
-                                if (value == null || isveg == false){
-                                  isveg = false;
-                                }
-                                else{
-                                  isveg = true;
-                                }
-                              });
-                            },
-                          ),
-                        ],
-                      );}),
-                      SizedBox(height: 15),
-                      ImageUpload(widget.canteenId, widget.portrait, onImageUpdate1, newitem: true, onImageUpdate1: onImageUpdate1,)
+                      const SizedBox(height: 15.0),
+                      StatefulBuilder(
+                        builder: (context, setState) {
+                          return Row(
+                            children: [
+                              Text("${AppLocalizations.of(context)!.veg} : "),
+                              Checkbox(
+                                value: isveg,
+                                onChanged: (value) {
+                                  setState(() {
+                                    isveg = value ?? false;
+                                  });
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 0),
+                      ImageUpload(
+                        widget.canteenId,
+                        widget.portrait,
+                        onImageUpdate1,
+                        newitem: true,
+                        onImageUpdate1: onImageUpdate1,
+                      )
                     ],
                   ),
                 ),
               ),
             ),
             actions: [
-              StatefulBuilder(
-                  builder: (context, setState) {
-                   return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all(Colors.redAccent),
-                          foregroundColor: WidgetStateProperty.all(Colors.black),
-                          padding: WidgetStateProperty.all(EdgeInsets.all(30.00)),
-                          fixedSize: WidgetStateProperty.all(Size.fromWidth(132)),
-                          overlayColor: WidgetStateProperty.all(const Color.fromARGB(227, 237, 74, 14)),
-                        ),
-                        onPressed: () {
-                          setState((){
-                            loading = false;
-                          });
-                          Navigator.pop(context);
-                        },
-                        child:Text(AppLocalizations.of(context)!.cancel, style: TextStyle(fontWeight: FontWeight.w600)),                  
-                      ),
-              TextButton(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll((loading)?Colors.grey:Colors.black),
-                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                  padding: WidgetStatePropertyAll(EdgeInsets.all(30.00)),
-                  fixedSize: WidgetStatePropertyAll(Size.fromWidth(132)),
-                  overlayColor: WidgetStatePropertyAll(const Color.fromARGB(255, 37, 113, 255)),
-                ),
-                onPressed: (loading == true)? null : () async{
-                  bool found = false;
-                  if (name.isEmpty || priceText.isEmpty || int.tryParse(priceText) == null || int.parse(priceText) == 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "Error - Don't feed Empty or Invalid Values",
-                          style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                        ),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                    // return;
-                  }
-                  setState(() {
-                    loading = true;
-                    int olditemid = 0;
-                    int foundItemId = GlobalMenuCache.items.keys.firstWhere(
-                      (key) => GlobalMenuCache.items[key]?['name'].trim().toLowerCase().replaceAll(' ', '') ==
-                          name.trim().toLowerCase().replaceAll(' ', ''),
-                          orElse: () => olditemid,
-                    );
-                    if(foundItemId!=olditemid){
-                      GlobalMenuCache.items[foundItemId] = {
-                        'name': name,
-                        'price': int.parse(priceText),
-                        'is_veg': isveg,
-                        'available': available,
-                        'stocks': stocks,
-                      };
-                      updateitem(foundItemId, GlobalMenuCache.items[foundItemId]);
-                      if (GlobalMenuCache.navailableid.contains(foundItemId)){
-                        GlobalMenuCache.navailableid.remove(foundItemId);
-                        GlobalMenuCache.availableid.add(foundItemId);
-                        setState((){
-                          found = true;
-                        });                  
-                      }
-                      }
-                  });
-                    if (found == false) {
-                    id = await addnewitem(name, int.parse(priceText), isveg, stocks, available);
-                    }                        
-                    if (id != null){
-                      String url = await ImageUploadState().imageupload(id!, pngn);
-                          if(url.isNotEmpty){
-                            setState(() {                              
-                              GlobalMenuCache.items[id]?['pic'] = true;
-                              final Map<String, dynamic> list = jsonDecode(cache.getString("piclink")!);
-                              list.map((itemId, url)=> MapEntry(itemId.toString(), url));
-                              list[id.toString()] = url;
-                              changeimage(id!, url);
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    style: _getButtonStyle(context, false),
+                    onPressed: () => Navigator.pop(context),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.close),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.cancel),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: _getButtonStyle(context, true),
+                    onPressed: (loading == true)
+                        ? null
+                        : () async {
+                            setState(() {
+                              loading = true;
                             });
-                          }
-                        fetchAndCacheAndNotify(widget.canteenId);
-                        }
-                    if (isError){
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Item: $name Already Exists, Updated its details",
-                            style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
+                            try {
+                              bool found = false;
+                              if (name.isEmpty ||
+                                  priceText.isEmpty ||
+                                  int.tryParse(priceText) == null ||
+                                  int.parse(priceText) == 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        "Error - Don't feed Empty or Invalid Values"),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                );
+                                return;
+                              }
+                              int olditemid = 0;
+                              int foundItemId = 
+                                  GlobalMenuCache.items.keys.firstWhere(
+                                (key) =>
+                                    GlobalMenuCache.items[key]?['name']
+                                        .trim()
+                                        .toLowerCase()
+                                        .replaceAll(' ', '') ==
+                                    name
+                                        .trim()
+                                        .toLowerCase()
+                                        .replaceAll(' ', ''),
+                                orElse: () => olditemid,
+                              );
+                              if (foundItemId != olditemid) {
+                                this.setState(() {
+                                  GlobalMenuCache.items[foundItemId] = {
+                                    'name': name,
+                                    'price': int.parse(priceText),
+                                    'is_veg': isveg,
+                                    'available': available,
+                                    'stocks': stocks,
+                                  };
+                                  updateitem(foundItemId,
+                                      GlobalMenuCache.items[foundItemId]);
+                                  if (GlobalMenuCache.navailableid
+                                      .contains(foundItemId)) {
+                                    GlobalMenuCache.navailableid
+                                        .remove(foundItemId);
+                                    GlobalMenuCache.availableid
+                                        .add(foundItemId);
+                                    found = true;
+                                  }
+                                });
+                              }
+
+                              if (found == false) {
+                                id = await addnewitem(
+                                    name,
+                                    int.parse(priceText),
+                                    isveg,
+                                    stocks,
+                                    available);
+                              }
+                              if (id != null) {
+                                String url = await imageupload(id!, pngn);
+                                if (url.isNotEmpty) {
+                                  this.setState(() {
+                                    GlobalMenuCache.items[id]?['pic'] = true;
+                                    final Map<String, dynamic> list = 
+                                        jsonDecode(
+                                            cache.getString("piclink")!);
+                                    list.map((itemId, url) => MapEntry(
+                                        itemId.toString(), url));
+                                    list[id.toString()] = url;
+                                    changeimage(id!, url);
+                                  });
+                                }
+                                fetchAndCacheAndNotify(widget.canteenId);
+                              }
+                              if (isError) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        "Item: $name Already Exists, Updated its details"),
+                                    backgroundColor: Colors.yellowAccent,
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        "Item : \"$name\" Added Successfully"),
+                                    backgroundColor: Colors.cyanAccent,
+                                  ),
+                                );
+                              }
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  loading = false;
+                                });
+                                Navigator.pop(context);
+                              }
+                            }
+                          },
+                    child: (loading)
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white)),
+                              SizedBox(width: 8),
+                              Text("Submitting..."),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              const Icon(Icons.check),
+                              const SizedBox(width: 8),
+                              Text(AppLocalizations.of(context)!.submit),
+                            ],
                           ),
-                          backgroundColor: Colors.yellowAccent,
-                        ),
-                      );
-                    }
-                    else{
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Item : \"$name\" Added Successfully",
-                            style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
-                          ),
-                          backgroundColor: Colors.cyanAccent,
-                        ),
-                      );
-                    }
-                  setState((){
-                    loading = false;
-                  });
-                  Navigator.pop(context);
-                  },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                  (loading)?SizedBox(width: 20, height: 20, child: CircularProgressIndicator()):Icon(Icons.check, color: Colors.greenAccent), 
-                  Text(AppLocalizations.of(context)!.submit, 
-                  style: TextStyle(fontWeight: FontWeight.w600))]),
-              ),
-            ]);
-          })
-          ]);
+                  )
+                ],
+              )
+            ],
+          );
         });
+      },
+    );
   }
 
-  void delAddItem(int itemId, String name, bool isAdd , bool available){
-    showDialog(context: context, builder: (context){
-      return AlertDialog(
-        title: Text((isAdd && available)?AppLocalizations.of(context)!.confirm_remove(name):((isAdd && !available)?AppLocalizations.of(context)!.confirm_add(name):AppLocalizations.of(context)!.confirm_delete(name)), style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500)),
-        content: SizedBox(
-          width: double.minPositive,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(Colors.black),
-                  foregroundColor: WidgetStatePropertyAll(Colors.white),
-                  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
-                  fixedSize: WidgetStatePropertyAll(Size(120, 45)),
-                  overlayColor: WidgetStatePropertyAll(Color.fromARGB(255, 37, 113, 255)),
+  Future<String> imageupload(int id, Uint8List? image) async {
+    dynamic data, data1;
+    if (image == null) return "";
+    try {
+      final response1 = await http.post(
+          Uri.parse("https://proj-xs.fly.dev/assets/upload/$id"),
+          headers: {'Content-Type': 'application/json'});
+
+      if (response1.statusCode == 200) {
+        data = jsonDecode(response1.body);
+        debugPrint("1st: ${data.toString()}");
+        final response = await http.put(Uri.parse("${data['url']}"),
+            body: image, headers: {'Content-Type': 'image/png'});
+        if (response.statusCode == 200) {
+          final setimage = await http.put(
+            Uri.parse("https://proj-xs.fly.dev/menu/set_pic/$id"),
+            headers: {'Content-Type': 'application/json'},
+          );
+          debugPrint(setimage.body);
+          final response2 = await http.get(
+              Uri.parse("https://proj-xs.fly.dev/assets/$id"),
+              headers: {'Content-Type': 'application/json'});
+          if (response2.statusCode == 200) {
+            data1 = jsonDecode(response2.body);
+            // debugPrint("2nd: ${data1.toString()}");
+            debugPrint("Image Uploaded Successfully");
+            debugPrint(
+                "${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
+            return data1['url'];
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Image Upload Failed: Get Stage"),
+                  backgroundColor: Colors.redAccent,
                 ),
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context)!.cancel)
+              );
+            }
+            return "";
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Image Upload Failed: 2nd Stage"),
+                backgroundColor: Colors.redAccent,
               ),
-              SizedBox(width:20.00),
-              TextButton(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(isAdd?(available?Colors.yellow:Colors.green):Colors.red),
-                  foregroundColor: WidgetStatePropertyAll(Colors.black),
-                  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
-                  fixedSize: WidgetStatePropertyAll(Size(120, 45)),
-                  overlayColor: WidgetStatePropertyAll(isAdd?(available?Colors.yellowAccent:Colors.greenAccent):Colors.redAccent),
-                ),
-                onPressed: () {
+            );
+          }
+          return "";
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Image Upload Failed: 1st Stage"),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return "";
+      }
+    } on Exception catch (e) {
+      debugPrint("Error: $e");
+      return "";
+    }
+  }
+
+  void delAddItem(int itemId, String name, bool isAdd, bool available) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          title: Text(
+              (isAdd && available)
+                  ? AppLocalizations.of(context)!.confirm_remove(name)
+                  : ((isAdd && !available)
+                      ? AppLocalizations.of(context)!.confirm_add(name)
+                      : AppLocalizations.of(context)!.confirm_delete(name)),
+              style: Theme.of(context).textTheme.titleLarge),
+          content: const Text("Are you sure?"),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                    style: _getButtonStyle(context, false),
+                    onPressed: () => Navigator.pop(context),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.close),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.cancel),
+                      ],
+                    )),
+                ElevatedButton(
+                  style: _getButtonStyle(context, true,
+                      isYellow: isAdd && available),
+                  onPressed: () {
+                    if (!mounted) return;
                     setState(() {
-                      if (isAdd == true){
+                      if (isAdd == true) {
                         if (GlobalMenuCache.items[itemId]?['available']) {
                           GlobalMenuCache.availableid.remove(itemId);
                           GlobalMenuCache.navailableid.add(itemId);
                           GlobalMenuCache.items[itemId]?['available'] = false;
                           updateitem(itemId, GlobalMenuCache.items[itemId]);
+                        } else {
+                          GlobalMenuCache.items[itemId]?['available'] = true;
+                          GlobalMenuCache.availableid.add(itemId);
+                          GlobalMenuCache.navailableid.remove(itemId);
+                          updateitem(itemId, GlobalMenuCache.items[itemId]);
                         }
-                        else {
-                            GlobalMenuCache.items[itemId]?['available'] = true;
-                            GlobalMenuCache.availableid.add(itemId);
-                            GlobalMenuCache.navailableid.remove(itemId);
-                            updateitem(itemId, GlobalMenuCache.items[itemId]);
-                      }}
-                      else{
+                      } else {
                         deleteitem(itemId);
                       }
-                      Navigator.pop(context);
                     });
-                },
-                child: Text((isAdd && available)?AppLocalizations.of(context)!.remove:((isAdd && !available)?AppLocalizations.of(context)!.add:AppLocalizations.of(context)!.delete), style: TextStyle(fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500)),
-          )],
-          ),
-        ),
-      );
-    },
-  );
-}
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check),
+                      const SizedBox(width: 8),
+                      Text((isAdd && available)
+                          ? AppLocalizations.of(context)!.remove
+                          : ((isAdd && !available)
+                              ? AppLocalizations.of(context)!.add
+                              : AppLocalizations.of(context)!.delete)),
+                    ],
+                  ),
+                )
+              ],
+            )
+          ],
+        );
+      },
+    );
+  }
 
-  void massEdit(){
-    if (widget.portrait){
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight
-    ]);
+  void massEdit() {
+    final isWindows = Theme.of(context).platform == TargetPlatform.windows;
+    if (widget.portrait && !isWindows) {
+      SystemChrome.setPreferredOrientations(
+          [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     }
     Set<int> searchitems = {};
     TextEditingController controller = TextEditingController();
-    Map<int, bool> errorMap = {};
-    Set<String> err = {};
     Map<int, Map<String, dynamic>> changes = {};
     showDialog(
-      barrierDismissible: (widget.portrait)?false:true,
+      barrierDismissible: (widget.portrait && !isWindows) ? false : true,
       context: context,
-      builder: (context) {
-            return AlertDialog(
-              title: Text(AppLocalizations.of(context)!.multiple_item_edit),
-              titleTextStyle: TextStyle(fontSize: 25.00, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w500),
-              content: SizedBox(
-                height: 400.00,
-                width: (widget.isTamil && widget.portrait)?670:(widget.portrait)?660:(widget.isTamil)?665:550,
-                child: StatefulBuilder(
-                  builder: (context, setState) {
-                    return SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: SearchBar(
-                            controller: controller,
-                            backgroundColor: WidgetStateProperty.all(Colors.black),
-                            padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10)),
-                            leading: Icon(Icons.search),
-                            hintText: AppLocalizations.of(context)!.search_name,
-                            onChanged: (value) async {
-                              if(value.isEmpty){
-                                setState(() {
-                                  searchitems.clear();
-                                });
-                                return;
-                              }
-                              await Future.delayed(Duration(milliseconds: 200));
-                              try {
-                                final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/$canteenId/$value"));
-                                Map<String, dynamic> decodedJson = jsonDecode(response.body);
-                                // debugPrint("$decodedJson");
-                                List<dynamic> idList = decodedJson["data"];
-                                setState(() {
-                                  searchitems.clear();
-                                  for (var i in idList) {
-                                    int? itemId = i["item_id"] is int 
-                                        ? i["item_id"] 
-                                        : int.tryParse(i["item_id"].toString());
-                                    
-                                    if (itemId != null) {
-                                      searchitems.add(itemId);
-                                    }
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          title: Text(AppLocalizations.of(context)!.multiple_item_edit,
+              style: Theme.of(context).textTheme.titleLarge),
+          content: StatefulBuilder(builder: (context, setState) {
+            final content = SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: SearchBar(
+                        controller: controller,
+                        hintText: AppLocalizations.of(context)!.search_name,
+                        onChanged: (value) async {
+                          if (value.isEmpty) {
+                            if (mounted) {
+                              setState(() {
+                                searchitems.clear();
+                              });
+                            }
+                            return;
+                          }
+                          await Future.delayed(
+                              const Duration(milliseconds: 200));
+                          try {
+                            final response = await http.get(Uri.parse(
+                                "https://proj-xs.fly.dev/search/$canteenId/$value"));
+                            Map<String, dynamic> decodedJson = 
+                                jsonDecode(response.body);
+                            List<dynamic> idList = decodedJson["data"];
+                            if (mounted) {
+                              setState(() {
+                                searchitems.clear();
+                                for (var i in idList) {
+                                  int? itemId = i["item_id"] is int
+                                      ? i["item_id"]
+                                      : int.tryParse(i["item_id"].toString());
+
+                                  if (itemId != null) {
+                                    searchitems.add(itemId);
                                   }
-                                });
-                              } on Exception catch (e) {
-                                if (mounted){
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("Error performing search : $e"),
-                                  backgroundColor: Colors.redAccent)
-                                );
                                 }
-                              }
-                            },
-                            trailing: [
-                              IconButton(icon: Icon(Icons.clear),
-                                onPressed: (){
+                              });
+                            }
+                          } on Exception catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Error performing search : $e"),
+                                      backgroundColor: Colors.redAccent));
+                            }
+                          }
+                        },
+                        trailing: [
+                          IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                if (mounted) {
                                   setState(() {
                                     controller.clear();
                                     searchitems.clear();
-                                  });}), SizedBox(width: 10)]
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          ListView.builder(
-                            physics: BouncingScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: searchitems.isNotEmpty ? searchitems.length : GlobalMenuCache.items.length,
-                            itemBuilder: (BuildContext context, int index) {
-                            int itemId = searchitems.isNotEmpty ? searchitems.elementAt(index) : GlobalMenuCache.items.keys.elementAt(index);
-                              return ListTile(
-                                subtitle: Form(
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          StatefulBuilder(
-                                            builder: (context, setState) {
-                                            return SizedBox( 
-                                              width: (widget.isTamil)?140.00:150.00,
-                                              child: TextFormField(
-                                                key: ValueKey(GlobalMenuCache.items[itemId]?['name']),
-                                                maxLength: 40,
-                                                initialValue: GlobalMenuCache.items[itemId]?['name'],
-                                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp('[a-zA-Z ]'))],
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    if (value.isEmpty) {
-                                                      errorMap[itemId] = true;
-                                                      err.add('Empty');
-                                                      ScaffoldMessenger.of(context).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text("Error: Name Cannot be Empty",
-                                                              style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
-                                                          backgroundColor: Colors.redAccent,
-                                                        ),
-                                                      );
-                                                    } else {
-                                                      if (GlobalMenuCache.items.values.where((item) => item != GlobalMenuCache.items[itemId]).any((item) => item['name'].trim().toLowerCase().replaceAll(' ', '') == value.trim().toLowerCase().replaceAll(' ', ''))) {
-                                                        errorMap[itemId] = true;
-                                                        err.add(value.trim().toLowerCase().replaceAll(" ", ""));
-                                                        ScaffoldMessenger.of(context).showSnackBar(
-                                                          SnackBar(
-                                                            content: Text("Item: $value Already Exists, Change the name",
-                                                                style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
-                                                            backgroundColor: Colors.redAccent,
-                                                          ),
-                                                        );
-                                                      } else {
-                                                        errorMap.remove(itemId);
-                                                        if (!errorMap.containsKey(itemId)){
-                                                        changes[itemId] = {
-                                                          'name': value,
-                                                          'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (GlobalMenuCache.items[itemId]?['price']),
-                                                          'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (GlobalMenuCache.items[itemId]?['is_veg']),
-                                                          'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (GlobalMenuCache.items[itemId]?['available']),
-                                                          'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (GlobalMenuCache.items[itemId]?['stocks'])
-                                                        };
-                                                      }}
-                                                    }
-                                                  });
-                                                },
-                                                decoration: InputDecoration(
-                                                  labelText: AppLocalizations.of(context)!.name,
-                                                  counterText: "",
-                                                  errorText: errorMap[itemId] == true ? "Item Exists or Empty" : null,
-                                                  border: OutlineInputBorder(),
-                                                  focusedBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.blue, width: 2),
-                                                  ),
-                                                  enabledBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: errorMap[itemId] == true ? Colors.red : Colors.grey, width: 2),
-                                                  ),
-                                                ),
-                                              ),
-                                            );},
-                                          ),
-                                          SizedBox(width: 10.00),
-                                            SizedBox(
-                                              width: (widget.isTamil)?75.00:60.00,
-                                              child: TextFormField(
-                                                key: ValueKey(GlobalMenuCache.items[itemId]?['price']),
-                                                maxLength: 4,
-                                                initialValue: GlobalMenuCache.items[itemId]?['price'].toString(),
-                                                keyboardType: TextInputType.number,
-                                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                                onChanged: (value) {
-                                                  if (value.isEmpty) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text("Error: Price Cannot be Empty",
-                                                            style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
-                                                        backgroundColor: Colors.redAccent,
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    changes[itemId] = {
-                                                      'price': int.parse(value),
-                                                      'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (GlobalMenuCache.items[itemId]?['name']),
-                                                      'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (GlobalMenuCache.items[itemId]?['is_veg']),
-                                                      'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (GlobalMenuCache.items[itemId]?['available']),
-                                                      'stocks': changes.containsKey(itemId) ? (changes[itemId]?['stocks']) : (GlobalMenuCache.items[itemId]?['stocks'])
-                                                    };
-                                                  }
-                                                },
-                                                decoration: InputDecoration(
-                                                  labelText: AppLocalizations.of(context)!.price,
-                                                  counterText: "",
-                                                  focusedBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Colors.blue, width: 2),
-                                                  ),
-                                                  enabledBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Colors.grey, width: 2),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.00),
-                                            SizedBox(
-                                              width: (widget.isTamil)?75.00:60.00,
-                                              child: TextFormField(
-                                                key: ValueKey(GlobalMenuCache.items[itemId]?['stocks']),
-                                                maxLength: 5,
-                                                initialValue: GlobalMenuCache.items[itemId]?['stocks'].toString(),
-                                                keyboardType: TextInputType.number,
-                                                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?([1-9][0-9]*|0)?$'))],
-                                                onChanged: (value) {
-                                                  if (value.isEmpty || value == "-") {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text("Error: Stocks can be either -1 or finite",
-                                                            style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
-                                                        backgroundColor: Colors.redAccent,
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    int? parsedValue = int.tryParse(value);
-                                                    if (parsedValue != null) {
-                                                      if (parsedValue < -1) parsedValue = -1;
-                                                      changes[itemId] = {
-                                                        'price': changes.containsKey(itemId) ? (changes[itemId]?['price']) : (GlobalMenuCache.items[itemId]?['price']),
-                                                        'name': changes.containsKey(itemId) ? (changes[itemId]?['name']) : (GlobalMenuCache.items[itemId]?['name']),
-                                                        'is_veg': changes.containsKey(itemId) ? (changes[itemId]?['is_veg']) : (GlobalMenuCache.items[itemId]?['is_veg']),
-                                                        'available': changes.containsKey(itemId) ? (changes[itemId]?['available']) : (GlobalMenuCache.items[itemId]?['available']),
-                                                        'stocks': parsedValue,
-                                                      };
-                                                    }
-                                                  }
-                                                },
-                                                decoration: InputDecoration(
-                                                  labelText: AppLocalizations.of(context)!.stock,
-                                                  counterText: "",
-                                                  focusedBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Colors.blue, width: 2),
-                                                  ),
-                                                  enabledBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(color: Colors.grey, width: 2),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.00),
-                                            SizedBox(
-                                              width: (widget.isTamil)?95.00:70.00,
-                                              child: StatefulBuilder(
-                                                builder: (context, setState) {
-                                                  return Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    children: [
-                                                      Checkbox(
-                                                        value: GlobalMenuCache.items[itemId]?['is_veg'],
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            GlobalMenuCache.items[itemId]?['is_veg'] = !(GlobalMenuCache.items[itemId]?['is_veg'] ?? false);
-                                                          });
-                                                        },
-                                                      ),
-                                                      Text(AppLocalizations.of(context)!.veg, style: TextStyle(fontSize: 15.00)),
-                                                    ],
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.00),
-                                            Expanded(
-                                              child: StatefulBuilder(
-                                                builder: (context, setState) {
-                                                  return Row(
-                                                    children: [
-                                                      Checkbox(
-                                                        value: GlobalMenuCache.items[itemId]?['available'],
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            if (!GlobalMenuCache.items[itemId]?['available']) {
-                                                              GlobalMenuCache.items[itemId]?['available'] = true;
-                                                              if(GlobalMenuCache.navailableid.contains(itemId)){
-                                                                GlobalMenuCache.navailableid.remove(itemId);
-                                                              }
-                                                              GlobalMenuCache.availableid.add(itemId);
-                                                            } else {
-                                                              GlobalMenuCache.items[itemId]?['available'] = false;
-                                                              GlobalMenuCache.availableid.remove(itemId);
-                                                              GlobalMenuCache.navailableid.add(itemId);
-                                                            }
-                                                          });
-                                                        },
-                                                      ),
-                                                      Expanded(
-                                                        child: Text(
-                                                          GlobalMenuCache.items[itemId]?['available'] ? AppLocalizations.of(context)!.on_menu : AppLocalizations.of(context)!.off_menu,
-                                                          style: TextStyle(fontSize: 15),
-                                                          textAlign: TextAlign.start,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                        ])
-                                      ]),
-                                  ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                ),
-              ),
-              contentPadding: EdgeInsets.only(top: 10, left: 20, right: 20, bottom: 2),
-              actionsPadding: EdgeInsets.only(left: 10, bottom: 10, right: 10), 
-              actionsOverflowButtonSpacing: 0,
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                TextButton(
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(Colors.red),
-                  foregroundColor: WidgetStatePropertyAll(Colors.black),
-                  padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)), 
-                  fixedSize: WidgetStatePropertyAll(Size(105, 60)),
-                  overlayColor: WidgetStatePropertyAll(Color.fromARGB(255, 37, 113, 255)),
-                ),
-                onPressed: () {
-                  SystemChrome.setPreferredOrientations([
-                    DeviceOrientation.portraitUp,
-                  ]);
-                  Navigator.pop(context);
-                  },
-                child: Text(AppLocalizations.of(context)!.cancel)
-              ),
-                TextButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(Colors.black),
-                    foregroundColor: WidgetStateProperty.all(Colors.white),
-                    padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0)),
-                    fixedSize: WidgetStateProperty.all(Size(105, 60)),
-                    overlayColor: WidgetStateProperty.all(const Color.fromARGB(255, 37, 113, 255)),
+                                  });
+                                }
+                              }),
+                        ]),
                   ),
-                  onPressed: (errorMap.isNotEmpty)
-                      ? () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Error: Name(s) Already Exists, Change that to proceed",
-                                  style: TextStyle(fontSize: 15.00, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400)),
-                              backgroundColor: Colors.redAccent,
-                            ),
-                          );
-                        }
-                      : () async{
-                        if(errorMap.isEmpty){
-                            for (int i in changes.keys){
-                              if (changes[i]?['name'] != GlobalMenuCache.items[i]?['name'] || changes[i]?['price'] != GlobalMenuCache.items[i]?['price'] || changes[i]?['stocks'] != GlobalMenuCache.items[i]?['stocks']){
-                                setState(() {
-                                  GlobalMenuCache.items[i] = {
-                                    'name': changes[i]?['name'],
-                                    'price': changes[i]?['price'],
-                                    'is_veg': GlobalMenuCache.items[i]?['is_veg'],
-                                    'available': GlobalMenuCache.items[i]?['available'],
-                                    'stocks': changes[i]?['stocks'],
-                                    'pic': GlobalMenuCache.items[i]?['pic']
+                  Flexible(
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: (widget.portrait)? 5: 4.8,
+                      ),
+                      itemCount: searchitems.isNotEmpty
+                          ? searchitems.length
+                          : GlobalMenuCache.items.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        int itemId = searchitems.isNotEmpty
+                            ? searchitems.elementAt(index)
+                            : GlobalMenuCache.items.keys.elementAt(index);
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: (!widget.portrait && index % 2 != 0)
+                                ? const Border(
+                                    left: BorderSide(
+                                      color: Colors.white54,
+                                      width: 1.0,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Row(children: [
+                            Text("${index + 1}."),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                key: ValueKey("name_$itemId"),
+                                initialValue:
+                                    GlobalMenuCache.items[itemId]?['name'],
+                                decoration:
+                                    const InputDecoration(labelText: "Name"),
+                                style: Theme.of(context).textTheme.bodyLarge,
+                                onChanged: (value) {
+                                  changes[itemId] = {
+                                    ...changes[itemId] ?? {},
+                                    'name': value
                                   };
-                              });
-                            await updateitem(i, GlobalMenuCache.items[i]);
-                            }
-                          }
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                "Item Changes are Successful",
-                                style: TextStyle(fontSize: 15.0, color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w700:FontWeight.w400),
+                                },
                               ),
-                              backgroundColor: Colors.cyanAccent,
-                            ));
-                            errorMap.clear();
-                            SystemChrome.setPreferredOrientations([
-                              DeviceOrientation.portraitUp,
-                            ]);
-                            Navigator.pop(context);
-                          }
-                        },
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 1,
+                              child: TextFormField(
+                                key: ValueKey("price_$itemId"),
+                                initialValue: GlobalMenuCache.items[itemId]
+                                        ?['price']
+                                    .toString(),
+                                keyboardType: TextInputType.number,
+                                decoration:
+                                    const InputDecoration(labelText: "Price"),
+                                style: Theme.of(context).textTheme.bodyLarge,
+                                onChanged: (value) {
+                                  changes[itemId] = {
+                                    ...changes[itemId] ?? {},
+                                    'price': int.tryParse(value) ?? 0
+                                  };
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 1,
+                              child: TextFormField(
+                                key: ValueKey("stock_$itemId"),
+                                initialValue: GlobalMenuCache.items[itemId]
+                                        ?['stocks']
+                                    .toString(),
+                                keyboardType: TextInputType.number,
+                                decoration:
+                                    const InputDecoration(labelText: "Stock"),
+                                style: Theme.of(context).textTheme.bodyLarge,
+                                onChanged: (value) {
+                                  changes[itemId] = {
+                                    ...changes[itemId] ?? {},
+                                    'stocks': int.tryParse(value) ?? 0
+                                  };
+                                },
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text("Veg",
+                                      style: TextStyle(fontSize: 12)),
+                                  Checkbox(
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    value: changes[itemId]?['is_veg'] ??
+                                        GlobalMenuCache
+                                            .items[itemId]?['is_veg'],
+                                    onChanged: (value) {
+                                      if (mounted) {
+                                        setState(() {
+                                          changes[itemId] = {
+                                            ...changes[itemId] ?? {},
+                                            'is_veg': value
+                                          };
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text("Menu",
+                                      style: TextStyle(fontSize: 12)),
+                                  Checkbox(
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    value: changes[itemId]?['available'] ??
+                                        GlobalMenuCache
+                                            .items[itemId]?['available'],
+                                    onChanged: (value) {
+                                      if (mounted) {
+                                        setState(() {
+                                          changes[itemId] = {
+                                            ...changes[itemId] ?? {},
+                                            'available': value
+                                          };
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ]),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+            if (isWindows) {
+              return SizedBox(
+                width: 800,
+                child: content,
+              );
+            }
+            return content;
+          }),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                    style: _getButtonStyle(context, false),
+                    onPressed: () {
+                      if (!isWindows) {
+                        SystemChrome.setPreferredOrientations([
+                          DeviceOrientation.portraitUp,
+                        ]);
+                      }
+                      Navigator.pop(context);
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.close),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context)!.cancel),
+                      ],
+                    )),
+                ElevatedButton(
+                  style: _getButtonStyle(context, true),
+                  onPressed: () async {
+                    for (int i in changes.keys) {
+                      final itemChanges = changes[i];
+                      if (itemChanges == null) continue;
+
+                      final originalItem = GlobalMenuCache.items[i];
+                      if (originalItem == null) continue;
+
+                      final updatedItem = {
+                        'name': itemChanges['name'] ?? originalItem['name'],
+                        'price': itemChanges['price'] ?? originalItem['price'],
+                        'is_veg':
+                            itemChanges['is_veg'] ?? originalItem['is_veg'],
+                        'available': itemChanges['available'] ??
+                            originalItem['available'],
+                        'stocks':
+                            itemChanges['stocks'] ?? originalItem['stocks'],
+                        'pic': originalItem['pic']
+                      };
+                      if (mounted) {
+                        this.setState(() {
+                          GlobalMenuCache.items[i] = updatedItem;
+                        });
+                      }
+                      await updateitem(i, updatedItem);
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text("Item Changes are Successful"),
+                      backgroundColor: Colors.cyanAccent,
+                    ));
+                    if (!isWindows) {
+                      SystemChrome.setPreferredOrientations([
+                        DeviceOrientation.portraitUp,
+                      ]);
+                    }
+                    Navigator.pop(context);
+                  },
                   child: Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [Icon(Icons.check, color: Colors.greenAccent), 
-                        Text(AppLocalizations.of(context)!.submit, style: TextStyle(fontWeight: FontWeight.w600))]),
+                      const Icon(Icons.check),
+                      const SizedBox(width: 8),
+                      Text(AppLocalizations.of(context)!.submit),
                     ],
                   ),
                 ),
-                ],)
               ],
-            );
-          },
+            )
+          ],
         );
+      },
+    );
   }
 
-Future<int?> addnewitem(String name, int price, bool isveg, int stocks, bool available) async {
-  try {
-  final response = await http.post(
-    Uri.parse('https://proj-xs.fly.dev/menu/create'),
-    headers: {
-      "accept": "application/json",
-      "Content-Type": "application/json"
-    },
-    body: jsonEncode({
-      "canteen_id": widget.canteenId,
-      "pic_link": (pngn != null)?true:false,
-      "name": name,
-      "price": price,
-      "is_veg": isveg,       
-      "is_available": available,
-      "stock": stocks,
-      // "pic_bytes": pngn
-    }), 
-  );
-  
-  if (response.statusCode == 200) { 
-    final Map<String, dynamic> decodedJson = jsonDecode(response.body);
-    setState(() {
-      GlobalMenuCache.items[decodedJson["item_id"]] = {
-      "name": name,
-      "price": price,
-      "is_veg": isveg,
-      "available": available,
-      "stocks": stocks,
-      "pic": decodedJson["pic_link"]
-      };
-      ImageUploadState().imageupload(canteenId, pngn);
-    });
-    if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Created Succesfully"),backgroundColor: Colors.cyanAccent));
-    }
-    return decodedJson["item_id"];
-  } else {
-    if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${response.body}"), backgroundColor: Colors.redAccent));
-    }
-    return null;
-  }
-} on Exception catch (e) {
-  if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
-  }
-  return null;
-}
-}
+  Future<int?> addnewitem(
+      String name, int price, bool isveg, int stocks, bool available) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://proj-xs.fly.dev/menu/create'),
+        headers: {
+          "accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode({
+          "canteen_id": widget.canteenId,
+          "pic_link": (pngn != null) ? true : false,
+          "name": name,
+          "price": price,
+          "is_veg": isveg,
+          "is_available": available,
+          "stock": stocks,
+        }),
+      );
 
-dynamic updateitem(int itemId, Map<String, dynamic>? item) async{
-  try{
-  final response = await http.put(Uri.parse("https://proj-xs.fly.dev/menu/update"),
-  headers: {'accept' : 'application/json','Content-Type' : 'application/json'},
-  body: jsonEncode({
-    "item_id": itemId,
-    "update": {
-    "description": "string",
-    "is_available": item?["available"],
-    "is_veg": item?['is_veg'],
-    "name": item?["name"],
-    "pic_link": (png != null || GlobalMenuCache.items[itemId]?['pic'] == true)?true:false,
-    "price": item?["price"],
-    "stock": item?["stocks"]
-  }}
-  ));
-  if (response.statusCode == 200){
-    if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Update Successful"), backgroundColor: Colors.cyanAccent));
-      setState((){
-        GlobalMenuCache.items[itemId] = {
-          "available": item?["available"],
-          "is_veg": item?['is_veg'],
-          "name": item?["name"],
-          "pic": (png != null)?true:false,
-          "price": item?["price"],
-          "stocks": item?["stocks"]
-        };
-      });
-    }
-  }
-  else{
-    if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Updating Items : ${response.statusCode}"), backgroundColor: Colors.redAccent));
-  }
-  }
-} on Exception catch (e){
-  if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent));
-  }
-}
-}
-
-void deleteitem(int itemId) async{
-  try{
-  final response = await http.delete(Uri.parse("https://proj-xs.fly.dev/menu/delete/$itemId"),
-  headers: {'accept' : 'application/json'});
-  if(response.statusCode == 200){
-    setState(() {
-       if (GlobalMenuCache.items[itemId]?['available']){
-          GlobalMenuCache.availableid.remove(itemId);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decodedJson = jsonDecode(response.body);
+        if (mounted) {
+          setState(() {
+            GlobalMenuCache.items[decodedJson["item_id"]] = {
+              "name": name,
+              "price": price,
+              "is_veg": isveg,
+              "available": available,
+              "stocks": stocks,
+              "pic": decodedJson["pic_link"]
+            };
+            ImageUploadState().imageupload(canteenId, pngn);
+          });
         }
-        else{
-          GlobalMenuCache.navailableid.remove(itemId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Item Created Succesfully"),
+              backgroundColor: Colors.cyanAccent));
         }
-        GlobalMenuCache.items.remove(itemId);
-        debugPrint("removed $itemId, ${GlobalMenuCache.items}");
-        fetchAndCacheAndNotify(widget.canteenId);
-    });
-    if (mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Item Deleted Successfully"), backgroundColor: Colors.cyanAccent));
+        return decodedJson["item_id"];
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Error: ${response.body}"),
+              backgroundColor: Colors.redAccent));
+        }
+        return null;
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Not Connected, $e"),
+            backgroundColor: Colors.redAccent));
+      }
+      return null;
     }
   }
-  else{
-    if (mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Deleting Item : ${response.statusCode}"), backgroundColor: Colors.redAccent));
+
+  dynamic updateitem(int itemId, Map<String, dynamic>? item) async {
+    try {
+      final response = await http.put(
+          Uri.parse("https://proj-xs.fly.dev/menu/update"),
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: jsonEncode({
+            "item_id": itemId,
+            "update": {
+              "description": "string",
+              "is_available": item?["available"],
+              "is_veg": item?['is_veg'],
+              "name": item?["name"],
+              "pic_link":
+                  (png != null || GlobalMenuCache.items[itemId]?['pic'] == true)
+                      ? true
+                      : false,
+              "price": item?["price"],
+              "stock": item?["stocks"]
+            }
+          }));
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Item Update Successful"),
+              backgroundColor: Colors.cyanAccent));
+          setState(() {
+            GlobalMenuCache.items[itemId] = {
+              "available": item?["available"],
+              "is_veg": item?['is_veg'],
+              "name": item?["name"],
+              "pic": (png != null) ? true : false,
+              "price": item?["price"],
+              "stocks": item?["stocks"]
+            };
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Error Updating Items : ${response.statusCode}"),
+              backgroundColor: Colors.redAccent));
+        }
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Not Connected, $e"),
+            backgroundColor: Colors.redAccent));
+      }
     }
-  } }on Exception catch (e){
-    if(mounted){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e"), backgroundColor: Colors.redAccent,));
   }
+
+  void deleteitem(int itemId) async {
+    try {
+      final response = await http.delete(
+          Uri.parse("https://proj-xs.fly.dev/menu/delete/$itemId"),
+          headers: {'accept': 'application/json'});
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            if (GlobalMenuCache.items[itemId]?['available']) {
+              GlobalMenuCache.availableid.remove(itemId);
+            } else {
+              GlobalMenuCache.navailableid.remove(itemId);
+            }
+            GlobalMenuCache.items.remove(itemId);
+            fetchAndCacheAndNotify(widget.canteenId);
+          });
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text("Item Deleted Successfully"),
+              backgroundColor: Colors.cyanAccent));
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Error Deleting Item : ${response.statusCode}"),
+              backgroundColor: Colors.redAccent));
+        }
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Not Connected, $e"),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
   }
-}
 
-// Future<void> addNewItems() async {
-//   for (var entry in item.entries) {
-//     await apipostcall(
-//       entry.key,
-//       entry.value['name'],
-//       entry.value['price'],
-//       entry.value['is_veg'],
-//       entry.value['stocks'],
-//       entry.value['available'],
-//     );
-//   }
-// }
-
-    String value = "Name";
+  String value = "Name";
   @override
   Widget build(BuildContext context) {
-    // setState(() => {});
+    final theme = Theme.of(context);
     return Scaffold(
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
-      floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-          heroTag: "refresh",
-          elevation: 10.00,
-          backgroundColor: Colors.cyan,
-            onPressed: (){
-              fetchAndCacheAndNotify(widget.canteenId);
-            },
-            icon: Icon(Icons.refresh,color: Colors.black),
-            label: Text(AppLocalizations.of(context)!.refresh, style: TextStyle(color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w600)),
+      backgroundColor: Colors.transparent,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 60.0),
+        child: SpeedDial(
+          icon: Icons.add,
+          activeIcon: Icons.close,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: Colors.white,
+          overlayColor: Colors.black,
+          overlayOpacity: 0.4,
+          spacing: 12,
+          spaceBetweenChildren: 12,
+          childrenButtonSize: const Size(60.0, 60.0),
+          children: [
+            SpeedDialChild(
+              child: const Icon(Icons.refresh),
+              label: AppLocalizations.of(context)!.refresh,
+              backgroundColor: theme.colorScheme.secondary,
+              labelStyle: theme.textTheme.labelLarge,
+              onTap: () => fetchAndCacheAndNotify(widget.canteenId),
             ),
-          SizedBox(height: 10.00),
-          FloatingActionButton.extended(
-            heroTag: "mass_edit",
-            elevation: 10.00,
-            backgroundColor: Colors.cyan,
-            onPressed: () {
-              massEdit();
-            },
-            icon: Icon(Icons.edit,color: Colors.black),
-            label: Text(AppLocalizations.of(context)!.bulk_edit, style: TextStyle(color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w600))
-          ),
-          SizedBox(height: 10.00),
-          FloatingActionButton.extended(
-          heroTag: "add",
-          elevation: 10.00,
-          backgroundColor: Colors.cyan,
-          onPressed: (){
-              addNewItem();
-          },
-          icon: Icon(Icons.add,color: Colors.black),
-          label: Text(AppLocalizations.of(context)!.add_item, style: TextStyle(color: Colors.black, fontWeight:(widget.isTamil)?FontWeight.w800:FontWeight.w600))
-          ),
-          ]),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            SizedBox(height: 20.00),
-            Align(
-              alignment: Alignment.center,
-              child: Text(
-                AppLocalizations.of(context)!.on_menu_head,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-              ),
+            SpeedDialChild(
+              child: const Icon(Icons.edit),
+              label: AppLocalizations.of(context)!.bulk_edit,
+              backgroundColor: theme.colorScheme.secondary,
+              labelStyle: theme.textTheme.labelLarge,
+              onTap: () => massEdit(),
             ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(AppLocalizations.of(context)!.sort_by, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w900:FontWeight.w600)),
-                SizedBox(width: 5),
-                DropdownButton(
-                  focusColor: Colors.transparent,
-                  value: value,
-                  items: [DropdownMenuItem(value: "Name", child: Text("Name")), DropdownMenuItem(value: "Price", child: Text("Price")), DropdownMenuItem(value : "Low Stock", child: Text("Low Stock"))],
-                  onChanged: (chvalue) {
-                    setState(() {
-                      if(chvalue == "Name"){
-                        sortmenu = 1;
-                        value = "Name";
-                      }
-                      else if (chvalue == "Price"){
-                        sortmenu = 2;
-                        value = "Price";
-                      }
-                      else{
-                        sortmenu = 3;
-                        value = "Low Stock";
-                      }
-                    });
-                      applySorting(GlobalMenuCache.items, sortmenu, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
-                  },
-                ),
-                SizedBox(width: 10)
-              ],
+            SpeedDialChild(
+              child: const Icon(Icons.add_box),
+              label: AppLocalizations.of(context)!.add_item,
+              backgroundColor: theme.colorScheme.secondary,
+              labelStyle: theme.textTheme.labelLarge,
+              onTap: () => addNewItem(),
             ),
-          SizedBox(height: 10),
-        if (GlobalMenuCache.availableid.isEmpty)
-          Center(
+          ],
+        ),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                AppLocalizations.of(context)!.no_item_menu,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.on_menu_head,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  Row(
+                    children: [
+                      Text("Sort:", style: theme.textTheme.titleMedium), 
+                      const SizedBox(width: 8), 
+                      Container(
+                        color: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: DropdownButton<String>(
+                          value: value,
+                          items: ["Name", "Price", "Low Stock"]
+                              .map((value) => DropdownMenuItem(
+                                    value: value,
+                                    child: Text(value),
+                                  ))
+                              .toList(),
+                          onChanged: (chvalue) {
+                            if (mounted) {
+                              setState(() {
+                                if (chvalue == "Name") {
+                                  sortmenu = 1;
+                                  value = "Name";
+                                } else if (chvalue == "Price") {
+                                  sortmenu = 2;
+                                  value = "Price";
+                                } else {
+                                  sortmenu = 3;
+                                  value = "Low Stock";
+                                }
+                              });
+                            }
+                            applySorting(
+                                GlobalMenuCache.items,
+                                sortmenu,
+                                GlobalMenuCache.availableid,
+                                GlobalMenuCache.navailableid);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          )
-        else 
-          buildGridSection(GlobalMenuCache.availableid, const Color.fromARGB(45, 0, 234, 255), Colors.white),
-        SizedBox(height: 45.00),
-        Align(
-              alignment: Alignment.center,
-              child: Text(
-                AppLocalizations.of(context)!.off_menu_head,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(AppLocalizations.of(context)!.sort_by, style: TextStyle(fontSize: 22.00, fontWeight:(widget.isTamil)?FontWeight.w900:FontWeight.w600)),
-                SizedBox(width: 5),
-                DropdownButton(
-                  focusColor: Colors.transparent,
-                  value: value,
-                  items: [DropdownMenuItem(value: "Name", child: Text("Name")), DropdownMenuItem(value: "Price", child: Text("Price")), DropdownMenuItem(value : "Low Stock", child: Text("Low Stock"))],
-                  onChanged: (chvalue) {
-                    setState(() {
-                      if(chvalue == "Name"){
-                        sortmenu = 1;
-                        value = "Name";
-                      }
-                      else if (chvalue == "Price"){
-                        sortmenu = 2;
-                        value = "Price";
-                      }
-                      else{
-                        sortmenu = 3;
-                        value = "Low Stock";
-                      }
-                    });
-                      applySorting(GlobalMenuCache.items, sortmenu, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
-                  },
-                ),
-                SizedBox(width: 10)
-              ],
-            ),
-          SizedBox(height: 10.00),
-        if (GlobalMenuCache.navailableid.isEmpty) 
-          Center(
+          ),
+          buildGridSection(GlobalMenuCache.availableid, true),
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                AppLocalizations.of(context)!.no_item,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.off_menu_head,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  Row(
+                    children: [
+                      Text("Sort:", style: theme.textTheme.titleMedium),
+                      const SizedBox(width: 8),
+                      Container(
+                        color: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: DropdownButton<String>(
+                          value: value,
+                          items: ["Name", "Price", "Low Stock"]
+                              .map((value) => DropdownMenuItem(
+                                    value: value,
+                                    child: Text(value),
+                                  ))
+                              .toList(),
+                          onChanged: (chvalue) {
+                            if (mounted) {
+                              setState(() {
+                                if (chvalue == "Name") {
+                                  sortmenu = 1;
+                                  value = "Name";
+                                } else if (chvalue == "Price") {
+                                  sortmenu = 2;
+                                  value = "Price";
+                                } else {
+                                  sortmenu = 3;
+                                  value = "Low Stock";
+                                }
+                              });
+                            }
+                            applySorting(
+                                GlobalMenuCache.items,
+                                sortmenu,
+                                GlobalMenuCache.availableid,
+                                GlobalMenuCache.navailableid);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          )
-        else 
-          buildGridSection(GlobalMenuCache.navailableid, const Color.fromARGB(55, 253, 143, 0), Colors.black),
-          SizedBox(height: 70),
-      ])
-    ));
+          ),
+          buildGridSection(GlobalMenuCache.navailableid, false),
+          const SliverToBoxAdapter(child: SizedBox(height: 150)),
+        ],
+      ),
+    );
   }
 
-Widget showImage(int itemId) {
+Widget showImage(int itemId, bool available) {
   return FutureBuilder<Widget>(
-    future: ImageUploadState().buildImageDisplay(itemId.toString(), 160, 160, cache, imageexpired),
+    future: ImageUploadState().buildImageDisplay(
+        itemId.toString(), 160, 160, cache, imageexpired),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
-        return CircularProgressIndicator();
+        return const CircularProgressIndicator();
       } else if (snapshot.hasError || !snapshot.hasData) {
         return Text("${snapshot.error}");
       } else {
@@ -1322,131 +1402,204 @@ Widget showImage(int itemId) {
   );
 }
 
-int axisCount = 6;
-Widget buildGridSection(Set<int> menuSet, Color bgColor, Color textColor) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      LayoutBuilder(
-        builder: (context, constraints) {
-          int crossAxisCount = 6;
-          if (widget.portrait){
-            crossAxisCount = 2;
-            axisCount = 2;
-          }
-          else if (constraints.maxWidth < 900) {
-            crossAxisCount = 3;
-            axisCount = 3;
-          } else if (constraints.maxWidth < 1200) {
-            crossAxisCount = 4;
-            axisCount = 4;
-          }
-            else if (constraints.maxWidth < 1460) {
-              crossAxisCount = 5;
-              axisCount = 5;            
-          }
-          return GridView.builder(
-            shrinkWrap: true,
-            clipBehavior: Clip.none,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: (isAndroid)?0.93:1,
+  Widget buildGridSection(Set<int> menuSet, bool available) {
+    if (menuSet.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Text(
+              available
+                  ? AppLocalizations.of(context)!.no_item_menu
+                  : AppLocalizations.of(context)!.no_item,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: menuSet.length,
-            itemBuilder: (BuildContext context, int index) {
-              int itemId = menuSet.elementAt(index);
-              return GridTile(
-                footer: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Image.asset((GlobalMenuCache.items[itemId]?['is_veg'])?"assets/images/veg.png":"assets/images/nonveg.png", width: 25, height: 25),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    InkWell(
-                        onTap: () => delAddItem(itemId, GlobalMenuCache.items[itemId]?['name'], true, GlobalMenuCache.items[itemId]?['available']),
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          height: 285,
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              showImage(itemId),
-                              Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        GlobalMenuCache.items[itemId]?['name'] ?? "Unknown Item",
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold,
-                                          color: (GlobalMenuCache.items[itemId]?['stocks'] == -1 || GlobalMenuCache.items[itemId]?['stocks'] >= 300)?Colors.white:(GlobalMenuCache.items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
-                                        softWrap: false,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  "₹${GlobalMenuCache.items[itemId]?['price'] ?? 'N/A'}",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold, color: (GlobalMenuCache.items[itemId]?['stocks'] == -1 || GlobalMenuCache.items[itemId]?['stocks'] >= 300)?Colors.white:(GlobalMenuCache.items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
-                                ),
-                              Text(
-                                  "${AppLocalizations.of(context)!.stock}: ${GlobalMenuCache.items[itemId]?['stocks'] == -1 ? 'Unlimited' : '${GlobalMenuCache.items[itemId]?['stocks']}'}",
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w600:FontWeight.bold, color: (GlobalMenuCache.items[itemId]?['stocks'] == -1 || GlobalMenuCache.items[itemId]?['stocks'] >= 300)?Colors.white:(GlobalMenuCache.items[itemId]?['stocks'] > 0)?Colors.limeAccent:Colors.red, fontSize: 17),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    Positioned(
-                      left: 5,
-                      top: 5,
-                      child: IconButton(
-                        hoverColor: Colors.blue,
-                        icon: Icon(Icons.edit, color: Colors.white54),
-                        onPressed: () {
-                          modifyItem(itemId, GlobalMenuCache.items[itemId]?['name'], GlobalMenuCache.items[itemId]?['price'], GlobalMenuCache.items[itemId]?['is_veg'], GlobalMenuCache.items[itemId]?['available']);
-                        },
-                      ),
-                    ),
-                    Positioned(
-                      right: 5,
-                      top: 5,
-                      child: IconButton(
-                        hoverColor: Colors.red,
-                        icon: Icon(Icons.delete, color: Colors.white54),
-                        onPressed: () {
-                          delAddItem(itemId, GlobalMenuCache.items[itemId]?['name'], false, false);
-                        },
-                      ),
-                    ),                  
-                  ],
-                ),
-              );
-            },
+          ),
+        ),
+      );
+    }
+
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: widget.portrait
+            ? 2
+            : (MediaQuery.of(context).size.width / 250).floor().clamp(2, 8),
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.8,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          int itemId = menuSet.elementAt(index);
+          final item = GlobalMenuCache.items[itemId];
+          if (item == null) return const SizedBox.shrink();
+
+          return MenuItemCard(
+            itemId: itemId,
+            item: item,
+            isTamil: widget.isTamil,
+            available: available,
+            onTap: () => delAddItem(itemId, item['name'], true, available),
+            onEdit: () => modifyItem(
+                itemId, item['name'], item['price'], item['is_veg'], available),
+            onDelete: () => delAddItem(itemId, item['name'], false, false),
           );
         },
+        childCount: menuSet.length,
       ),
-    ],
-  );
-}}
+    );
+  }
+}
+
+class MenuItemCard extends StatelessWidget {
+  final int itemId;
+  final Map<String, dynamic> item;
+  final bool isTamil;
+  final bool available;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const MenuItemCard({
+    super.key,
+    required this.itemId,
+    required this.item,
+    required this.isTamil,
+    required this.available,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final localizations = AppLocalizations.of(context)!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        // color: Colors.white,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned(
+              child: MenupageState().showImage(itemId, available),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      const Color.fromARGB(153, 0, 0, 0),
+                      const Color.fromARGB(255, 0, 0, 0),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.5, 0.7, 0.8],
+                  ),
+                ),
+              ),
+            ),
+            if (!available)
+              Positioned.fill(
+                child: Container(
+                  color: const Color.fromARGB(128, 0, 0, 0),
+                  child: Center(
+                    child: Text(
+                      localizations.off_menu,
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(color: Colors.white70),
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              top: 5,
+              left: 20,
+              child: SizedBox(
+                height: 48,
+                child: Image.asset(
+                  item['is_veg']
+                      ? "assets/images/veg.png"
+                      : "assets/images/nonveg.png",
+                  width: 24,
+                  height: 24,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: PopupMenuButton(
+                icon: const Icon(Icons.more_vert, color: Colors.white),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    onEdit();
+                  } else if (value == 'delete') {
+                    onDelete();
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(Icons.edit),
+                      title: Text('Edit'),
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(Icons.delete),
+                      title: Text('Delete'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 8,
+              left: 8,
+              right: 8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['name'] ?? "Unknown Item",
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "₹${item['price'] ?? 'N/A'}",
+                        style: TextStyle(
+                            fontSize: 19,
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      RichText(
+                        text: TextSpan(children: [
+                          TextSpan(text: "${localizations.stock}:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          TextSpan(text: " ${item['stocks'] == -1 ? '∞' : item['stocks']}", style: TextStyle(color: theme.colorScheme.primary, fontSize: 20, fontWeight: FontWeight.bold,))
+                        ])
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

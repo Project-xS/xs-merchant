@@ -5,23 +5,19 @@ import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/main.dart';
 import 'package:merchant/menupage.dart';
 
-int crossAxisCount = 6;
-
 class BillMenu extends StatefulWidget {
   final int canteenId;
   final bool isTamil;
   final Map<int, Map<String, dynamic>> bill;
   final List<int> searchitems;
-  final Function(LinkedHashSet<int>) onSearchUpdate;
   final Function(Map<int, Map<String, dynamic>>) onBillUpdate;
-  const BillMenu(this.canteenId, this.isTamil, this.searchitems, this.onSearchUpdate, this.bill, this.onBillUpdate, {super.key});
+  const BillMenu(this.canteenId, this.isTamil, this.searchitems, this.bill, this.onBillUpdate, {super.key});
 
   @override
   State<BillMenu> createState() => Billmenu();
 }
 
-class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu>{
-
+class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu> {
   Map<int, Map<String, dynamic>> itemData = {};
   LinkedHashSet<int> availableIdData = LinkedHashSet();
   LinkedHashSet<int> notAvailableIdData = LinkedHashSet();
@@ -36,7 +32,7 @@ class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu>{
 
   @override
   void initState() {
-    if((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty){
+    if ((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty) {
       fetchAndCacheAndNotify(widget.canteenId);
     }
     super.initState();
@@ -46,156 +42,213 @@ class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu>{
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        crossAxisCount = 6;
+        int crossAxisCount = 6;
         if (constraints.maxWidth < 580) {
-          crossAxisCount = 3;
+          crossAxisCount = 2;
         } else if (constraints.maxWidth < 650) {
-          crossAxisCount = 4;
+          crossAxisCount = 3;
         } else if (constraints.maxWidth < 830) {
+          crossAxisCount = 4;
+        } else if (constraints.maxWidth < 1100){
           crossAxisCount = 5;
         }
+
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: (crossAxisCount == 3)?0.59:(crossAxisCount == 4)?0.5:(constraints.maxWidth < 730 && crossAxisCount == 5)?0.45:(constraints.maxWidth < 900 && crossAxisCount == 6)?0.45:0.5,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.8,
           ),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: (widget.searchitems.isNotEmpty)?widget.searchitems.length:GlobalMenuCache.availableid.length,
+          itemCount: (widget.searchitems.isNotEmpty)
+              ? widget.searchitems.length
+              : GlobalMenuCache.availableid.length,
           itemBuilder: (BuildContext context, int index) {
-            int itemId = (widget.searchitems.isNotEmpty)?widget.searchitems.elementAt(index):GlobalMenuCache.availableid.elementAt(index);
-            return GridTile(
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(45, 0, 234, 255),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 5),
-                        SizedBox(height:5),
-                        MenupageState().showImage(itemId),
-                        Text(
-                          GlobalMenuCache.items[itemId]?['name'] ?? "Unknown Item",
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: widget.isTamil ? FontWeight.w600 : FontWeight.bold,
-                            color: _getStockColor(GlobalMenuCache.items[itemId]?['stocks'], Colors.white),
-                          ),
-                        ),
-                        Text(
-                          "₹${GlobalMenuCache.items[itemId]?['price'] ?? 'N/A'}",
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: widget.isTamil ? FontWeight.w600 : FontWeight.bold,
-                            color: _getStockColor(GlobalMenuCache.items[itemId]?['stocks'], Colors.white),
-                          ),
-                        ),
-                        Text(
-                          "Stock: ${GlobalMenuCache.items[itemId]?['stocks'] == -1 ? 'Unlimited' : GlobalMenuCache.items[itemId]?['stocks'].toString()}",
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: widget.isTamil ? FontWeight.w600 : FontWeight.bold,
-                            color: _getStockColor(GlobalMenuCache.items[itemId]?['stocks'], Colors.white),
-                          ),
-                        ),
-                        const SizedBox(height: 5, width: 10),
-                        StatefulBuilder(
-                          builder: (context, stateset) {
-                            int count = widget.bill[itemId]?['count'] ?? 0;
-                            return Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [                        
-                            ElevatedButton(              
-                              style: ButtonStyle(
-                                padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                                fixedSize: WidgetStatePropertyAll(Size.square(40)),
-                                minimumSize: WidgetStatePropertyAll(Size.square(40))
-                                ),              
-                              onPressed: !(widget.bill.containsKey(itemId))? null :(){
-                                stateset(() {                                  
-                                if (count - 1 <= 0){
-                                  if (widget.bill.keys.contains(itemId)){
-                                    widget.bill.removeWhere((key, value) => key == itemId);
-                                    widget.onBillUpdate(widget.bill);
-                                  }
-                                  widget.bill.remove(itemId);
-                                  debugPrint(widget.bill.toString());
-                                }
-                                else{
-                                  count -= 1;
-                                  widget.bill[itemId] = {
-                                    'name': GlobalMenuCache.items[itemId]?['name'],
-                                    'price': GlobalMenuCache.items[itemId]?['price']*count,
-                                    'count': count,
-                                    'id': itemId,
-                                  };
-                                  widget.onBillUpdate(widget.bill);
-                                  debugPrint(widget.bill.toString());
-                                  }
-                              });
-                              } ,
-                              child: Icon(Icons.remove)),
-                              const SizedBox(height: 5, width: 10),
-                              Text(widget.bill[itemId]?['count'].toString() ?? "0"),
-                              const SizedBox(height: 5, width: 10),
-                              ElevatedButton(
-                                style: ButtonStyle(
-                                  padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                                  fixedSize: WidgetStatePropertyAll(Size.square(40)),
-                                  minimumSize: WidgetStatePropertyAll(Size.square(40))
-                                ),
-                                onPressed: (){
-                                  stateset(() {
-                                  if(widget.bill.values.where((element) => element['id'] == itemId).isNotEmpty){
-                                    count += 1;                                
-                                    widget.bill[itemId] = {
-                                    'name': GlobalMenuCache.items[itemId]?['name'],
-                                    'price': GlobalMenuCache.items[itemId]?['price']*count,
-                                    'count': count,
-                                    'id': itemId,
-                                  };
-                                  widget.onBillUpdate(widget.bill);
-                                  }
-                                  else{
-                                  widget.bill[itemId] = {
-                                    'name': GlobalMenuCache.items[itemId]?['name'],
-                                    'price': GlobalMenuCache.items[itemId]?['price'],
-                                    'count': 1,
-                                    'id': itemId,
-                                  };
-                                  widget.onBillUpdate(widget.bill);
-                                  debugPrint(widget.bill.toString());
-                                  }
-                                });
-                                }, 
-                                child: Icon(Icons.add)),
-                          ],);
-                          }
-                        )
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            int itemId = (widget.searchitems.isNotEmpty)
+                ? widget.searchitems.elementAt(index)
+                : GlobalMenuCache.availableid.elementAt(index);
+            final item = GlobalMenuCache.items[itemId];
+            if (item == null) return const SizedBox.shrink();
+
+            return BillMenuItemCard(
+              itemId: itemId,
+              item: item,
+              isTamil: widget.isTamil,
+              bill: widget.bill,
+              onBillUpdate: widget.onBillUpdate,
             );
           },
         );
       },
     );
   }
+}
 
-  Color _getStockColor(int? stocks, Color defaultColor) {
-    if (stocks == -1 || stocks == null || stocks >= 300) return Colors.white;
-    if (stocks > 0) return Colors.limeAccent;
-    return Colors.red;
+class BillMenuItemCard extends StatefulWidget {
+  final int itemId;
+  final Map<String, dynamic> item;
+  final bool isTamil;
+  final Map<int, Map<String, dynamic>> bill;
+  final Function(Map<int, Map<String, dynamic>>) onBillUpdate;
+
+  const BillMenuItemCard({
+    super.key,
+    required this.itemId,
+    required this.item,
+    required this.isTamil,
+    required this.bill,
+    required this.onBillUpdate,
+  });
+
+  @override
+  State<BillMenuItemCard> createState() => _BillMenuItemCardState();
+}
+
+class _BillMenuItemCardState extends State<BillMenuItemCard> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+              child: MenupageState().showImage(widget.itemId, widget.item['available'] ?? false),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Color.fromARGB(180, 0, 0, 0),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.6, 1.0],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Text(
+                    widget.item['name'] ?? "Unknown Item",
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "₹${widget.item['price'] ?? 'N/A'}",
+                        style: TextStyle(
+                            fontSize: 18,
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "Stock: ${widget.item['stocks'] == -1 ? '∞' : widget.item['stocks']}",
+                        style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                        icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
+                        onPressed: !(widget.bill.containsKey(widget.itemId))
+                            ? null
+                            : () {
+                                setState(() {
+                                  int count = widget.bill[widget.itemId]?['count'] ?? 0;
+                                  if (count - 1 <= 0) {
+                                    if (widget.bill.keys.contains(widget.itemId)) {
+                                      widget.bill.removeWhere(
+                                          (key, value) => key == widget.itemId);
+                                      widget.onBillUpdate(widget.bill);
+                                    }
+                                  } else {
+                                    count -= 1;
+                                    widget.bill[widget.itemId] = {
+                                      'name': widget.item['name'],
+                                      'price': widget.item['price'] * count,
+                                      'count': count,
+                                      'id': widget.itemId,
+                                    };
+                                    widget.onBillUpdate(widget.bill);
+                                  }
+                                });
+                              },
+                        ),
+                    Text(
+                      (widget.bill[widget.itemId]?['count'] ?? 0).toString(),
+                      style: const TextStyle(
+                          fontSize: 22,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.add_circle, color: theme.colorScheme.primary, size: 28),
+                      onPressed: () {
+                        setState(() {
+                          int count = widget.bill[widget.itemId]?['count'] ?? 0;
+                          if (widget.bill.values
+                              .where((element) =>
+                                  element['id'] == widget.itemId)
+                              .isNotEmpty) {
+                            count += 1;
+                            widget.bill[widget.itemId] = {
+                              'name': widget.item['name'],
+                              'price': widget.item['price'] * count,
+                              'count': count,
+                              'id': widget.itemId,
+                            };
+                            widget.onBillUpdate(widget.bill);
+                          } else {
+                            widget.bill[widget.itemId] = {
+                              'name': widget.item['name'],
+                              'price': widget.item['price'],
+                              'count': 1,
+                              'id': widget.itemId,
+                            };
+                            widget.onBillUpdate(widget.bill);
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

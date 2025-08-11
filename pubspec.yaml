@@ -58,6 +58,7 @@ dependencies:
   extended_image_library: ^5.0.1
   http_parser: ^4.1.2
   charset_converter: ^2.3.0
+  flutter_speed_dial: ^7.0.0
   # image: ^4.5.4
 
 dev_dependencies:

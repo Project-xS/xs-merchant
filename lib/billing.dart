@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/menu_grid.dart';
 import 'package:merchant/posprint.dart';
+import 'package:merchant/tally_view.dart';
 
 class Billing extends StatefulWidget {
   final String name;
@@ -24,30 +25,27 @@ class _BillingState extends State<Billing> {
   Map<int, Map<String, dynamic>> item = {};
   List<int> searchitems = [];
   int billIndex = 1;
+  bool _isGridView = true;
 
   @override
   Widget build(BuildContext context) {
-    void updateSearchItems(searchitem) {
-      setState(() {
-        searchitems = searchitem;
-      });
-    }
     void updateBillItems(updatedBill) {
       setState(() {
         bill = updatedBill;
       });
     }
+    final theme = Theme.of(context);
     int subtotal = 0;
     bill.forEach((key, value) {
       subtotal += (value['price'] ?? 0) as int;
     });
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         heroTag: "close",
-        backgroundColor: Colors.cyan,
-        label: Text("Close", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 18)),
-        icon: Icon(Icons.close, color: Colors.black),
+        backgroundColor: theme.colorScheme.primary,
+        label: Text("Close", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
+        icon: const Icon(Icons.close, color: Colors.white),
         onPressed: () {
           Navigator.pop(context);
         },
@@ -55,13 +53,21 @@ class _BillingState extends State<Billing> {
       appBar: AppBar(
         forceMaterialTransparency: true,
         toolbarHeight: 50.00,
-        title: Text("Billing:", style: TextStyle(fontWeight: FontWeight.bold))),
+        title: Text("Billing:", style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
+            onPressed: () {
+              setState(() {
+                _isGridView = !_isGridView;
+              });
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height - 110,
-          width: MediaQuery.of(context).size.width - 2,
-          child: Row(
+        child: Row(
             children: [
               Expanded(
                 flex: 4,
@@ -81,16 +87,15 @@ class _BillingState extends State<Billing> {
                               padding: const EdgeInsets.symmetric(horizontal: 20.0),
                               child: SearchBar(
                               controller: controller,
-                              backgroundColor: WidgetStateProperty.all(const Color.fromARGB(255, 130, 126, 126)),
+                              backgroundColor: WidgetStateProperty.all(theme.colorScheme.surfaceContainerHighest),
                               padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10)),
-                              leading: Icon(Icons.search, color: Colors.black),
+                              leading: Icon(Icons.search, color: theme.colorScheme.primary),
                               hintText: AppLocalizations.of(context)!.search_name,
-                              hintStyle: WidgetStatePropertyAll(TextStyle(color: Colors.black)),
+                              hintStyle: WidgetStatePropertyAll(TextStyle(color: theme.colorScheme.primary)),
                               onChanged: (value) async {
                                 if(value.isEmpty){
                                   setState(() {
                                     searchitems.clear();
-                                    updateSearchItems(searchitems);
                                   });
                                   return;
                                 }
@@ -102,10 +107,10 @@ class _BillingState extends State<Billing> {
                                   setState(() {
                                     searchitems.clear();
                                     for (var i in idList) {
-                                      int? itemId = i["item_id"] is int 
-                                          ? i["item_id"] 
+                                      int? itemId = i["item_id"] is int
+                                          ? i["item_id"]
                                           : int.tryParse(i["item_id"].toString());
-                                      
+
                                       if (itemId != null && i["is_available"]==true) {
                                         searchitems.add(itemId);
                                       }
@@ -122,15 +127,12 @@ class _BillingState extends State<Billing> {
                                 }
                               },
                               trailing: [
-                                IconButton(icon: Icon(Icons.clear, color: Colors.black),
+                                IconButton(icon: Icon(Icons.clear, color: theme.colorScheme.primary),
                                   onPressed: (){
                                     setState(() {
                                       controller.clear();
                                       searchitems.clear();
-                                      updateSearchItems(searchitems);
                                       focus.requestFocus(focus);
-                                    });
-                                    setState(() {                                    
                                     });
                                     }), SizedBox(width: 10)]
                               ),
@@ -138,14 +140,21 @@ class _BillingState extends State<Billing> {
                             SizedBox(height: 10),
                             Expanded(
                               child: SingleChildScrollView(
-                                child: BillMenu(
-                                  widget.canteenId,
-                                  widget.isTamil,
-                                  searchitems,
-                                  updateSearchItems,                              
-                                  bill,
-                                  updateBillItems
-                                )
+                                child: _isGridView
+                                  ? BillMenu(
+                                      widget.canteenId,
+                                      widget.isTamil,
+                                      searchitems,
+                                      bill,
+                                      updateBillItems
+                                    )
+                                  : TallyView(
+                                      widget.canteenId,
+                                      widget.isTamil,
+                                      searchitems,
+                                      bill,
+                                      updateBillItems
+                                    )
                               )
                             )
                           ],
@@ -167,7 +176,7 @@ class _BillingState extends State<Billing> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(width: 10),
-                          Expanded(flex: 3, child: Text("Item", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),                        
+                          Expanded(flex: 3, child: Text("Item", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
                           Expanded(flex: 2, child: Text("Count", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
                           Expanded(flex: 2, child: Text("Price", style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
                           Flexible(flex: 1, child: Text(""))
@@ -183,13 +192,13 @@ class _BillingState extends State<Billing> {
                               child: Row(
                                 children: [
                                   Text("${index+1}. "),
-                                  Expanded(flex: 3, child: Text(bill[i]?['name'], overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18))),          
+                                  Expanded(flex: 3, child: Text(bill[i]?['name'], overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18))),
                                   Expanded(flex: 2, child: Text(bill[i]?['count'].toString()??"", textAlign: TextAlign.center, style: TextStyle(fontSize: 18))),
                                   Expanded(flex: 2, child: Text("₹${bill[i]?['price']}", style: TextStyle(fontSize: 18))),
                                   IconButton(
                                     onPressed: (){
                                       showDialog(
-                                        context: context, 
+                                        context: context,
                                         builder: (context){
                                           return AlertDialog(
                                             title: Text("Edit Bill Item: ", style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold,)),
@@ -206,11 +215,11 @@ class _BillingState extends State<Billing> {
                                                   onChanged: (value) {
                                                     if (int.parse(value)>=1){
                                                     stateset(() {
-                                                      bill[i] = {                                                      
+                                                      bill[i] = {
                                                       'price' : (bill[i]?['price']/bill[i]?['count']).toInt()*int.parse(value),
                                                       'count' : int.parse(value),
                                                       'id' : i,
-                                                      'name' : bill[i]?['name']                                                            
+                                                      'name' : bill[i]?['name']
                                                       };
                                                       updateBillItems(bill);
                                                     });
@@ -226,12 +235,12 @@ class _BillingState extends State<Billing> {
                                                 TextButton(onPressed: (){
                                                   stateset(() {
                                                     Navigator.pop(context);
-                                                  });                              
-                                                }, 
+                                                  });
+                                                },
                                                 style: ButtonStyle(
-                                                  padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
-                                                  backgroundColor: WidgetStateProperty.all(Colors.greenAccent)),
-                                                child: Text("Change", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold)),
+                                                  padding: const WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                                                  backgroundColor: WidgetStateProperty.all(theme.colorScheme.primary)),
+                                                child: Text("Change", style: TextStyle(fontSize: 20.00 ,color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold)),
                                                 ),
                                                 SizedBox(height: 20),
                                                 Text("Or", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -245,17 +254,17 @@ class _BillingState extends State<Billing> {
                                                       updateBillItems(bill);
                                                       Navigator.pop(context);
                                                     }
-                                                  });                                  
-                                                }, 
+                                                  });
+                                                },
                                                 style: ButtonStyle(
-                                                  padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
-                                                  backgroundColor: WidgetStateProperty.all(Colors.redAccent)),
-                                                child: Text("Delete", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold)),
+                                                  padding: const WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                                                  backgroundColor: WidgetStateProperty.all(theme.colorScheme.error)),
+                                                child: Text("Delete", style: TextStyle(fontSize: 20.00 ,color: theme.colorScheme.onError, fontWeight: FontWeight.bold)),
                                                 )
                                               ])
                                           );
                                         }
-                                        );},                                   
+                                        );},
                                     icon: Icon(Icons.edit)),
                                 ],
                               ),
@@ -270,15 +279,15 @@ class _BillingState extends State<Billing> {
                       Divider(),
                       Center(
                         child: TextButton(style: ButtonStyle(
-                          padding: WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
-                          backgroundColor: WidgetStateProperty.all(Colors.cyan)),
+                          padding: const WidgetStatePropertyAll(EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20)),
+                          backgroundColor: WidgetStateProperty.all(theme.colorScheme.primary)),
                           onPressed: (){
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => PrintBill(bill: bill)
                                 ));},
-                          child: Text("Print", style: TextStyle(fontSize: 20.00 ,color: Colors.black, fontWeight: FontWeight.bold))),
+                          child: Text("Print", style: TextStyle(fontSize: 20.00 ,color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold))),
                       )
                     ],
                   ),
@@ -288,7 +297,6 @@ class _BillingState extends State<Billing> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

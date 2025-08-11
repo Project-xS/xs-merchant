@@ -14,12 +14,6 @@ class Orders extends StatefulWidget {
 }
 
 class _OrdersState extends State<Orders> with OrderFetchMixin<Orders>{
-  // Map<int, Map<String, dynamic>> orders = {
-  //   1: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken', 'Rasam'], 'time':'07:00', 'count': [10,500,20,70]},
-  //   2: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken', 'Sambar'], 'time':'11:15', 'count': [30,500,20,90]},
-  //   3: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken', 'Rice'], 'time':'12:00', 'count': [60,500,20,10]},
-  //   4: {'name': ['Chicken Rice', 'Veg Fried Rice', 'Chilli Chicken', 'Sambar'], 'time':'3:00', 'count': [90,500,20,90]},
-  // };
   Map<String, Map<String, dynamic>> orders = {};
 
   @override
@@ -77,146 +71,198 @@ class _OrdersState extends State<Orders> with OrderFetchMixin<Orders>{
     }
   }
 
-    @override
+    ButtonStyle _getButtonStyle(BuildContext context, bool isPrimary,
+      {bool isYellow = false}) {
+    Color color;
+    if (isYellow) {
+      color = Colors.yellowAccent;
+    } else {
+      color = isPrimary ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.error;
+    }
+
+    return ButtonStyle(
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(
+            horizontal: 24, vertical: 22),
+      ),
+      backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.hovered)) return Colors.black;
+          return color;
+        },
+      ),
+      foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+        (Set<WidgetState> states) {
+          if (states.contains(WidgetState.hovered)) return color;
+          return Colors.black;
+        },
+      ),
+      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          side: const BorderSide(color: Colors.black, width: 2),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(onPressed: () {
-        getorders();
-      },
-      backgroundColor: Colors.cyan,
-      label: Text(AppLocalizations.of(context)!.refresh, style: TextStyle(fontWeight: (widget.isTamil)?FontWeight.w900:FontWeight.w600, color: Colors.black)),
-      icon: Icon(Icons.refresh, color: Colors.black)) ,
-      body: Padding(
-        padding: EdgeInsets.symmetric(vertical: 10.00, horizontal: ((widget.portrait)?0:(MediaQuery.of(context).size.width)/4)),
+      backgroundColor: Colors.transparent,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 60.0),
+        child: FloatingActionButton.extended(
+            onPressed: () {
+              getorders();
+            },
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            label: Text(AppLocalizations.of(context)!.refresh,
+                style: Theme.of(context).textTheme.labelLarge),
+            icon: const Icon(Icons.refresh)),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                AppLocalizations.of(context)!.delivery_time,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                String orderTime = orders.keys.elementAt(index);
+                return generateList(orderTime);
+              },
+              childCount: orders.length,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget generateList(String orderTime) {
+    bool loading = false;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(AppLocalizations.of(context)!.delivery_time, style: TextStyle(fontSize: 22.00, fontWeight: FontWeight.bold)),
-            Flexible(
-                  child: ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    itemCount: orders.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      String orderTime = orders.keys.elementAt(index);
-                      return Align(
-                        alignment: Alignment.center,
-                        child: Card(
-                          margin: EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          child: Padding(
-                            padding: EdgeInsets.all(25.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: RichText(text: 
-                                  TextSpan(children: [
-                                    TextSpan(text: AppLocalizations.of(context)!.timing), 
-                                    TextSpan(text: (orderTime == "Instant")?AppLocalizations.of(context)!.instant:orderTime, style: TextStyle(color: Colors.cyan))
-                                    ],
-                                  style: TextStyle(fontSize: 19.00, fontWeight: FontWeight.w600))),
-                                ),
-                                SizedBox(height: 10.00),
-                                generateList(orderTime),
-                            ]
-                          )
-                            )
-                          ),
-                      );
-                      }
-                    )
-                  ),
+            Text(
+              "${AppLocalizations.of(context)!.timing} ${(orderTime == "Instant") ? AppLocalizations.of(context)!.instant : orderTime}",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(orders[orderTime]!['name'].length, (i) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      orders[orderTime]!['name'][i],
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    Text(
+                      "x${orders[orderTime]!['count'][i]}",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  style: _getButtonStyle(context, true),
+                  onPressed: (loading)
+                      ? null
+                      : () async {
+                          setState(() {
+                            loading = true;
+                          });
+                          try {
+                            await verifyOrder(orderTime);
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                loading = false;
+                              });
+                            }
+                          }
+                        },
+                  child: (loading)
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white)),
+                            SizedBox(width: 8),
+                            Text("Verifying..."),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            const Icon(Icons.check),
+                            const SizedBox(width: 8),
+                            Text(AppLocalizations.of(context)!.verify),
+                          ],
+                        ),
+                ),
+              ],
+            )
           ],
         ),
       ),
     );
   }
-  Widget generateList(String orderTime) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Column(
-          children: List.generate(orders[orderTime]?['name'].length, (i) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color:Color.fromRGBO(75, 75, 75, 1))),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(width: 5.00),
-                  // orders[orderId]?['time'][i] ? Icon(Icons.verified, color: Colors.green) : Icon(Icons.cancel, color: Colors.red),
-                  SizedBox(width: 10.00),
-                  Expanded(
-                    child:
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          SizedBox(width: 200, child: Text("${orders[orderTime]?['name'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis, maxLines: 2,)),
-                          SizedBox(width: 20.00),
-                          SizedBox(width: 50, child: Text("x${orders[orderTime]?['count'][i]}", style: TextStyle(fontSize: 18.00), overflow: TextOverflow.ellipsis,)),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 40.00,),
-                      ],
-                    ),
 
-                  ],
-                );
-              },
-            )),
-          SizedBox(width:1200.00, height: 20.00, child: Divider(height: 10.00, thickness: 2.00, color: Color.fromRGBO(75, 75, 75, 1)))
-      ],
-
-    );
+  Future<void> verifyOrder(String orderTime) async {
+    try {
+      final response = await http.post(
+        Uri.parse("https://proj-xs.fly.dev/orders/verify"),
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode({
+          "canteen_id": widget.canteenId,
+          "delivery_time": orderTime,
+        }),
+      );
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Order Verified Successfully"),
+              backgroundColor: Colors.cyanAccent));
+          setState(() {
+            orders.remove(orderTime);
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Error Verifying Order: ${response.statusCode}"),
+              backgroundColor: Colors.redAccent));
+        }
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Not Connected, $e"),
+            backgroundColor: Colors.redAccent));
+      }
+    }
   }
 }
-
-
-
-
-
-//       body: SingleChildScrollView(
-//         child: Center(
-//           child: Padding(
-//             padding: EdgeInsets.symmetric(vertical: 20.00, horizontal: ((widget.portrait)?(MediaQuery.of(context).size.width)/7:(MediaQuery.of(context).size.width)/3)),
-//             child: Card(
-//               margin: EdgeInsets.all(16),
-//               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-//               child: Padding(
-//                 padding: EdgeInsets.all(16),
-//                 child: Column(
-//                   mainAxisSize: MainAxisSize.min,
-//                   crossAxisAlignment: CrossAxisAlignment.center,
-//                   children: [
-//                     Text(AppLocalizations.of(context)!.order_items, style: TextStyle(fontSize: 22, fontWeight:(widget.isTamil)?FontWeight.w600:FontWeight.w500)),
-//                     SizedBox(height: 10),
-//                     Column(
-//                       children: List.generate(orders.length, (i) {
-//                         String orderTime = orders.keys.elementAt(i);
-//                         return Column(
-//                           children: [
-//                             Divider(thickness: 2, color: Color.fromRGBO(75, 75, 75, 1)),
-//                             Row(
-//                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                               children: [
-//                                 Text("${i+1}. " "${orders[orderTime]?['name']}", style: TextStyle(fontSize: 20)),
-//                                 Text("x ${orders[orderTime]?['count']}", style: TextStyle(fontSize: 20)),
-//                               ],
-//                             ),
-//                           ],
-//                         );
-//                       }),
-//                     ),
-//                     Divider(thickness: 2, color: Color.fromRGBO(75, 75, 75, 1)),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }

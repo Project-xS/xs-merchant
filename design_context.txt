@@ -1,0 +1,59 @@
+# Gemini UI/UX Design Context for XS-Merchant (Final)
+
+This document outlines the definitive design system for the XS-Merchant application, incorporating all user feedback for a world-class, professional, and visually stunning user experience.
+
+## 1. Design Philosophy
+
+- **Modern & Clean:** A sophisticated, uncluttered dark mode interface.
+- **Depth & Interactivity:** Use of shadows, hover effects, and meaningful motion to create a responsive and premium feel.
+- **Data-First Efficiency:** For complex views like "Mass Edit," prioritize a compact, tabular layout that allows users to view and manage data efficiently.
+- **Responsive & Adaptive:** Layouts must be seamless from mobile portrait to full-screen desktop.
+
+## 2. Color Palette
+
+- **Primary Background:** `#0D1117` (Almost Black)
+- **Card/Surface Color:** `#161B22` (Dark Grey)
+- **Primary Accent (Submit/Confirm):** `#238636` (Vibrant Green)
+- **Secondary Accent (FABs):** `#30A14E` (Lighter Green)
+- **Error/Delete/Cancel Accent:** `Colors.redAccent`
+- **Warning Accent:** `Colors.yellowAccent`
+- **Primary Text:** `#FFFFFF` (White)
+- **Secondary Text / Icons:** `#8B949E` (Grey)
+- **Button Text:** `#000000` (Black) - For primary and secondary action buttons.
+
+## 3. Typography
+
+- **Primary Font:** 'Catamaran'
+- **Card Title (Name):** 22pt, Bold, White
+- **Card Subtitle (Price):** 19pt, Bold, Primary Accent Color
+- **Card Subtitle (Stock):** 18pt, Bold, White
+
+## 4. Key UI Components & Patterns
+
+### Dialog Buttons
+- **Style:** A custom `ElevatedButton` style.
+- **Shape:** Rounded rectangle (Stadium Border) for a modern, pill-shaped look.
+- **Height:** Increased vertical padding to `22` for a taller, more substantial button.
+- **Colors:** Uses the Green/Red/Yellow accent colors for the background.
+- **Text Color:** Always Black for high contrast and a unique look.
+- **Hover Effect:** On hover, the background inverts to black, and the text takes on the button's original accent color (Green/Red/Yellow).
+- **Loading State:** On submission, the button's text is replaced by a `CircularProgressIndicator` to provide immediate feedback to the user that their action is being processed. The button is disabled during this state.
+
+### Menu Item Card (`menupage.dart`)
+- **Layout:** Image-first design with a dark gradient overlay at the bottom.
+- **Text:** Name, Price, and Stock are large, bold, and placed on the gradient for maximum legibility.
+- **Action Menu:** A "kebab" menu (`...`) in the top-right corner provides "Edit" and "Delete" options, ensuring a clean design that works on all platforms.
+- **Veg/Non-Veg Indicator:** An icon in the top-left corner, vertically aligned with the kebab menu.
+- **`onTap` Action:** Tapping the card toggles its availability (On/Off Menu).
+
+### Mass Edit Dialog (`menupage.dart`)
+- **Layout:** A list of compact cards, each containing a `TextFormField` for the item's name, and a row with fields for price, stock, and checkboxes for "Veg" and "On Menu."
+- **Sizing:** The dialog uses a percentage of the screen width/height to avoid being overwhelmingly large on desktop screens.
+
+### Floating Action Button
+- **Position:** Padded to ensure it always sits above the bottom navigation bar.
+- **Style:** A "Speed Dial" FAB with solid, opaque child buttons for a clean, modern look.
+
+### Sort Dropdown
+- **Visibility:** Appears for both "On Menu" and "Off Menu" sections.
+- **Style:** Prefixed with a "Sort:" label and has a black background for a consistent look.

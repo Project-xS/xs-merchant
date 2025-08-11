@@ -16,15 +16,12 @@ class PrintBill extends StatefulWidget {
 class _PrintBillState extends State<PrintBill> {
 // Future<void> _sendToUsbPrinter(List<int> bytes) async {
 //   try {
-//     // Step 1: Skip getPrinters() for Windows since not implemented
 //     if (!Platform.isWindows) {
 //       await FlutterThermalPrinter.instance.getPrinters();
 //     }
 
-//     // Step 2: Get available devices from the stream (one-time)
 //     final printers = await FlutterThermalPrinter.instance.devicesStream.first;
 
-//     // Step 3: Filter for USB printers
 //     final usbPrinters = printers.where((p) => p.connectionType == ConnectionType.USB).toList();
 
 //     if (usbPrinters.isEmpty) {
@@ -32,17 +29,14 @@ class _PrintBillState extends State<PrintBill> {
 //       return;
 //     }
 
-//     // Step 4: Pick first USB printer (you can add selection UI later)
 //     Printer selectedPrinter = usbPrinters.first;
 
-//     // Step 5: Connect to the selected USB printer
 //     bool connected = await FlutterThermalPrinter.instance.connect(selectedPrinter);
 //     if (!connected) {
 //       debugPrint("❌ Failed to connect to USB printer.");
 //       return;
 //     }
 
-//     // Step 6: Send print data
 //     await FlutterThermalPrinter.instance.printData(
 //       selectedPrinter,
 //       bytes,
@@ -100,8 +94,8 @@ class _PrintBillState extends State<PrintBill> {
         final String itemPrice = item['price'].toString();
         subtotal += int.parse(itemPrice);
 
-        // Note: For printer output, text wrapping depends on the printer's capabilities and width setting.
-        // The `width: 6` in PosColumn helps proportion, but actual line breaks can vary.
+        //printer outputvaries, need testing.
+        // The linebreak of width 6 may vary.
         bytes += generator.row([
           PosColumn(text: '$itemIndex. ${itemName.length > 18 ? '${itemName.substring(0, 15)}...' : itemName}', width: 6),
           PosColumn(text: itemCount.toString(), width: 3, styles: PosStyles(align: PosAlign.center)),

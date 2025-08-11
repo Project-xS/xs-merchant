@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:merchant/login.dart';
 import 'package:merchant/main.dart';
-import 'package:merchant/menupage.dart';
 import 'package:merchant/settings_modal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -43,150 +42,86 @@ class ImageUploadState extends State<ImageUpload> {
   bool isProcessingImage = false;
 
   Future<void> pickImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-    );
-
-    if (result != null && result.files.isNotEmpty) {
-      final path = result.files.first.path!;
-      imageFile = File(path);
-      imagepicked = FileImage(imageFile!);
-
-      png = null;
-      croppedUiImage = null;
-
-      setState(() {});
-    }
-  }
-
-  Future<void> initialize() async {
-    if (imageFile == null || png != null) return;
-    final bytes = await imageFile!.readAsBytes();
-    img.Image? decodedImage = img.decodeImage(bytes);
-    if (decodedImage != null) {
-      img.Image resizedImage = img.copyResize(decodedImage, width: 250, height: 250);
-      final Uint8List resizedBytes = Uint8List.fromList(img.encodePng(resizedImage));
-      setState(() {
-        png = resizedBytes;
-        if(widget.newitem){
-        widget.onImageUpdate1!(widget.canteenId, png, false);
-      }
-      else{
-        widget.onImageUpdate(widget.canteenId, png, false);
-      }
-      });
-    } else {
-      debugPrint("Failed to decode image for initialization.");
-      setState(() {
-        png = null;
-      });
-      if(widget.newitem){
-        widget.onImageUpdate1!(widget.canteenId, null, false);
-      }
-      else{
-        widget.onImageUpdate(widget.canteenId, null, false);
-      }
-    }
-  }
-
-  Future<void> initializeimage() async{
-    await initialize();
-  }
-
-  Widget previewImages(){
-    if (imageFile == null) {
-      return const Text("No image picked yet.");
-    }
-    initializeimage();
-    return FutureBuilder(
-      future: initializeimage(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        }
-        return SizedBox(
-          height: 400,
-          width: 300,
-          child: Column(
-            children: [
-              Flexible(
-                child: Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: (croppedUiImage != null)
-                      ? RawImage(image: croppedUiImage!)
-                      : (png != null)
-                          ? Image.memory(png!)
-                          : (imagepicked != null)
-                              ? Image(image: imagepicked!)
-                              : const Text("No image"),
-                ),
-              ),
-              const SizedBox(height: 10),
-              isProcessingImage
-                  ? const CircularProgressIndicator.adaptive()
-                  : ElevatedButton(
-                      onPressed: () async {
-                        if (imageFile == null) return;
-                        setState(() {
-                          isProcessingImage = true;
-                        });
-
-                        try {
-                          final croppedResult = await showCupertinoImageCropper(
-                            context,
-                            imageProvider: FileImage(imageFile!),
-                            allowedAspectRatios: const [
-                              CropAspectRatio(width: 250, height: 250),
-                            ],
-                            showLoadingIndicatorOnSubmit: false);
-                            
-                          if (croppedResult != null && mounted) {
-                            ui.Image finalImage = croppedResult.uiImage;
-                            if (finalImage.width != 250 || finalImage.height != 250) {
-                              final ByteData? byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
-                              if (byteData != null) {
-                                final List<int> bytes = byteData.buffer.asUint8List();
-                                img.Image? decodedImage = img.decodeImage(bytes);
-                                if (decodedImage != null) {
-                                  img.Image resizedImage = img.copyResize(decodedImage, width: 250, height: 250);
-                                  final Uint8List resizedBytes = Uint8List.fromList(img.encodePng(resizedImage));
-                                  finalImage = await decodeImageFromList(resizedBytes);
-                                }
-                              }
-                            }
-
-                            setState(() {
-                              croppedUiImage = finalImage;
-                            });
-                            await converttopng(croppedUiImage);
-                          } else {
-                            debugPrint("Cropping canceled or no result received.");
-                          }
-                        } catch (e) {
-                          setState(() {
-                            pickImageError = e;
-                          });
-                          debugPrint("Error during cropping: $e");
-                        } finally {
-                          setState(() {
-                            isProcessingImage = false;
-                          });
-                        }
-                      },
-                      child: const Text("Crop Image"),
-                    ),
-            ],
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Dialog(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text("Loading..."),
+              ],
+            ),
           ),
         );
       },
     );
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (mounted) Navigator.of(context).pop();
+
+      if (result != null && result.files.isNotEmpty) {
+        final path = result.files.first.path!;
+        final pickedFile = File(path);
+
+        if (!mounted) return;
+
+        final croppedResult = await showCupertinoImageCropper(
+          context,
+          imageProvider: FileImage(pickedFile),
+          allowedAspectRatios: const [
+            CropAspectRatio(width: 250, height: 250),
+          ],
+          showLoadingIndicatorOnSubmit: false,
+        );
+
+        if (croppedResult != null && mounted) {
+          ui.Image finalImage = croppedResult.uiImage;
+          if (finalImage.width != 250 || finalImage.height != 250) {
+            final ByteData? byteData =
+                await finalImage.toByteData(format: ui.ImageByteFormat.png);
+            if (byteData != null) {
+              final List<int> bytes = byteData.buffer.asUint8List();
+              img.Image? decodedImage = img.decodeImage(bytes);
+              if (decodedImage != null) {
+                img.Image resizedImage =
+                    img.copyResize(decodedImage, width: 250, height: 250);
+                final Uint8List resizedBytes =
+                    Uint8List.fromList(img.encodePng(resizedImage));
+                finalImage = await decodeImageFromList(resizedBytes);
+              }
+            }
+          }
+
+          setState(() {
+            croppedUiImage = finalImage;
+          });
+          await converttopng(croppedUiImage);
+        }
+      }
+    } catch (e) {
+      debugPrint("Error during image pick/crop: $e");
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   Future<void> converttopng(ui.Image? image) async {
     if (image == null) return;
 
     final byte = await image.toByteData(format: ui.ImageByteFormat.png);
+    debugPrint("Image converted to PNG: ${byte?.lengthInBytes} bytes");
     if (byte == null) return;
 
     setState(() {
@@ -197,98 +132,119 @@ class ImageUploadState extends State<ImageUpload> {
       else{        
         widget.onImageUpdate(widget.canteenId, png, false);
       }
+      debugPrint("Image picked and converted to PNG: ${png?.lengthInBytes} bytes");
     });
   }
 
 Future<String> imageupload(int id, Uint8List? image) async{
   dynamic data, data1;
-  if(image == null) return "";
+  debugPrint("[imageupload] Called with id: $id, image: ${image != null ? image.length : 'null'} bytes");
+  if(image == null) {
+    debugPrint("[imageupload] image is null, returning early");
+    return "";
+  }
   try{
+    debugPrint("[imageupload] Setting isLoading true");
     if(mounted && Scaffold.maybeOf(context) != null){
-    setState((){      
-      isLoading = true;
-    });}
+      setState((){      
+        isLoading = true;
+      });
+    }
+    debugPrint("[imageupload] Sending POST to /assets/upload/$id");
     final response1 = await http.post(
       Uri.parse("https://proj-xs.fly.dev/assets/upload/$id"), 
       headers: {'Content-Type': 'application/json'});
+    debugPrint("[imageupload] POST /assets/upload/$id status: ${response1.statusCode}, body: ${response1.body}");
 
     if(response1.statusCode == 200){
       data = jsonDecode(response1.body);
-      debugPrint("1st: ${data.toString()}");
+      await Future.delayed(Duration(seconds: 1));
+      debugPrint("[imageupload] POST response data: ${data.toString()}");
+      debugPrint("[imageupload] Sending PUT to presigned url: ${data['url']}");
       final response = await http.put(
-        Uri.parse("${data['url']}"), 
+        Uri.parse("${data['url']}"),
         body: image, 
         headers: {'Content-Type': 'image/png'}
-        );
+      );
+      debugPrint("[imageupload] PUT presigned url status: ${response.statusCode}, body: ${response.body}");
       if(response.statusCode == 200){
+        debugPrint("[imageupload] PUT to presigned url succeeded");
+        debugPrint("[imageupload] Sending PUT to /menu/set_pic/$id");
+        await Future.delayed(Duration(seconds: 1));
         final setimage = await http.put(
           Uri.parse("https://proj-xs.fly.dev/menu/set_pic/$id"),
           headers: {'Content-Type': 'application/json'},
         );
-        debugPrint(setimage.body);
+        debugPrint("[imageupload] PUT /menu/set_pic/$id status: ${setimage.statusCode}, body: ${setimage.body}");
+        debugPrint("[imageupload] Sending GET to /assets/$id");
+        await Future.delayed(Duration(seconds: 1));
         final response2 = await http.get(
           Uri.parse("https://proj-xs.fly.dev/assets/$id"),
           headers: {'Content-Type': 'application/json'});
+        debugPrint("[imageupload] GET /assets/$id status: ${response2.statusCode}, body: ${response2.body}");
         if (response2.statusCode == 200){
           data1 = jsonDecode(response2.body);
-          // debugPrint("2nd: ${data1.toString()}");
-          debugPrint("Image Uploaded Successfully");
+          debugPrint("[imageupload] Image Uploaded Successfully");
           isLoading = false;
-          debugPrint("${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
-          return data1['url'];
-            
+          debugPrint("[imageupload] GlobalMenuCache: ${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
+          return data1['url'];      
+        }else{
+          debugPrint("[imageupload] GET /assets/$id failed");
+          if(mounted && Scaffold.maybeOf(context) != null){
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Image Upload Failed: Get Stage, , ${response2.body}"),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
+          return "";
+        }
       }else{
+        debugPrint("[imageupload] PUT to presigned url failed");
         if(mounted && Scaffold.maybeOf(context) != null){
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Image Upload Failed: Get Stage"),
+              content: Text("Image Upload Failed: 2nd Stage, ${response1.body}"),
               backgroundColor: Colors.redAccent,
-                ),
+            ),
           );
         }
         return "";
       }
-      }else{
-        if(mounted && Scaffold.maybeOf(context) != null){
+    }
+    else{
+      debugPrint("[imageupload] POST /assets/upload/$id failed");
+      if(mounted && Scaffold.maybeOf(context) != null){
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Image Upload Failed: 2nd Stage"),
+            content: Text("Image Upload Failed: 1st Stage, ${response1.body}"),
             backgroundColor: Colors.redAccent,
-              ),
+          ),
         );
       }
       return "";
     }
-    }
-    else{
-      if(mounted && Scaffold.maybeOf(context) != null){
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Image Upload Failed: 1st Stage"),
-          backgroundColor: Colors.redAccent,
-            ),
-      );
-    }
-    return "";
-    }
   } on Exception catch(e){
-    debugPrint("Error: $e");
+    debugPrint("[imageupload] Exception: $e");
     return "";
   } finally{
+    debugPrint("[imageupload] finally block, isLoading set to false");
     if(mounted && Scaffold.maybeOf(context) != null){
-    setState((){
-      isLoading = false;
-      if(data1 != null){
-        GlobalMenuCache.items[id]?['pic'] = data1['url'];
-        debugPrint("Image Uploaded Successfully");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Image Uploaded Successfully"),
-            backgroundColor: Colors.cyanAccent,
-          ),
-        );
-      }
-    });}
+      setState((){
+        isLoading = false;
+        if(data1 != null){
+          GlobalMenuCache.items[id]?['pic'] = data1['url'];
+          debugPrint("[imageupload] Image Uploaded Successfully (finally)");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Image Uploaded Successfully"),
+              backgroundColor: Colors.cyanAccent,
+            ),
+          );
+        }
+      });
+    }
   }
 }
 
@@ -327,6 +283,7 @@ dynamic getallimage(Function(Map<String, String>) imageexpired) async{
 }
 
 Future<Widget> buildImageDisplay(String itemId, double width, double height, SharedPreferences cache, Function(Map<String, String>) imageexpired) async{
+  // return Image(image: AssetImage("assets/images/friedrice.png"));
   if (imagecalled) return const Center(child: CircularProgressIndicator());
   final cacheTimeString = cache.getString('time');
   final now = DateTime.now();
@@ -359,8 +316,8 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
       filterQuality: FilterQuality.high,
       cache: true,
       cacheKey: itemId,
-      width: (isAndroid)?115:(MenupageState().axisCount+1)*20.5,
-      height: (isAndroid)?115:(MenupageState().axisCount+1)*20.5,
+      width: (isAndroid)?115:(2)*20.5,
+      height: (isAndroid)?115:(5)*20.5,
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
@@ -394,14 +351,16 @@ Future<void> removeImageFromCache(String url,String itemId) async {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: Text("Picture: ", style: TextStyle(fontSize: 20.00))),
-        SizedBox(height: 10),
+        Text("Picture: ", style: TextStyle(fontSize: 20.00)),
         ElevatedButton(
-          child: (isAndroid)?Text("Open Gallery"):Text("Open File Explorer"),
-          onPressed: () => pickImage()
+          child: const Text("Select Image"),
+          onPressed: () => pickImage(),
         ),
-        SizedBox(height: 10),
-        Flexible(child: previewImages()),
+        if (png != null)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.memory(png!, height: 150),
+          ),
       ],
     );
   }
