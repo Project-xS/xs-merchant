@@ -58,7 +58,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
 
     _snowfallController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(minutes: 10),
     )..repeat();
   }
 
@@ -166,16 +166,16 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                         width: isAndroid ? null : 400,
                         padding: const EdgeInsets.all(24.0),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: const Color.fromARGB(51, 255, 255, 255),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: const Color.fromARGB(101, 255, 255, 255),
                           ),
                         ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset('assets/images/logo.png', height: 80),
+                            Image.asset('assets/images/logo.png', height: 150, width: 150, fit: BoxFit.fill),
                             const SizedBox(height: 16),
                             Text(
                               "Welcome Back",
@@ -258,8 +258,8 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         errorText: errorText,
         errorStyle: const TextStyle(color: Colors.redAccent),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(12),          borderSide: const BorderSide(color: Color.fromARGB(77, 255, 255, 255)),
+
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -328,13 +328,56 @@ class MountainPainter extends CustomPainter {
         end: Alignment.bottomCenter,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
-    final moonPaint = Paint()..color = const Color.fromARGB(255, 227, 224, 224).withOpacity(0.9);
-    canvas.drawCircle(Offset(size.width * 0.15, size.height * 0.15), 60, moonPaint);
+    final moonCenter = Offset(size.width * 0.15, size.height * 0.15);
+    const double moonRadius = 60;
+
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color.fromARGB(80, 255, 255, 255),
+          const Color.fromARGB(0, 255, 255, 255),
+        ],
+      ).createShader(Rect.fromCircle(center: moonCenter, radius: moonRadius * 2));
+    canvas.drawCircle(moonCenter, moonRadius * 2, glowPaint);
+
+    final moonPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color.fromARGB(255, 237, 237, 237),
+          const Color.fromARGB(255, 176, 176, 176),
+        ],
+        stops: [0.65, 1.0],
+      ).createShader(Rect.fromCircle(center: moonCenter, radius: moonRadius));
+    canvas.drawCircle(moonCenter, moonRadius, moonPaint);
+
+    final craterPaint = Paint()..color = const Color.fromARGB(200, 120, 120, 120);
+
+    final List<Map<String, dynamic>> craters = [
+      {"offset": Offset(-20, -10), "radius": 10.0},
+      {"offset": Offset(50, -5), "radius": 6.0},
+      {"offset": Offset(-1, -50), "radius": 5.0},
+      {"offset": Offset(18, 18), "radius": 7.0},
+      {"offset": Offset(-25, 20), "radius": 8.0},
+      {"offset": Offset(5, 45), "radius": 4.0},
+    ];
+
+    for (final crater in craters) {
+      canvas.drawCircle(
+        moonCenter + crater["offset"],
+        crater["radius"] as double,
+        craterPaint,
+      );
+    }
+
+    // Mountains
     Path mountainPath = Path();
     mountainPath.moveTo(0, size.height * 0.75);
-    mountainPath.cubicTo(size.width * 0.1, size.height * 0.65, size.width * 0.2, size.height * 0.7, size.width * 0.3, size.height * 0.6);
-    mountainPath.cubicTo(size.width * 0.4, size.height * 0.5, size.width * 0.55, size.height * 0.55, size.width * 0.65, size.height * 0.7);
-    mountainPath.cubicTo(size.width * 0.75, size.height * 0.85, size.width * 0.85, size.height * 0.8, size.width, size.height * 0.75);
+    mountainPath.cubicTo(size.width * 0.1, size.height * 0.65,
+        size.width * 0.2, size.height * 0.7, size.width * 0.3, size.height * 0.6);
+    mountainPath.cubicTo(size.width * 0.4, size.height * 0.5,
+        size.width * 0.55, size.height * 0.55, size.width * 0.65, size.height * 0.7);
+    mountainPath.cubicTo(size.width * 0.75, size.height * 0.85,
+        size.width * 0.85, size.height * 0.8, size.width, size.height * 0.75);
     mountainPath.lineTo(size.width, size.height);
     mountainPath.lineTo(0, size.height);
     mountainPath.close();
@@ -351,15 +394,15 @@ class SnowfallPainter extends CustomPainter {
 
   SnowfallPainter(this.animationValue) {
     if (_snowflakes.isEmpty) {
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 80; i++) {
         _snowflakes.add(Snowflake());
       }
     }
   }
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withOpacity(0.8);
+  void paint(Canvas canvas, Size size) {    final paint = Paint()..color = const Color.fromARGB(204, 255, 255, 255);
+
 
     for (var snowflake in _snowflakes) {
       snowflake.update(animationValue, size);
@@ -380,7 +423,6 @@ class Snowflake {
   late double size;
   late double speed;
   late double phase;
-
   Snowflake() {
     _reset();
   }
@@ -388,12 +430,12 @@ class Snowflake {
   void _reset() {
     position = Offset(Random().nextDouble(), Random().nextDouble());
     size = Random().nextDouble() * 2 + 1;
-    speed = 0.000000000001;
+    speed = Random().nextDouble() * 0.0005 + 0.0002;
     phase = Random().nextDouble() * pi * 2;
   }
 
   void update(double animationValue, Size bounds) {
-    double x = position.dx + sin(animationValue * 2 * pi + phase) * 0.002;
+    double x = position.dx + sin(phase + animationValue * 2 * pi) * 0.002;
     double y = (position.dy + speed) % 1.0;
 
     if (y < position.dy) {
@@ -401,5 +443,6 @@ class Snowflake {
     } else {
       position = Offset(x, y);
     }
+
   }
 }

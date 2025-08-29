@@ -90,10 +90,10 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     );
   }
 
-  void modifyItem(
-      int itemId, String oldName, int oldRate, bool isveg, bool available) {
+  void modifyItem(int itemId, String oldName, int oldRate, bool isveg, bool available) {
     bool isError = false;
     String name = "";
+    int? rate;
     int stocks = GlobalMenuCache.items[itemId]?['stocks'] ?? 0;
     showDialog(
       barrierDismissible: false,
@@ -166,7 +166,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                         onChanged: (value) {
                           if (!mounted) return;
                           setState(() {
-                            oldRate = (int.tryParse(value) != null)
+                            rate = (int.tryParse(value) != null)
                                 ? int.parse(value)
                                 : oldRate;
                           });
@@ -220,8 +220,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                         ],
                       ),
                       const SizedBox(height: 0),
-                      ImageUpload(
-                          widget.canteenId, widget.portrait, onImageUpdate)
+                      ImageUpload(widget.canteenId, widget.portrait, onImageUpdate)
                     ],
                   ),
                 ),
@@ -253,37 +252,28 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                             try {
                               if (!isError) {
                                 if (png != null) {
-                                  String url = await imageupload(itemId, png);
-                                  if (url.isNotEmpty) {
+                                  String? url = await ImageUploadState().imageupload(itemId, png);
+                                  if (url != null && url.isNotEmpty) {
                                     this.setState(() {
-                                      GlobalMenuCache.items[itemId]?['pic'] =
-                                          url;
-                                      final Map<String, dynamic> list =
-                                          jsonDecode(
-                                              cache.getString("piclink")!);
-                                      list.map((itemId, url) => MapEntry(
-                                          itemId.toString(), url));
+                                      GlobalMenuCache.items[itemId]?['pic'] = url;
+                                      final Map<String, dynamic> list = jsonDecode(cache.getString("piclink")!);
+                                      list.map((itemId, url) => MapEntry(itemId.toString(), url));
                                       list[itemId.toString()] = url;
                                       changeimage(itemId, url);
                                     });
                                   }
                                 }
-                                this.setState(() {
-                                  GlobalMenuCache.items[itemId] = {
+                                  await updateitem(itemId, {
                                     'name': name.isNotEmpty ? name : oldName,
-                                    'price': oldRate,
+                                    'price': rate??oldRate,
                                     'is_veg': isveg,
                                     'available': available,
                                     'stocks': stocks,
-                                    'pic':
-                                        GlobalMenuCache.items[itemId]?['pic']
-                                  };
-                                });
-                                await updateitem(
-                                    itemId, GlobalMenuCache.items[itemId]);
+                                    'pic': GlobalMenuCache.items[itemId]?['pic']
+                                  });
                               }
                             } finally {
-                              if (mounted) {
+                              if (context.mounted) {
                                 setState(() {
                                   png = null;
                                   loading = false;
@@ -544,22 +534,19 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                     available);
                               }
                               if (id != null) {
-                                String url = await imageupload(id!, pngn);
-                                if (url.isNotEmpty) {
+                                String? url = await ImageUploadState().imageupload(id!, pngn);
+                                if (url != null && url.isNotEmpty) {
                                   this.setState(() {
-                                    GlobalMenuCache.items[id]?['pic'] = true;
-                                    final Map<String, dynamic> list = 
-                                        jsonDecode(
-                                            cache.getString("piclink")!);
-                                    list.map((itemId, url) => MapEntry(
-                                        itemId.toString(), url));
+                                    GlobalMenuCache.items[id]?['pic'] = url;
+                                    final Map<String, dynamic> list = jsonDecode(cache.getString("piclink")!);
+                                    list.map((itemId, url) => MapEntry(itemId.toString(), url));
                                     list[id.toString()] = url;
                                     changeimage(id!, url);
                                   });
                                 }
                                 fetchAndCacheAndNotify(widget.canteenId);
                               }
-                              if (isError) {
+                              if (isError && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
@@ -568,16 +555,18 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                   ),
                                 );
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        "Item : \"$name\" Added Successfully"),
-                                    backgroundColor: Colors.cyanAccent,
-                                  ),
-                                );
+                                if (context.mounted){
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          "Item : \"$name\" Added Successfully"),
+                                      backgroundColor: Colors.cyanAccent,
+                                    ),
+                                  );
+                                }
                               }
                             } finally {
-                              if (mounted) {
+                              if (context.mounted) {
                                 setState(() {
                                   loading = false;
                                 });
@@ -615,73 +604,73 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     );
   }
 
-  Future<String> imageupload(int id, Uint8List? image) async {
-    dynamic data, data1;
-    if (image == null) return "";
-    try {
-      final response1 = await http.post(
-          Uri.parse("https://proj-xs.fly.dev/assets/upload/$id"),
-          headers: {'Content-Type': 'application/json'});
+  // Future<String?> imageupload(int id, Uint8List? image) async {
+  //   dynamic data, data1;
+  //   if (image == null) return null;
+  //   try {
+  //     final response1 = await http.post(
+  //         Uri.parse("https://proj-xs.fly.dev/assets/upload/$id"),
+  //         headers: {'Content-Type': 'application/json'});
 
-      if (response1.statusCode == 200) {
-        data = jsonDecode(response1.body);
-        debugPrint("1st: ${data.toString()}");
-        final response = await http.put(Uri.parse("${data['url']}"),
-            body: image, headers: {'Content-Type': 'image/png'});
-        if (response.statusCode == 200) {
-          final setimage = await http.put(
-            Uri.parse("https://proj-xs.fly.dev/menu/set_pic/$id"),
-            headers: {'Content-Type': 'application/json'},
-          );
-          debugPrint(setimage.body);
-          final response2 = await http.get(
-              Uri.parse("https://proj-xs.fly.dev/assets/$id"),
-              headers: {'Content-Type': 'application/json'});
-          if (response2.statusCode == 200) {
-            data1 = jsonDecode(response2.body);
-            // debugPrint("2nd: ${data1.toString()}");
-            debugPrint("Image Uploaded Successfully");
-            debugPrint(
-                "${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
-            return data1['url'];
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Image Upload Failed: Get Stage"),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
-            }
-            return "";
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Image Upload Failed: 2nd Stage"),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-          }
-          return "";
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Image Upload Failed: 1st Stage"),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-        return "";
-      }
-    } on Exception catch (e) {
-      debugPrint("Error: $e");
-      return "";
-    }
-  }
+  //     if (response1.statusCode == 200) {
+  //       data = jsonDecode(response1.body);
+  //       debugPrint("1st: ${data.toString()}");
+  //       final response = await http.put(Uri.parse("${data['url']}"),
+  //           body: image, headers: {'Content-Type': 'image/png'});
+  //       if (response.statusCode == 200) {
+  //         final setimage = await http.put(
+  //           Uri.parse("https://proj-xs.fly.dev/menu/set_pic/$id"),
+  //           headers: {'Content-Type': 'application/json'},
+  //         );
+  //         debugPrint(setimage.body);
+  //         final response2 = await http.get(
+  //             Uri.parse("https://proj-xs.fly.dev/assets/$id"),
+  //             headers: {'Content-Type': 'application/json'});
+  //         if (response2.statusCode == 200) {
+  //           data1 = jsonDecode(response2.body);
+  //           // debugPrint("2nd: ${data1.toString()}");
+  //           debugPrint("Image Uploaded Successfully");
+  //           debugPrint(
+  //               "${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
+  //           return data1['url'];
+  //         } else {
+  //           if (mounted) {
+  //             ScaffoldMessenger.of(context).showSnackBar(
+  //               const SnackBar(
+  //                 content: Text("Image Upload Failed: Get Stage"),
+  //                 backgroundColor: Colors.redAccent,
+  //               ),
+  //             );
+  //           }
+  //           return null;
+  //         }
+  //       } else {
+  //         if (mounted) {
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             const SnackBar(
+  //               content: Text("Image Upload Failed: 2nd Stage"),
+  //               backgroundColor: Colors.redAccent,
+  //             ),
+  //           );
+  //         }
+  //         return null;
+  //       }
+  //     } else {
+  //       if (mounted) {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(
+  //             content: Text("Image Upload Failed: 1st Stage"),
+  //             backgroundColor: Colors.redAccent,
+  //           ),
+  //         );
+  //       }
+  //       return null;
+  //     }
+  //   } on Exception catch (e) {
+  //     debugPrint("Error: $e");
+  //     return null;
+  //   }
+  // }
 
   void delAddItem(int itemId, String name, bool isAdd, bool available) {
     showDialog(
@@ -816,12 +805,11 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                               });
                             }
                           } on Exception catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          "Error performing search : $e"),
-                                      backgroundColor: Colors.redAccent));
+                            if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error performing search : $e"),
+                                backgroundColor: Colors.redAccent));
                             }
                           }
                         },
@@ -1039,22 +1027,24 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                         'pic': originalItem['pic']
                       };
                       if (mounted) {
-                        this.setState(() {
+                        setState(() {
                           GlobalMenuCache.items[i] = updatedItem;
                         });
                       }
                       await updateitem(i, updatedItem);
                     }
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Item Changes are Successful"),
-                      backgroundColor: Colors.cyanAccent,
-                    ));
+                    if (context.mounted){
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text("Item Changes are Successful"),
+                        backgroundColor: Colors.cyanAccent,
+                      ));
                     if (!isWindows) {
                       SystemChrome.setPreferredOrientations([
                         DeviceOrientation.portraitUp,
                       ]);
                     }
                     Navigator.pop(context);
+                    }
                   },
                   child: Row(
                     children: [
@@ -1072,8 +1062,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     );
   }
 
-  Future<int?> addnewitem(
-      String name, int price, bool isveg, int stocks, bool available) async {
+  Future<int?> addnewitem(String name, int price, bool isveg, int stocks, bool available, {String? pic}) async {
     try {
       final response = await http.post(
         Uri.parse('https://proj-xs.fly.dev/menu/create'),
@@ -1083,7 +1072,6 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         },
         body: jsonEncode({
           "canteen_id": widget.canteenId,
-          "pic_link": (pngn != null) ? true : false,
           "name": name,
           "price": price,
           "is_veg": isveg,
@@ -1142,33 +1130,28 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           body: jsonEncode({
             "item_id": itemId,
             "update": {
-              "description": "string",
               "is_available": item?["available"],
               "is_veg": item?['is_veg'],
               "name": item?["name"],
-              "pic_link":
-                  (png != null || GlobalMenuCache.items[itemId]?['pic'] == true)
-                      ? true
-                      : false,
               "price": item?["price"],
               "stock": item?["stocks"]
             }
           }));
       if (response.statusCode == 200) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text("Item Update Successful"),
-              backgroundColor: Colors.cyanAccent));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Item Update Successful"), backgroundColor: Colors.cyanAccent));
           setState(() {
             GlobalMenuCache.items[itemId] = {
               "available": item?["available"],
               "is_veg": item?['is_veg'],
               "name": item?["name"],
-              "pic": (png != null) ? true : false,
+              "pic": GlobalMenuCache.items[itemId]?['pic'],
+              "etag": GlobalMenuCache.items[itemId]?['etag'],
               "price": item?["price"],
               "stocks": item?["stocks"]
             };
           });
+          return true;
         }
       } else {
         if (mounted) {
@@ -1388,8 +1371,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
 
 Widget showImage(int itemId, bool available) {
   return FutureBuilder<Widget>(
-    future: ImageUploadState().buildImageDisplay(
-        itemId.toString(), 160, 160, cache, imageexpired),
+    future: ImageUploadState().buildImageDisplay(itemId.toString(), 160, 160),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const CircularProgressIndicator();
@@ -1516,10 +1498,14 @@ class MenuItemCard extends StatelessWidget {
                 ),
               ),
             Positioned(
-              top: 5,
-              left: 20,
-              child: SizedBox(
-                height: 48,
+              top: 8,
+              left: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(175, 0, 0, 0),
+                  borderRadius: BorderRadius.circular(8)
+                ),
                 child: Image.asset(
                   item['is_veg']
                       ? "assets/images/veg.png"
@@ -1532,31 +1518,37 @@ class MenuItemCard extends StatelessWidget {
             Positioned(
               top: 8,
               right: 8,
-              child: PopupMenuButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    onEdit();
-                  } else if (value == 'delete') {
-                    onDelete();
-                  }
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Edit'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(175, 0, 0, 0),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: PopupMenuButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      onEdit();
+                    } else if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: Icon(Icons.edit),
+                        title: Text('Edit'),
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: Icon(Icons.delete),
-                      title: Text('Delete'),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete),
+                        title: Text('Delete'),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             Positioned(

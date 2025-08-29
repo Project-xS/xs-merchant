@@ -25,7 +25,7 @@ class _BillingState extends State<Billing> {
   Map<int, Map<String, dynamic>> item = {};
   List<int> searchitems = [];
   int billIndex = 1;
-  bool _isGridView = true;
+  bool _isGridView = false;
 
   @override
   Widget build(BuildContext context) {
@@ -39,17 +39,17 @@ class _BillingState extends State<Billing> {
     bill.forEach((key, value) {
       subtotal += (value['price'] ?? 0) as int;
     });
-    return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: "close",
-        backgroundColor: theme.colorScheme.primary,
-        label: Text("Close", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
-        icon: const Icon(Icons.close, color: Colors.white),
-        onPressed: () {
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.pop(context);
-        },
-      ),
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Scaffold(
       appBar: AppBar(
         forceMaterialTransparency: true,
         toolbarHeight: 50.00,
@@ -118,7 +118,7 @@ class _BillingState extends State<Billing> {
                                     debugPrint(searchitems.toString());
                                   });
                                 } on Exception catch (e) {
-                                  if (mounted){
+                                  if (context.mounted){
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text("Error performing search : $e"),
                                     backgroundColor: Colors.redAccent)
@@ -297,6 +297,6 @@ class _BillingState extends State<Billing> {
             ],
           ),
         ),
-      );
+      ));
   }
 }

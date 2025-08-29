@@ -41,6 +41,10 @@ class _TallyViewState extends State<TallyView> {
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
             child: Row(
               children: [
+                Flexible(child: GlobalMenuCache.items[itemId]?['is_veg'] == true
+                    ? Icon(Icons.circle, color: Colors.green, size: 16)
+                    : Icon(Icons.circle, color: theme.colorScheme.error, size: 16)),
+                const SizedBox(width: 12),
                 Expanded(
                   flex: 5,
                   child: Column(

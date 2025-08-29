@@ -409,7 +409,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                             }
                           });
                         } else {
-                          if (mounted) {
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                     content: Text(
@@ -420,7 +420,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                           });
                         }
                       } on Exception catch (e) {
-                        if (mounted) {
+                        if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text("Not Connected, $e")));
                         }

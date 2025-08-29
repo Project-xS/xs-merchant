@@ -72,7 +72,7 @@ class _MobileBillingState extends State<MobileBilling> {
                       }
                     });
                   } catch (e) {
-                    if (mounted) {
+                    if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.redAccent));
                     }
                   }

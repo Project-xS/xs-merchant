@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
-import 'package:merchant/login.dart';
 import 'package:merchant/main.dart';
 import 'package:merchant/settings_modal.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:extended_image/extended_image.dart';
 import 'package:extended_image_library/extended_image_library.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ImageUpload extends StatefulWidget {
   final bool isAndroid;
@@ -41,7 +39,7 @@ class ImageUploadState extends State<ImageUpload> {
   String base64image = "";
   bool isProcessingImage = false;
 
-  Future<void> pickImage() async {
+  Future<void> pickImage({int height = 300, int width = 300, bool item = true}) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -61,7 +59,6 @@ class ImageUploadState extends State<ImageUpload> {
         );
       },
     );
-
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -73,21 +70,19 @@ class ImageUploadState extends State<ImageUpload> {
       if (result != null && result.files.isNotEmpty) {
         final path = result.files.first.path!;
         final pickedFile = File(path);
-
         if (!mounted) return;
-
         final croppedResult = await showCupertinoImageCropper(
           context,
           imageProvider: FileImage(pickedFile),
-          allowedAspectRatios: const [
-            CropAspectRatio(width: 250, height: 250),
+          allowedAspectRatios: [
+            CropAspectRatio(width: width, height: height),
           ],
           showLoadingIndicatorOnSubmit: false,
         );
 
         if (croppedResult != null && mounted) {
           ui.Image finalImage = croppedResult.uiImage;
-          if (finalImage.width != 250 || finalImage.height != 250) {
+          if (finalImage.width != width || finalImage.height != height) {
             final ByteData? byteData =
                 await finalImage.toByteData(format: ui.ImageByteFormat.png);
             if (byteData != null) {
@@ -95,14 +90,13 @@ class ImageUploadState extends State<ImageUpload> {
               img.Image? decodedImage = img.decodeImage(bytes);
               if (decodedImage != null) {
                 img.Image resizedImage =
-                    img.copyResize(decodedImage, width: 250, height: 250);
+                    img.copyResize(decodedImage, width: width, height: height);
                 final Uint8List resizedBytes =
                     Uint8List.fromList(img.encodePng(resizedImage));
                 finalImage = await decodeImageFromList(resizedBytes);
               }
             }
           }
-
           setState(() {
             croppedUiImage = finalImage;
           });
@@ -136,12 +130,12 @@ class ImageUploadState extends State<ImageUpload> {
     });
   }
 
-Future<String> imageupload(int id, Uint8List? image) async{
+Future<String?> imageupload(int id, Uint8List? image, {int height = 300, int width = 300}) async{
   dynamic data, data1;
   debugPrint("[imageupload] Called with id: $id, image: ${image != null ? image.length : 'null'} bytes");
   if(image == null) {
     debugPrint("[imageupload] image is null, returning early");
-    return "";
+    return null;
   }
   try{
     debugPrint("[imageupload] Setting isLoading true");
@@ -150,21 +144,20 @@ Future<String> imageupload(int id, Uint8List? image) async{
         isLoading = true;
       });
     }
-    debugPrint("[imageupload] Sending POST to /assets/upload/$id");
-    final response1 = await http.post(
-      Uri.parse("https://proj-xs.fly.dev/assets/upload/$id"), 
-      headers: {'Content-Type': 'application/json'});
-    debugPrint("[imageupload] POST /assets/upload/$id status: ${response1.statusCode}, body: ${response1.body}");
-
+    debugPrint("[imageupload] Sending PUT to /menu/upload_pic/$id");
+    final response1 = await http.put(
+      Uri.parse("https://proj-xs.fly.dev/menu/upload_pic/$id"), 
+      headers: {'accept': 'application/json'});
+    debugPrint("[imageupload] POST /menu/upload_pic/$id status: ${response1.statusCode}, body: ${response1.body}");
     if(response1.statusCode == 200){
       data = jsonDecode(response1.body);
       await Future.delayed(Duration(seconds: 1));
       debugPrint("[imageupload] POST response data: ${data.toString()}");
       debugPrint("[imageupload] Sending PUT to presigned url: ${data['url']}");
       final response = await http.put(
-        Uri.parse("${data['url']}"),
+        Uri.parse("${data['presigned_url']}"),
         body: image, 
-        headers: {'Content-Type': 'image/png'}
+        headers: {'accept': 'image/png'}
       );
       debugPrint("[imageupload] PUT presigned url status: ${response.statusCode}, body: ${response.body}");
       if(response.statusCode == 200){
@@ -173,7 +166,7 @@ Future<String> imageupload(int id, Uint8List? image) async{
         await Future.delayed(Duration(seconds: 1));
         final setimage = await http.put(
           Uri.parse("https://proj-xs.fly.dev/menu/set_pic/$id"),
-          headers: {'Content-Type': 'application/json'},
+          headers: {'accept': 'application/json'},
         );
         debugPrint("[imageupload] PUT /menu/set_pic/$id status: ${setimage.statusCode}, body: ${setimage.body}");
         debugPrint("[imageupload] Sending GET to /assets/$id");
@@ -187,6 +180,7 @@ Future<String> imageupload(int id, Uint8List? image) async{
           debugPrint("[imageupload] Image Uploaded Successfully");
           isLoading = false;
           debugPrint("[imageupload] GlobalMenuCache: ${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
+          GlobalMenuCache.items[id]?['pic'] = data1['url'];
           return data1['url'];      
         }else{
           debugPrint("[imageupload] GET /assets/$id failed");
@@ -248,76 +242,21 @@ Future<String> imageupload(int id, Uint8List? image) async{
   }
 }
 
-dynamic getallimage(Function(Map<String, String>) imageexpired) async{
-  Map<String, String> updated = {};
-  Set<int> item = GlobalMenuCache.availableid;
-  Set<int> item1 = GlobalMenuCache.availableid;
-  for(int i in item){
-    if(GlobalMenuCache.items[i]?['pic'] != true){
-      continue;
+Future<Widget> buildImageDisplay(String itemId, double width, double height) async {
+  final imageUrl = GlobalMenuCache.items[int.parse(itemId)]?['pic'];
+  if (imageUrl != null && imageUrl.isNotEmpty) {
+    bool found = await cachedImageExists(imageUrl, cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag']);
+    File? file = await getCachedImageFile(imageUrl, cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag']);
+    if (found && file != null) {
+      return Image.file(file);
     }
-    final response = await http.get(
-    Uri.parse("https://proj-xs.fly.dev/assets/$i"),
-    headers: {'Content-Type': 'application/json'});
-    if (response.statusCode == 200){
-      final data1 = jsonDecode(response.body);
-        updated['$i'] = data1['url'];
-    }
-  }
-  for(int i in item1){
-    if(GlobalMenuCache.items[i]?['pic'] != true){
-      continue;
-    }
-    final response = await http.get(
-    Uri.parse("https://proj-xs.fly.dev/assets/$i"),
-    headers: {'Content-Type': 'application/json'});
-    if (response.statusCode == 200){
-      final data1 = jsonDecode(response.body);
-        updated['$i'] = data1['url'];
-    }
-  }
-  // debugPrint("Updated Expired Image");
-  imagecalled = false;
-  imageexpired(updated);
-  return;
-}
-
-Future<Widget> buildImageDisplay(String itemId, double width, double height, SharedPreferences cache, Function(Map<String, String>) imageexpired) async{
-  // return Image(image: AssetImage("assets/images/friedrice.png"));
-  if (imagecalled) return const Center(child: CircularProgressIndicator());
-  final cacheTimeString = cache.getString('time');
-  final now = DateTime.now();
-  if (cacheTimeString == null || cache.getString('piclink') == null ||
-      now.difference(DateTime.parse(cacheTimeString)).inHours > 11) {
-        if(!imagecalled){
-          imagecalled = true;
-          await getallimage(imageexpired);
-        }
-        else{
-          debugPrint("!imagecalled, ${GlobalMenuCache.items[int.parse(itemId)]?['name']}");
-          return const Center(
-            child: Icon(Icons.fastfood, size: 50),
-          );
-        }
-  }
-  final picLinkString = cache.getString('piclink');
-  if (picLinkString == null) {
-    debugPrint("piclink not found");
-    return const Center(
-      child: Icon(Icons.fastfood, size: 50),
-    );
-  }
-  final Map<String, dynamic> link = jsonDecode(picLinkString);
-  final imageUrl = link[itemId];
-
-  if (imageUrl != null && GlobalMenuCache.items[int.parse(itemId)]?['pic'] == true ) {
     return ExtendedImage.network(
       imageUrl,
       filterQuality: FilterQuality.high,
+      cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
       cache: true,
-      cacheKey: itemId,
-      width: (isAndroid)?115:(2)*20.5,
-      height: (isAndroid)?115:(5)*20.5,
+      // width: (isAndroid) ? 115 : width,
+      // height: (isAndroid) ? 115 : height,
       loadStateChanged: (ExtendedImageState state) {
         switch (state.extendedImageLoadState) {
           case LoadState.loading:
@@ -325,10 +264,9 @@ Future<Widget> buildImageDisplay(String itemId, double width, double height, Sha
           case LoadState.completed:
             return ExtendedRawImage(
               image: state.extendedImageInfo?.image,
-              fit: BoxFit.scaleDown,
+              fit: BoxFit.cover,
             );
           case LoadState.failed:
-            debugPrint("No image loadstate failed, ${GlobalMenuCache.items[int.parse(itemId)]?['name']}");
             return const Center(
               child: Icon(Icons.fastfood, size: 50),
             );
@@ -363,5 +301,141 @@ Future<void> removeImageFromCache(String url,String itemId) async {
           ),
       ],
     );
+  }
+}
+
+Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) async {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return const Dialog(
+        child: Padding(
+          padding: EdgeInsets.all(20.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Loading..."),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  Uint8List? imageBytes;
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (context.mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+
+    if (result != null && result.files.isNotEmpty) {
+      final path = result.files.first.path!;
+      final pickedFile = File(path);
+      final croppedResult = await showCupertinoImageCropper(
+        context.mounted?context:context,
+        imageProvider: FileImage(pickedFile),
+        allowedAspectRatios: [
+          CropAspectRatio(width: 1280, height: 500),
+        ],
+        showLoadingIndicatorOnSubmit: false,
+      );
+
+      if (croppedResult != null) {
+        ui.Image finalImage = croppedResult.uiImage;
+        if (finalImage.width != 1280 || finalImage.height != 500) {
+            final ByteData? byteData =
+                await finalImage.toByteData(format: ui.ImageByteFormat.png);
+            if (byteData != null) {
+              final List<int> bytes = byteData.buffer.asUint8List();
+              img.Image? decodedImage = img.decodeImage(bytes);
+              if (decodedImage != null) {
+                img.Image resizedImage =
+                    img.copyResize(decodedImage, width: 1280, height: 500);
+                imageBytes = Uint8List.fromList(img.encodePng(resizedImage));
+              }
+            }
+        } else {
+            final byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
+            imageBytes = byteData?.buffer.asUint8List();
+        }
+      }
+    }
+  } catch (e) {
+    debugPrint("Error during image pick/crop: $e");
+    if (context.mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+    return;
+  }
+
+  if (imageBytes == null) {
+    return;
+  }
+
+  try {
+    final response1 = await http.put(
+      Uri.parse("https://proj-xs.fly.dev/canteen/upload_pic/$canteenId"), 
+      headers: {'accept': 'application/json'});
+
+    if (response1.statusCode == 200) {
+      final data = jsonDecode(response1.body);
+      final response = await http.put(
+        Uri.parse("${data['presigned_url']}"),
+        body: imageBytes, 
+        headers: {'accept': 'image/png'}
+      );
+
+      if (response.statusCode == 200) {
+        await http.put(
+          Uri.parse("https://proj-xs.fly.dev/canteen/set_pic/$canteenId"),
+          headers: {'accept': 'application/json'},
+        );
+        
+        if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Canteen Image Updated Successfully"),
+                backgroundColor: Colors.cyanAccent,
+              ),
+            );
+        }
+      } else {
+        if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Image Upload Failed: 2nd Stage, ${response.body}"),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+        }
+      }
+    } else {
+        if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Image Upload Failed: 1st Stage, ${response1.body}"),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+        }
+    }
+  } on Exception catch(e) {
+    debugPrint("[imageupload] Exception: $e");
+    if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("An error occurred during upload."),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+    }
   }
 }

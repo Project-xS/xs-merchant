@@ -11,6 +11,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   Map<int, Map<String, dynamic>> fetchedItems = {};
   LinkedHashSet<int> fetchedAid = LinkedHashSet();
   LinkedHashSet<int> fetchedNaid = LinkedHashSet();
+  Map<String, Map<String, dynamic>> orders = {};
   int sort = 1;
   int get canteenIdToFetch;
 
@@ -22,15 +23,6 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
     }
     super.initState();
   }
-
-  // @override
-  // void dispose() {
-  //   timer?.cancel();
-  //   GlobalMenuCache.items.clear();
-  //   GlobalMenuCache.availableid.clear();
-  //   GlobalMenuCache.navailableid.clear();
-  //   super.dispose();
-  // }
 
   void startAutoFetch() {
     timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
@@ -49,6 +41,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
+        debugPrint("Fetched: ${decodedJson.toString()}");
         List<dynamic> dataList = decodedJson["data"];
         setState((){
           GlobalMenuCache.availableid.clear();
@@ -67,7 +60,8 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             "is_veg": item1["is_veg"],
             "available": item1["is_available"],
             "stocks": item1["stock"],
-            "pic": item1["pic_link"]
+            "pic": item1["pic_link"],
+            "etag": item1["pic_etag"]?.toString().replaceAll('"','')
           };
         }
         setState((){
@@ -114,7 +108,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
       if (mounted && Scaffold.maybeOf(context) != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Not Connected, $e"),
+            content: Text("Check Internet Connection"),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -195,7 +189,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
   }
 
   void _startOrderAutoFetchTimer() {
-    _timer = Timer.periodic(Duration(minutes: 2), (timer) {
+    _timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
       triggerOrderFetch();
     });
   }
@@ -203,8 +197,6 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
   Future<void> triggerOrderFetch() async {
     final int id = canteenIdForOrders;
     debugPrint("Fetching orders for canteen ID: $id");
-    if (!mounted) return;
-
     try {
       final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders?canteen_id=$id"));
       
@@ -226,7 +218,6 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
           };
         }
         onOrdersUpdated(fetchedOrders);
-
         if (mounted && Scaffold.maybeOf(context) != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
@@ -19,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_size/window_size.dart';
 
 late SharedPreferences cache;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void imageexpired(Map<String, String> updatedimage) async {
   cache.setString('time', DateTime.now().toString());
@@ -60,6 +62,39 @@ class GlobalMenuCache {
   static Map<int, Map<String, dynamic>> items = {};
   static LinkedHashSet<int> availableid = LinkedHashSet();
   static LinkedHashSet<int> navailableid = LinkedHashSet();
+}
+
+class OpenBillingPageIntent extends Intent {
+  const OpenBillingPageIntent();
+}
+
+class OpenBillingPageAction extends Action<OpenBillingPageIntent> {
+  OpenBillingPageAction({
+    required this.name,
+    required this.isTamil,
+    required this.canteenId,
+    required this.isPortrait,
+  });
+
+  final String name;
+  final bool isTamil;
+  final int canteenId;
+  final bool isPortrait;
+
+  @override
+  void invoke(OpenBillingPageIntent intent) {
+    final BuildContext? context = navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => isPortrait
+              ? MobileBilling(name, isTamil, canteenId)
+              : Billing(name, isPortrait, isTamil, canteenId),
+        ),
+      );
+    }
+  }
 }
 
 class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
@@ -123,76 +158,92 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: (isTamil) ? "Tamil" : 'Catamaran',
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D1117),
-        primaryColor: const Color(0xFF0D1117),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF238636),
-          secondary: Color(0xFF30A14E),
-          surface: Colors.black,
-          onPrimary: Colors.white,
-          onSecondary: Colors.white,
-          error: Colors.redAccent,
-        ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
-              fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-          titleLarge: TextStyle(
-              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          bodyLarge: TextStyle(
-              fontSize: 16, color: Colors.white, fontWeight: FontWeight.normal),
-          bodyMedium: TextStyle(
-              fontSize: 14, color: Color(0xFF8B949E), fontWeight: FontWeight.normal),
-          labelLarge: TextStyle(
-              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        cardTheme: const CardThemeData(
-          elevation: 4,
-          color: Color(0xFF161B22),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)),
+    return Shortcuts(
+      shortcuts: <LogicalKeySet, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB): const OpenBillingPageIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          OpenBillingPageIntent: OpenBillingPageAction(
+            name: name,
+            isTamil: isTamil,
+            canteenId: canteenId,
+            isPortrait: login.isAndroid,
           ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        },
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            fontFamily: (isTamil) ? "Tamil" : 'Catamaran',
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF0D1117),
+            primaryColor: const Color(0xFF0D1117),
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF238636),
+              secondary: Color(0xFF30A14E),
+              surface: Colors.black,
+              onPrimary: Colors.white,
+              onSecondary: Colors.white,
+              error: Colors.redAccent,
+            ),
+            textTheme: const TextTheme(
+              displayLarge: TextStyle(
+                  fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+              titleLarge: TextStyle(
+                  fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+              bodyLarge: TextStyle(
+                  fontSize: 16, color: Colors.white, fontWeight: FontWeight.normal),
+              bodyMedium: TextStyle(
+                  fontSize: 14, color: Color(0xFF8B949E), fontWeight: FontWeight.normal),
+              labelLarge: TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            cardTheme: const CardThemeData(
+              elevation: 4,
+              color: Color(0xFF161B22),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(15)),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              backgroundColor: Color.fromARGB(0, 22, 27, 34),
+              selectedItemColor: Color(0xFF238636),
+              unselectedItemColor: Color(0xFF8B949E),
+              showUnselectedLabels: true,
+              type: BottomNavigationBarType.fixed,
+              elevation: 0,
             ),
           ),
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color.fromARGB(0, 22, 27, 34),
-          selectedItemColor: Color(0xFF238636),
-          unselectedItemColor: Color(0xFF8B949E),
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
+          locale: isTamil ? const Locale('ta', '') : const Locale('en', ''),
+          supportedLocales: const [
+            Locale('en', ''),
+            Locale('ta', ''),
+          ],
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: (isLoggedin == true)
+              ? HomePage(
+                  changeLanguage: _changeLanguage,
+                  isTamil: isTamil,
+                  canteenId: canteenId,
+                  isLoggedin: isLoggedin,
+                  updateLoginState: updateLoginState)
+              : login.Login(updateLoginState: updateLoginState),
         ),
       ),
-      locale: isTamil ? const Locale('ta', '') : const Locale('en', ''),
-      supportedLocales: const [
-        Locale('en', ''),
-        Locale('ta', ''),
-      ],
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      home: (isLoggedin == true)
-          ? HomePage(
-              changeLanguage: _changeLanguage,
-              isTamil: isTamil,
-              canteenId: canteenId,
-              isLoggedin: isLoggedin,
-              updateLoginState: updateLoginState)
-          : login.Login(updateLoginState: updateLoginState),
     );
   }
 }
@@ -326,20 +377,19 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     ),
-                    if (currentIndex == 0)
-                      ListTile(
-                        leading: const Icon(Icons.refresh, size: 28),
-                        title: Text(
-                          "Force Refresh Images",
-                          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            ImageUploadState().getallimage(imageexpired);
-                          });
-                          Navigator.pop(context);
-                        },
+                    ListTile(
+                      leading: const Icon(Icons.image_outlined, size: 28),
+                      title: Text(
+                        "Set new Canteen Image",
+                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
+                      onTap: () async {
+                        await pickAndUploadCanteenImage(context, widget.canteenId);
+                        if(context.mounted){
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
                     const Spacer(),
                     const Divider(color: Colors.white24),
                     ListTile(

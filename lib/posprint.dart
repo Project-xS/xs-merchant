@@ -124,16 +124,18 @@ class _PrintBillState extends State<PrintBill> {
       bytes += generator.cut();
       // debugPrint(bytes.toString());
       // _sendToUsbPrinter(bytes);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Print data generated for debugging! (No actual print)'), duration: Duration(seconds: 2)),
-      );
+      if (context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Print data generated for debugging! (No actual print)'), duration: Duration(seconds: 2)),
+        );
+      }
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error generating print data: $e')),
-      );
-    }
+      if (context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating print data: $e')),
+        );
+    }}
   }
 
   @override

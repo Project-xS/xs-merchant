@@ -115,8 +115,8 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned.fill(
-              child: MenupageState().showImage(widget.itemId, widget.item['available'] ?? false),
+          Positioned(
+            child: MenupageState().showImage(widget.itemId, widget.item['available'] ?? false),
           ),
           Positioned.fill(
             child: Container(
@@ -124,12 +124,27 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Color.fromARGB(180, 0, 0, 0),
+                    Color.fromARGB(153, 0, 0, 0),
+                    Color.fromARGB(255, 0, 0, 0),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  stops: [0.6, 1.0],
+                  stops: [0.5, 0.7, 0.8],
                 ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 5,
+            left: 20,
+            child: SizedBox(
+              height: 48,
+              child: Image.asset(
+                widget.item['is_veg']
+                    ? "assets/images/veg.png"
+                    : "assets/images/nonveg.png",
+                width: 24,
+                height: 24,
               ),
             ),
           ),
