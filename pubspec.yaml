@@ -59,6 +59,9 @@ dependencies:
   http_parser: ^4.1.2
   charset_converter: ^2.3.0
   flutter_speed_dial: ^7.0.0
+  fl_chart: ^1.0.0
+  ml_algo: ^16.18.0
+  ml_dataframe: ^1.6.0
   # image: ^4.5.4
 
 dev_dependencies:

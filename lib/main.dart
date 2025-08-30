@@ -16,6 +16,7 @@ import 'package:merchant/login.dart';
 import 'package:merchant/menupage.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
+import 'package:merchant/sales_prediction.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_size/window_size.dart';
 
@@ -100,7 +101,6 @@ class OpenBillingPageAction extends Action<OpenBillingPageIntent> {
 class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   bool isTamil = false;
   bool isLoggedin = login.isLoggedin;
-  // bool isLoggedin = false;
 
   @override
   void initState() {
@@ -388,6 +388,21 @@ class _HomePageState extends State<HomePage> {
                         if(context.mounted){
                           Navigator.pop(context);
                         }
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.online_prediction, size: 28),
+                      title: Text(
+                        "Prediction",
+                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SalesPredictionPage(),
+                          ),
+                        );
                       },
                     ),
                     const Spacer(),

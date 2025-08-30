@@ -1457,11 +1457,9 @@ class MenuItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
-
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        // color: Colors.white,
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
@@ -1519,35 +1517,41 @@ class MenuItemCard extends StatelessWidget {
               top: 8,
               right: 8,
               child: Container(
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: const Color.fromARGB(175, 0, 0, 0),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: PopupMenuButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.white),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      onEdit();
-                    } else if (value == 'delete') {
-                      onDelete();
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit),
-                        title: Text('Edit'),
+                child: Center(
+                  child: PopupMenuButton(
+                    borderRadius: BorderRadius.circular(8),
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.more_vert, color: Colors.white, size: 22),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        onEdit();
+                      } else if (value == 'delete') {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: Icon(Icons.edit),
+                          title: Text('Edit'),
+                        ),
                       ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete),
-                        title: Text('Delete'),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete),
+                          title: Text('Delete'),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
