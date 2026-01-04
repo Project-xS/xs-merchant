@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:merchant/api/api_client.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -296,7 +296,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
 
   void markdelivered(bool submit, int orderId) async{
     try{
-        final response = await http.put((submit)?Uri.parse("https://proj-xs.fly.dev/orders/$orderId/delivered"):Uri.parse("https://proj-xs.fly.dev/orders/$orderId/cancelled"));
+        final action = submit ? 'delivered' : 'cancelled';
+        final response = await ApiClient.put('/orders/$orderId/$action');
         if (response.statusCode == 200){
           if(mounted){
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Order $orderId ${(submit)?"Delivered":"Cancelled"} Successfully")));
@@ -381,8 +382,9 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       try {
                         await Future.delayed(
                             const Duration(milliseconds: 200));
-                        final response = await http.get(Uri.parse(
-                            "https://proj-xs.fly.dev/orders/by_user?${rfid ? "rfid=${controller.text}" : "user_id=${controller.text}"}"));
+                        final response = await ApiClient.get(
+                          "/orders/by_user?${rfid ? "rfid=${controller.text}" : "user_id=${controller.text}"}",
+                        );
                         if (response.statusCode == 200) {
                           Map<String, dynamic> decodedJson =
                               jsonDecode(response.body);

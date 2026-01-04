@@ -33,7 +33,7 @@ class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu> {
   @override
   void initState() {
     if ((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty) {
-      fetchAndCacheAndNotify(widget.canteenId);
+      fetchAndCacheAndNotify();
     }
     super.initState();
   }

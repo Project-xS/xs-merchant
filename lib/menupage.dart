@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:http/http.dart' as http;
 import 'package:merchant/auto_fetch_mixin.dart';
+import 'package:merchant/api/api_client.dart';
+import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
-import 'package:merchant/login.dart';
 import 'package:merchant/main.dart';
 
 class Menupage extends StatefulWidget {
@@ -32,7 +32,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   @override
   void initState() {
     if ((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty) {
-      fetchAndCacheAndNotify(widget.canteenId);
+      fetchAndCacheAndNotify();
     }
     super.initState();
   }
@@ -544,7 +544,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                     changeimage(id!, url);
                                   });
                                 }
-                                fetchAndCacheAndNotify(widget.canteenId);
+                                fetchAndCacheAndNotify();
                               }
                               if (isError && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -785,8 +785,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                           await Future.delayed(
                               const Duration(milliseconds: 200));
                           try {
-                            final response = await http.get(Uri.parse(
-                                "https://proj-xs.fly.dev/search/$canteenId/$value"));
+                            final response = await ApiClient.get(
+                              "/search/${Uri.encodeComponent(value)}",
+                            );
                             Map<String, dynamic> decodedJson = 
                                 jsonDecode(response.body);
                             List<dynamic> idList = decodedJson["data"];
@@ -1064,27 +1065,33 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
 
   Future<int?> addnewitem(String name, int price, bool isveg, int stocks, bool available, {String? pic}) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://proj-xs.fly.dev/menu/create'),
+      final internalCanteenId = AuthService.canteenId ?? widget.canteenId;
+      final response = await ApiClient.post(
+        '/menu/create',
         headers: {
           "accept": "application/json",
           "Content-Type": "application/json"
         },
         body: jsonEncode({
-          "canteen_id": widget.canteenId,
+          "canteen_id": internalCanteenId,
           "name": name,
           "price": price,
           "is_veg": isveg,
           "is_available": available,
           "stock": stocks,
+          "has_pic": pngn != null,
         }),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> decodedJson = jsonDecode(response.body);
+        final int? createdItemId = decodedJson["item_id"] is int
+            ? decodedJson["item_id"]
+            : int.tryParse(decodedJson["item_id"]?.toString() ?? "");
         if (mounted) {
           setState(() {
-            GlobalMenuCache.items[decodedJson["item_id"]] = {
+            if (createdItemId != null) {
+              GlobalMenuCache.items[createdItemId] = {
               "name": name,
               "price": price,
               "is_veg": isveg,
@@ -1092,19 +1099,24 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
               "stocks": stocks,
               "pic": decodedJson["pic_link"]
             };
-            ImageUploadState().imageupload(canteenId, pngn);
+            }
           });
+        }
+        if (createdItemId != null && pngn != null) {
+          ImageUploadState().imageupload(createdItemId, pngn);
         }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text("Item Created Succesfully"),
               backgroundColor: Colors.cyanAccent));
         }
-        return decodedJson["item_id"];
+        return createdItemId;
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text("Error: ${response.body}"),
+              content: Text(
+                ApiClient.tryExtractErrorMessage(response) ?? "Error: ${response.body}",
+              ),
               backgroundColor: Colors.redAccent));
         }
         return null;
@@ -1121,8 +1133,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
 
   dynamic updateitem(int itemId, Map<String, dynamic>? item) async {
     try {
-      final response = await http.put(
-          Uri.parse("https://proj-xs.fly.dev/menu/update"),
+      final response = await ApiClient.put(
+          "/menu/update",
           headers: {
             'accept': 'application/json',
             'Content-Type': 'application/json'
@@ -1171,8 +1183,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
 
   void deleteitem(int itemId) async {
     try {
-      final response = await http.delete(
-          Uri.parse("https://proj-xs.fly.dev/menu/delete/$itemId"),
+      final response = await ApiClient.delete(
+          "/menu/delete/$itemId",
           headers: {'accept': 'application/json'});
       if (response.statusCode == 200) {
         if (mounted) {
@@ -1183,7 +1195,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
               GlobalMenuCache.navailableid.remove(itemId);
             }
             GlobalMenuCache.items.remove(itemId);
-            fetchAndCacheAndNotify(widget.canteenId);
+            fetchAndCacheAndNotify();
           });
         }
         if (mounted) {
@@ -1232,7 +1244,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
               label: AppLocalizations.of(context)!.refresh,
               backgroundColor: theme.colorScheme.secondary,
               labelStyle: theme.textTheme.labelLarge,
-              onTap: () => fetchAndCacheAndNotify(widget.canteenId),
+              onTap: () => fetchAndCacheAndNotify(),
             ),
             SpeedDialChild(
               child: const Icon(Icons.edit),

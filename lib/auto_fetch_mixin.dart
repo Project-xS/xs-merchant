@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:merchant/login.dart';
+import 'package:merchant/api/api_client.dart';
 import 'package:merchant/main.dart';
 
 mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
@@ -27,18 +26,18 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   void startAutoFetch() {
     timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
       debugPrint("Timer over, fetching");
-      fetchAndCacheAndNotify(canteenId);
+      fetchAndCacheAndNotify();
     });
   }
   // uncomment below for caching
-  Future<void> fetchAndCacheAndNotify(int id) async {    
+  Future<void> fetchAndCacheAndNotify() async {    
     if (!mounted) return;
-    final url = "https://proj-xs.fly.dev/canteen/$id/items";
+    final url = "/menu/items";
     // final cacheManager = JsonCacheManager.instance;
     // dynamic combinedJson;
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await ApiClient.get(url);
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         debugPrint("Fetched: ${decodedJson.toString()}");
@@ -94,9 +93,10 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
         // );
       } else {
         if (mounted && Scaffold.maybeOf(context) != null) {
+          final msg = ApiClient.tryExtractErrorMessage(response);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Error Getting Items : ${response.statusCode}"),
+              content: Text(msg ?? "Error Getting Items : ${response.statusCode}"),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -198,7 +198,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
     final int id = canteenIdForOrders;
     debugPrint("Fetching orders for canteen ID: $id");
     try {
-      final response = await http.get(Uri.parse("https://proj-xs.fly.dev/orders?canteen_id=$id"));
+      final response = await ApiClient.get('/orders');
       
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
@@ -228,9 +228,10 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
         }
       } else {
         if (mounted && Scaffold.maybeOf(context) != null) {
+          final msg = ApiClient.tryExtractErrorMessage(response);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Error Fetching Order Details: ${response.statusCode}"),
+              content: Text(msg ?? "Error Fetching Order Details: ${response.statusCode}"),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -250,4 +251,3 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
     }
   }
 }
-

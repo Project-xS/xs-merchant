@@ -5,14 +5,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
+import 'package:merchant/api/api_client.dart';
+import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/billing.dart';
 import 'package:merchant/mobile_billing.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/login.dart' as login;
-import 'package:merchant/login.dart';
 import 'package:merchant/menupage.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
@@ -37,11 +37,6 @@ void changeimage(int id, String url) async {
 }
 
 String name = "";
-
-final storage = FlutterSecureStorage(
-    aOptions: (isAndroid)
-        ? const AndroidOptions(encryptedSharedPreferences: true)
-        : AndroidOptions.defaultOptions);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -101,6 +96,7 @@ class OpenBillingPageAction extends Action<OpenBillingPageIntent> {
 class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   bool isTamil = false;
   bool isLoggedin = login.isLoggedin;
+  int canteenId = 0;
 
   @override
   void initState() {
@@ -108,6 +104,34 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
     GlobalMenuCache.items.clear();
     GlobalMenuCache.availableid.clear();
     GlobalMenuCache.navailableid.clear();
+    ApiClient.onUnauthorized = () {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('Session expired. Please log in again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      if (mounted) {
+        updateLoginState(false, 0, '');
+      } else {
+        login.isLoggedin = false;
+        login.canteenId = 0;
+      }
+    };
+    ApiClient.onForbidden = () {
+      final ctx = navigatorKey.currentContext;
+      if (ctx != null) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('Insufficient privileges.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    };
     initApp();
     super.initState();
   }
@@ -117,6 +141,8 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
     GlobalMenuCache.items.clear();
     GlobalMenuCache.availableid.clear();
     GlobalMenuCache.navailableid.clear();
+    ApiClient.onUnauthorized = null;
+    ApiClient.onForbidden = null;
     timer?.cancel();
     super.dispose();
   }
@@ -129,15 +155,14 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   }
 
   Future<void> firstTimeloggedin() async {
-    int id = int.parse(await storage.read(key: "CanteenId") ?? "0");
-    String uname = (await storage.read(key: "Username") ?? "").toUpperCase();
-    String c;
-    [_, _, c] = await LoginState().details();
-    if (id != 0) {
+    final session = await AuthService.loadFromStorage();
+    if (session != null && !session.isExpired) {
       setState(() {
         isLoggedin = true;
-        canteenId = int.parse(c);
-        name = uname;
+        login.isLoggedin = true;
+        canteenId = session.canteenId ?? 0;
+        login.canteenId = canteenId;
+        name = (session.canteenName ?? "").toUpperCase();
       });
     }
   }
@@ -151,7 +176,9 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   void updateLoginState(bool loggedIn, int id, String canteenname) {
     setState(() {
       isLoggedin = loggedIn;
+      login.isLoggedin = loggedIn;
       canteenId = id;
+      login.canteenId = id;
       name = canteenname;
     });
   }
@@ -168,7 +195,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
             name: name,
             isTamil: isTamil,
             canteenId: canteenId,
-            isPortrait: login.isAndroid,
+            isPortrait: Platform.isAndroid,
           ),
         },
         child: MaterialApp(
@@ -268,7 +295,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool portrait = login.isAndroid;
+  bool portrait = Platform.isAndroid;
   int currentIndex = 0;
 
   @override
@@ -416,6 +443,7 @@ class _HomePageState extends State<HomePage> {
                             color: theme.colorScheme.error),
                       ),
                       onTap: () {
+                        AuthService.logout();
                         widget.updateLoginState(false, widget.canteenId, name.toLowerCase());
                         Navigator.pop(context);
                       },

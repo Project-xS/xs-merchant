@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:merchant/api/api_client.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/menu_grid.dart';
 import 'package:merchant/posprint.dart';
@@ -101,7 +101,17 @@ class _BillingState extends State<Billing> {
                                 }
                                 await Future.delayed(Duration(milliseconds: 300));
                                 try {
-                                  final response = await http.get(Uri.parse("https://proj-xs.fly.dev/search/${widget.canteenId}/$value"));
+                                  final response = await ApiClient.get('/search/${Uri.encodeComponent(value)}');
+                                  if (response.statusCode != 200) {
+                                    final msg = ApiClient.tryExtractErrorMessage(response) ??
+                                        'Search failed: ${response.statusCode}';
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+                                      );
+                                    }
+                                    return;
+                                  }
                                   Map<String, dynamic> decodedJson = jsonDecode(response.body);
                                   List<dynamic> idList = decodedJson["data"];
                                   setState(() {

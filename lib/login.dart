@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:merchant/main.dart';
+import 'package:merchant/api/api_client.dart';
+import 'package:merchant/auth/auth_service.dart';
 
 class Login extends StatefulWidget {
   final Function(bool, int, String) updateLoginState;
@@ -17,29 +17,21 @@ class Login extends StatefulWidget {
 bool isLoggedin = false, isLoading = false;
 int canteenId = 0;
 int? error;
-String uName = "", pass = "", canteen = "";
+String uName = "";
 bool isAndroid = Platform.isAndroid;
 
 class LoginState extends State<Login> with TickerProviderStateMixin {
   bool isPasswordVisible = false;
   final textFieldFocusNode = FocusNode();
   TextEditingController controller1 = TextEditingController(text: uName);
-  TextEditingController controller2 = TextEditingController(text: pass);
+  TextEditingController controller2 = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late AnimationController _snowfallController;
 
-  Future<List<String>> details() async {
-    uName = (await storage.read(key: "Username") ?? "").toLowerCase();
-    pass = await storage.read(key: "Password") ?? "";
-    canteen = await storage.read(key: "CanteenId") ?? "$canteenId";
-    return [uName, pass, canteen];
-  }
-
   @override
   void initState() {
-    details();
     super.initState();
     _animationController = AnimationController(
       vsync: this,
@@ -72,32 +64,52 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
   }
 
   Future<void> loginUser(String username, String password) async {
-    final String apiUrl = 'https://proj-xs.fly.dev/canteen/login';
     setState(() {
       isLoading = true;
     });
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
+      final response = await ApiClient.post(
+        '/canteen/login',
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
-        final int canteenId =
-            int.parse(responseData['data']['canteen_id'].toString());
-        final String name = responseData['data']['canteen_name'];
+        final token = responseData['token'];
+        if (token is! String || token.isEmpty) {
+          setState(() {
+            error = 0;
+            isLoggedin = false;
+            isLoading = false;
+          });
+          return;
+        }
 
-        await storage.write(key: "Username", value: name);
-        await storage.write(key: "Password", value: password);
-        await storage.write(key: "CanteenId", value: canteenId.toString());
+        final data = responseData['data'];
+        final int? responseCanteenId = (data is Map<String, dynamic>)
+            ? int.tryParse('${data['canteen_id']}')
+            : null;
+        final String? responseCanteenName =
+            (data is Map<String, dynamic>) ? data['canteen_name']?.toString() : null;
+
+        await AuthService.setToken(
+          token: token,
+          canteenId: responseCanteenId,
+          canteenName: responseCanteenName,
+        );
+
+        final int effectiveCanteenId =
+            AuthService.canteenId ?? responseCanteenId ?? 0;
+        final String effectiveName =
+            (AuthService.canteenName ?? responseCanteenName ?? username).toString();
+
         setState(() {
           isLoggedin = true;
           isLoading = false;
-          widget.updateLoginState(isLoggedin, canteenId, name);
+          widget.updateLoginState(isLoggedin, effectiveCanteenId, effectiveName);
         });
-        debugPrint('Login successful. Canteen ID: $canteenId');
+        debugPrint('Login successful.');
       } else if (response.statusCode == 401) {
         setState(() {
           isLoggedin = false;

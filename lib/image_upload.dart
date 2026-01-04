@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
+import 'package:merchant/api/api_client.dart';
+import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/main.dart';
 import 'package:merchant/settings_modal.dart';
 import 'package:flutter/foundation.dart';
@@ -145,9 +147,10 @@ Future<String?> imageupload(int id, Uint8List? image, {int height = 300, int wid
       });
     }
     debugPrint("[imageupload] Sending PUT to /menu/upload_pic/$id");
-    final response1 = await http.put(
-      Uri.parse("https://proj-xs.fly.dev/menu/upload_pic/$id"), 
-      headers: {'accept': 'application/json'});
+    final response1 = await ApiClient.put(
+      "/menu/upload_pic/$id",
+      headers: {'accept': 'application/json'},
+    );
     debugPrint("[imageupload] POST /menu/upload_pic/$id status: ${response1.statusCode}, body: ${response1.body}");
     if(response1.statusCode == 200){
       data = jsonDecode(response1.body);
@@ -164,16 +167,17 @@ Future<String?> imageupload(int id, Uint8List? image, {int height = 300, int wid
         debugPrint("[imageupload] PUT to presigned url succeeded");
         debugPrint("[imageupload] Sending PUT to /menu/set_pic/$id");
         await Future.delayed(Duration(seconds: 1));
-        final setimage = await http.put(
-          Uri.parse("https://proj-xs.fly.dev/menu/set_pic/$id"),
+        final setimage = await ApiClient.put(
+          "/menu/set_pic/$id",
           headers: {'accept': 'application/json'},
         );
         debugPrint("[imageupload] PUT /menu/set_pic/$id status: ${setimage.statusCode}, body: ${setimage.body}");
         debugPrint("[imageupload] Sending GET to /assets/$id");
         await Future.delayed(Duration(seconds: 1));
-        final response2 = await http.get(
-          Uri.parse("https://proj-xs.fly.dev/assets/$id"),
-          headers: {'Content-Type': 'application/json'});
+        final response2 = await ApiClient.get(
+          "/assets/$id",
+          headers: {'Content-Type': 'application/json'},
+        );
         debugPrint("[imageupload] GET /assets/$id status: ${response2.statusCode}, body: ${response2.body}");
         if (response2.statusCode == 200){
           data1 = jsonDecode(response2.body);
@@ -305,6 +309,18 @@ Future<void> removeImageFromCache(String url,String itemId) async {
 }
 
 Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) async {
+  final effectiveCanteenId = AuthService.canteenId ?? canteenId;
+  if (effectiveCanteenId == 0) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Unable to determine canteen id. Please log in again."),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+    return;
+  }
   showDialog(
     context: context,
     barrierDismissible: false,
@@ -381,9 +397,10 @@ Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) asyn
   }
 
   try {
-    final response1 = await http.put(
-      Uri.parse("https://proj-xs.fly.dev/canteen/upload_pic/$canteenId"), 
-      headers: {'accept': 'application/json'});
+    final response1 = await ApiClient.put(
+      "/canteen/upload_pic/$effectiveCanteenId",
+      headers: {'accept': 'application/json'},
+    );
 
     if (response1.statusCode == 200) {
       final data = jsonDecode(response1.body);
@@ -394,8 +411,8 @@ Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) asyn
       );
 
       if (response.statusCode == 200) {
-        await http.put(
-          Uri.parse("https://proj-xs.fly.dev/canteen/set_pic/$canteenId"),
+        await ApiClient.put(
+          "/canteen/set_pic/$effectiveCanteenId",
           headers: {'accept': 'application/json'},
         );
         
