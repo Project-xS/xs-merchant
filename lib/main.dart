@@ -206,6 +206,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
               primary: Color(0xFF238636),
               secondary: Color(0xFF30A14E),
               surface: Colors.black,
+              surfaceContainerHighest: Color(0xFF1C2128),
               onPrimary: Colors.white,
               onSecondary: Colors.white,
               error: Colors.redAccent,
@@ -216,9 +217,19 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
+              headlineMedium: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
               titleLarge: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              titleMedium: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
               bodyLarge: TextStyle(
@@ -231,17 +242,77 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
                 color: Color(0xFF8B949E),
                 fontWeight: FontWeight.normal,
               ),
+              bodySmall: TextStyle(fontSize: 12, color: Color(0xFF8B949E)),
               labelLarge: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              centerTitle: false,
+              titleTextStyle: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontFamily: 'Catamaran',
+              ),
+              iconTheme: IconThemeData(color: Colors.white),
+            ),
             cardTheme: const CardThemeData(
               elevation: 4,
               color: Color(0xFF161B22),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(15)),
+              ),
+            ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: const Color(0xFF161B22),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              titleTextStyle: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontFamily: 'Catamaran',
+              ),
+            ),
+            snackBarTheme: const SnackBarThemeData(
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: const Color(0xFF161B22),
+              labelStyle: const TextStyle(color: Color(0xFF8B949E)),
+              hintStyle: const TextStyle(color: Color(0xFF8B949E)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color.fromARGB(77, 255, 255, 255),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF238636)),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.redAccent),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
               ),
             ),
             elevatedButtonTheme: ElevatedButtonThemeData(

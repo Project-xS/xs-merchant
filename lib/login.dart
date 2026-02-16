@@ -24,6 +24,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
   int? error;
   bool isPasswordVisible = false;
   final textFieldFocusNode = FocusNode();
+  final _formKey = GlobalKey<FormState>();
   TextEditingController controller1 = TextEditingController();
   TextEditingController controller2 = TextEditingController();
   late AnimationController _animationController;
@@ -213,40 +214,56 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            _buildTextField(
-                              controller: controller1,
-                              label: "Username",
-                              icon: Icons.person_outline,
-                              maxLength: 256,
-                              errorText: error == 401
-                                  ? "ID or Password Wrong"
-                                  : error == 0
-                                  ? "Check Internet Connection"
-                                  : null,
-                            ),
-                            const SizedBox(height: 20),
-                            _buildTextField(
-                              controller: controller2,
-                              label: "Password",
-                              icon: Icons.lock_outline,
-                              maxLength: 256,
-                              obscureText: !isPasswordVisible,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  isPasswordVisible
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  color: Colors.white70,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    isPasswordVisible = !isPasswordVisible;
-                                  });
-                                },
+                            Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  _buildTextField(
+                                    controller: controller1,
+                                    label: "Username",
+                                    icon: Icons.person_outline,
+                                    maxLength: 256,
+                                    validator: (value) =>
+                                        value == null || value.trim().isEmpty
+                                        ? "Username is required"
+                                        : null,
+                                    errorText: error == 401
+                                        ? "ID or Password Wrong"
+                                        : error == 0
+                                        ? "Check Internet Connection"
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _buildTextField(
+                                    controller: controller2,
+                                    label: "Password",
+                                    icon: Icons.lock_outline,
+                                    maxLength: 256,
+                                    obscureText: !isPasswordVisible,
+                                    validator: (value) =>
+                                        value == null || value.trim().isEmpty
+                                        ? "Password is required"
+                                        : null,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        isPasswordVisible
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        color: Colors.white70,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          isPasswordVisible =
+                                              !isPasswordVisible;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  _buildLoginButton(),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 32),
-                            _buildLoginButton(),
                           ],
                         ),
                       ),
@@ -269,11 +286,13 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
     bool obscureText = false,
     Widget? suffixIcon,
     int? maxLength,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       maxLength: maxLength,
+      validator: validator,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -282,24 +301,6 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         suffixIcon: suffixIcon,
         errorText: errorText,
         errorStyle: const TextStyle(color: Colors.redAccent),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color.fromARGB(77, 255, 255, 255),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-        ),
       ),
     );
   }
@@ -318,8 +319,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         onPressed: isLoading
             ? null
             : () {
-                if (controller1.text.trim().isNotEmpty &&
-                    controller2.text.trim().isNotEmpty) {
+                if (_formKey.currentState!.validate()) {
                   loginUser(controller1.text, controller2.text);
                 }
               },
