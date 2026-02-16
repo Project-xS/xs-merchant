@@ -127,10 +127,13 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                     available: isAvailable,
                     stock: stock,
                   );
-                  updateitem(
-                    foundItemId,
-                    GlobalMenuCache.items[foundItemId]!.toJson(),
-                  );
+                  updateitem(foundItemId, {
+                    'name': name,
+                    'price': price,
+                    'is_veg': isVeg,
+                    'available': isAvailable,
+                    'stocks': stock,
+                  });
                   if (GlobalMenuCache.navailableid.contains(foundItemId)) {
                     GlobalMenuCache.navailableid.remove(foundItemId);
                     GlobalMenuCache.availableid.add(foundItemId);
@@ -801,6 +804,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
 
   dynamic updateitem(int itemId, Map<String, dynamic>? item) async {
     try {
+      final available = item?["available"] ?? item?["is_available"];
+      final stock = item?["stocks"] ?? item?["stock"];
       final response = await ApiClient.put(
         ApiConstants.menuUpdate,
         headers: {
@@ -810,11 +815,11 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         body: jsonEncode({
           "item_id": itemId,
           "update": {
-            "is_available": item?["available"],
+            "is_available": available,
             "is_veg": item?['is_veg'],
             "name": item?["name"],
             "price": item?["price"],
-            "stock": item?["stocks"],
+            "stock": stock,
           },
         }),
       );
@@ -830,11 +835,11 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
             final oldItem = GlobalMenuCache.items[itemId];
             if (oldItem != null) {
               GlobalMenuCache.items[itemId] = oldItem.copyWith(
-                available: item?["available"],
+                available: available,
                 isVeg: item?['is_veg'],
                 name: item?["name"],
                 price: item?["price"],
-                stock: item?["stocks"],
+                stock: stock,
               );
             }
           });

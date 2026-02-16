@@ -8,12 +8,21 @@ import 'package:merchant/auth/auth_service.dart';
 typedef ApiVoidCallback = void Function();
 
 class ApiClient {
+  static const String _defaultBaseUrl = 'https://proj-xs.fly.dev';
+
   static String get baseUrl {
-    final url = dotenv.env['BASE_URL'];
-    if (url == null || url.isEmpty) {
-      throw StateError('BASE_URL is not set in .env');
+    const envUrl = String.fromEnvironment('BASE_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+
+    final fileUrl = dotenv.env['BASE_URL'];
+    if (fileUrl != null && fileUrl.isNotEmpty) return fileUrl;
+
+    if (kDebugMode) {
+      debugPrint(
+        '[ApiClient] BASE_URL not set; falling back to $_defaultBaseUrl',
+      );
     }
-    return url;
+    return _defaultBaseUrl;
   }
 
   static ApiVoidCallback? onUnauthorized;

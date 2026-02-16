@@ -21,12 +21,12 @@ class MenuItem {
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     return MenuItem(
-      id: json['item_id'] as int,
+      id: _parseInt(json['item_id'], field: 'item_id'),
       name: json['name'] as String,
-      price: json['price'] as int,
+      price: _parseInt(json['price'], field: 'price'),
       isVeg: json['is_veg'] as bool,
       available: json['is_available'] as bool,
-      stock: json['stock'] as int,
+      stock: _parseInt(json['stock'], field: 'stock'),
       pic: json['pic_link'] as String?,
       etag: json['pic_etag']?.toString().replaceAll('"', ''),
     );
@@ -66,5 +66,15 @@ class MenuItem {
       pic: pic ?? this.pic,
       etag: etag ?? this.etag,
     );
+  }
+
+  static int _parseInt(dynamic value, {required String field}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    throw FormatException('Invalid $field value: $value');
   }
 }
