@@ -31,6 +31,9 @@ class _QrScanDialogState extends State<QrScanDialog> {
   String? _error;
   String _scanBuffer = '';
   Timer? _scanDebounce;
+  String? _lastToken;
+  DateTime? _lastResultAt;
+  static const Duration _rescanCooldown = Duration(seconds: 3);
 
   bool get _useCamera {
     if (kIsWeb) return false;
@@ -58,6 +61,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
   Future<void> _submitToken(String token) async {
     final trimmed = token.trim();
     if (trimmed.isEmpty || _isProcessing) return;
+    if (_shouldIgnoreToken(trimmed)) return;
 
     setState(() {
       _isProcessing = true;
@@ -102,6 +106,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
           _orderData = decoded?['data'] as Map<String, dynamic>?;
           _error = null;
         });
+        _recordResult(trimmed);
         return;
       }
 
@@ -111,10 +116,12 @@ class _QrScanDialogState extends State<QrScanDialog> {
       setState(() {
         _error = msg;
       });
+      _recordResult(trimmed);
     } catch (e) {
       setState(() {
         _error = "Scan failed: $e";
       });
+      _recordResult(trimmed);
     } finally {
       if (mounted) {
         setState(() {
@@ -149,16 +156,17 @@ class _QrScanDialogState extends State<QrScanDialog> {
                     child: MobileScanner(
                       controller: _scannerController,
                       onDetect: (capture) {
-                        if (_isProcessing) return;
-                        final barcodes = capture.barcodes;
-                        final raw = barcodes.isNotEmpty
-                            ? barcodes.first.rawValue
-                            : null;
-                        if (raw != null && raw.isNotEmpty) {
-                          _submitToken(raw);
-                        }
-                      },
-                    ),
+                      if (_isProcessing || _orderData != null) return;
+                      final barcodes = capture.barcodes;
+                      final raw = barcodes.isNotEmpty
+                          ? barcodes.first.rawValue
+                          : null;
+                      if (raw != null && raw.isNotEmpty) {
+                        if (_shouldIgnoreToken(raw)) return;
+                        _submitToken(raw);
+                      }
+                    },
+                  ),
                   ),
                 ),
               const SizedBox(height: 12),
@@ -218,20 +226,30 @@ class _QrScanDialogState extends State<QrScanDialog> {
                     ),
                 ],
               ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.error.withValues(alpha: 0.1),
+                    border: Border.all(color: theme.colorScheme.error),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
                     _error!,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.error,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              if (_orderData != null) _buildOrderDetails(theme),
-            ],
-          ),
+              ),
+            if (_orderData != null) _buildOrderDetails(theme),
+          ],
         ),
+      ),
       ),
       actions: [
         TextButton(
@@ -369,5 +387,19 @@ class _QrScanDialogState extends State<QrScanDialog> {
         ),
       ),
     );
+  }
+
+  bool _shouldIgnoreToken(String token) {
+    if (_orderData != null) return true;
+    if (_lastToken == token && _lastResultAt != null) {
+      final elapsed = DateTime.now().difference(_lastResultAt!);
+      if (elapsed < _rescanCooldown) return true;
+    }
+    return false;
+  }
+
+  void _recordResult(String token) {
+    _lastToken = token;
+    _lastResultAt = DateTime.now();
   }
 }
