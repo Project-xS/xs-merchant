@@ -162,7 +162,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
         login.isLoggedin = true;
         canteenId = session.canteenId ?? 0;
         login.canteenId = canteenId;
-        name = (session.canteenName ?? "").toUpperCase();
+        name = (session.canteenName ?? " ").trim().toUpperCase();
       });
     }
   }
@@ -459,9 +459,9 @@ class _HomePageState extends State<HomePage> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Center(
-              child: Text(
-                "Welcome, $name",
+              child: Center(
+                child: Text(
+                (name.trim().isEmpty) ? "Welcome" : "Welcome, $name",
                 style: theme.textTheme.displayLarge,
               ),
             ),

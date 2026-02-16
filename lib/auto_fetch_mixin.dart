@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/main.dart';
 
@@ -23,7 +24,14 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
   void startAutoFetch() {
+    timer?.cancel();
     timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
       debugPrint("Timer over, fetching");
       fetchAndCacheAndNotify();
@@ -37,11 +45,16 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
     // dynamic combinedJson;
 
     try {
+      if (kDebugMode) {
+        debugPrint('[menu] GET $url');
+      }
       final response = await ApiClient.get(url);
+      if (!mounted) return;
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         debugPrint("Fetched: ${decodedJson.toString()}");
         List<dynamic> dataList = decodedJson["data"];
+        if (!mounted) return;
         setState((){
           GlobalMenuCache.availableid.clear();
           GlobalMenuCache.navailableid.clear();
@@ -63,6 +76,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             "etag": item1["pic_etag"]?.toString().replaceAll('"','')
           };
         }
+        if (!mounted) return;
         setState((){
           GlobalMenuCache.items = fetchedItems;
           GlobalMenuCache.availableid = fetchedAid;
@@ -101,6 +115,11 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             ),
           );
         }
+        if (kDebugMode) {
+          debugPrint(
+            '[menu] non-200: ${response.statusCode} body=${response.body}',
+          );
+        }
         debugPrint("Failed to load data: ${response.statusCode}");
         return;
       }
@@ -112,6 +131,9 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             backgroundColor: Colors.redAccent,
           ),
         );
+      }
+      if (kDebugMode) {
+        debugPrint('[menu] exception: $e');
       }
       debugPrint("$e");
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:merchant/auth/jwt.dart';
 import 'package:merchant/common/secure_storage.dart';
 
@@ -21,6 +22,8 @@ class AuthSession {
 class AuthService {
   static const _tokenKey = 'AdminJwt';
   static const _expiresAtMsKey = 'AdminJwtExpiresAtMs';
+  static const _canteenIdKey = 'AdminCanteenId';
+  static const _canteenNameKey = 'AdminCanteenName';
 
   static AuthSession? _session;
 
@@ -34,18 +37,53 @@ class AuthService {
     final token = await secureStorage.read(key: _tokenKey);
     final expiresAtMsRaw = await secureStorage.read(key: _expiresAtMsKey);
     final expiresAtMs = int.tryParse(expiresAtMsRaw ?? '');
+    final canteenIdRaw = await secureStorage.read(key: _canteenIdKey);
+    final canteenNameRaw = await secureStorage.read(key: _canteenNameKey);
+    int? canteenIdHint = int.tryParse(canteenIdRaw ?? '');
+    String? canteenNameHint =
+        (canteenNameRaw != null && canteenNameRaw.isNotEmpty)
+            ? canteenNameRaw
+            : null;
+
+    // Backwards-compat: older builds stored these as "Username" / "CanteenId".
+    if (canteenIdHint == null) {
+      canteenIdHint = int.tryParse(await secureStorage.read(key: 'CanteenId') ?? '');
+    }
+    if (canteenNameHint == null) {
+      final legacyName = await secureStorage.read(key: 'Username');
+      if (legacyName != null && legacyName.trim().isNotEmpty) {
+        canteenNameHint = legacyName.trim();
+      }
+    }
     if (token == null || token.isEmpty || expiresAtMs == null) {
       _session = null;
       return null;
     }
 
-    final loaded = _buildSession(token: token, expiresAtMs: expiresAtMs);
+    final loaded = _buildSession(
+      token: token,
+      expiresAtMs: expiresAtMs,
+      canteenIdHint: canteenIdHint,
+      canteenNameHint: canteenNameHint,
+    );
     if (loaded.isExpired) {
       await logout();
       return null;
     }
 
     _session = loaded;
+    // Best-effort migrate display fields to new keys for future runs.
+    if (_session?.canteenId != null) {
+      await secureStorage.write(key: _canteenIdKey, value: '${_session!.canteenId}');
+    }
+    if ((_session?.canteenName ?? '').isNotEmpty) {
+      await secureStorage.write(key: _canteenNameKey, value: _session!.canteenName);
+    }
+    if (kDebugMode) {
+      debugPrint(
+        'Loaded admin session: canteenId=${_session?.canteenId}, canteenName=${_session?.canteenName}, expiresAtMs=${_session?.expiresAtMs}',
+      );
+    }
     return _session;
   }
 
@@ -68,6 +106,18 @@ class AuthService {
     _session = session;
     await secureStorage.write(key: _tokenKey, value: token);
     await secureStorage.write(key: _expiresAtMsKey, value: '$expiresAtMs');
+    if (_session?.canteenId != null) {
+      await secureStorage.write(
+        key: _canteenIdKey,
+        value: '${_session!.canteenId}',
+      );
+    }
+    if ((_session?.canteenName ?? '').isNotEmpty) {
+      await secureStorage.write(
+        key: _canteenNameKey,
+        value: _session!.canteenName,
+      );
+    }
 
     // Clear legacy credentials if present.
     await secureStorage.delete(key: 'Password');
@@ -79,6 +129,8 @@ class AuthService {
     _session = null;
     await secureStorage.delete(key: _tokenKey);
     await secureStorage.delete(key: _expiresAtMsKey);
+    await secureStorage.delete(key: _canteenIdKey);
+    await secureStorage.delete(key: _canteenNameKey);
   }
 
   static AuthSession _buildSession({
@@ -113,4 +165,3 @@ class AuthService {
     );
   }
 }
-
