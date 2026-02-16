@@ -7,6 +7,7 @@ import 'package:merchant/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:merchant/history/history_order_card.dart';
 import 'package:merchant/history/verification_dialog.dart';
+import 'package:merchant/history/qr_scan_dialog.dart';
 
 class OrderHistory extends StatefulWidget {
   final bool portrait;
@@ -112,17 +113,33 @@ class _OrderHistoryState extends State<OrderHistory>
       backgroundColor: Colors.transparent,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 60.0),
-        child: FloatingActionButton.extended(
-          elevation: 10.00,
-          backgroundColor: theme.colorScheme.secondary,
-          onPressed: () {
-            orderverfication();
-          },
-          icon: const Icon(Icons.room_service),
-          label: Text(
-            AppLocalizations.of(context)!.deliver,
-            style: theme.textTheme.labelLarge,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FloatingActionButton.extended(
+              heroTag: 'deliver-manual',
+              elevation: 10.00,
+              backgroundColor: theme.colorScheme.secondary,
+              onPressed: orderverfication,
+              icon: const Icon(Icons.room_service),
+              label: Text(
+                AppLocalizations.of(context)!.deliver,
+                style: theme.textTheme.labelLarge,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FloatingActionButton.extended(
+              heroTag: 'deliver-qr',
+              elevation: 10.00,
+              backgroundColor: theme.colorScheme.primary,
+              onPressed: qrVerification,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: Text(
+                "Scan QR",
+                style: theme.textTheme.labelLarge,
+              ),
+            ),
+          ],
         ),
       ),
       body: CustomScrollView(
@@ -284,6 +301,22 @@ class _OrderHistoryState extends State<OrderHistory>
           onMarkDelivered: (submit, orderId) {
             markdelivered(submit, orderId);
             // Clear search results to refresh view if needed
+            setState(() {
+              searchResults.clear();
+            });
+          },
+        );
+      },
+    );
+  }
+
+  void qrVerification() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return QrScanDialog(
+          onDeliver: (orderId) {
+            markdelivered(true, orderId);
             setState(() {
               searchResults.clear();
             });

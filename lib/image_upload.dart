@@ -490,7 +490,7 @@ Future<void> pickAndUploadCanteenImage(
 
   try {
     final response1 = await ApiClient.put(
-      ApiConstants.canteenUploadPic(effectiveCanteenId),
+      ApiConstants.canteenUploadPic,
       headers: {'accept': 'application/json'},
     );
 
@@ -504,7 +504,7 @@ Future<void> pickAndUploadCanteenImage(
 
       if (response.statusCode == 200) {
         await ApiClient.put(
-          ApiConstants.canteenSetPic(effectiveCanteenId),
+          ApiConstants.canteenSetPic,
           headers: {'accept': 'application/json'},
         );
 
