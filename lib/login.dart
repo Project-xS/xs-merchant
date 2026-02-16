@@ -15,16 +15,16 @@ class Login extends StatefulWidget {
   State<Login> createState() => LoginState();
 }
 
-bool isLoggedin = false, isLoading = false;
-int canteenId = 0;
-int? error;
-String uName = "";
-bool isAndroid = Platform.isAndroid;
+final bool _isAndroid = Platform.isAndroid;
 
 class LoginState extends State<Login> with TickerProviderStateMixin {
+  bool isLoggedin = false;
+  bool isLoading = false;
+  int canteenId = 0;
+  int? error;
   bool isPasswordVisible = false;
   final textFieldFocusNode = FocusNode();
-  TextEditingController controller1 = TextEditingController(text: uName);
+  TextEditingController controller1 = TextEditingController();
   TextEditingController controller2 = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -179,7 +179,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        width: isAndroid ? null : 400,
+                        width: _isAndroid ? null : 400,
                         padding: const EdgeInsets.all(24.0),
                         decoration: BoxDecoration(
                           color: const Color.fromARGB(51, 255, 255, 255),

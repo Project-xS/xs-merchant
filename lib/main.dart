@@ -12,7 +12,7 @@ import 'package:merchant/billing.dart';
 import 'package:merchant/mobile_billing.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
-import 'package:merchant/login.dart' as login;
+import 'package:merchant/login.dart';
 import 'package:merchant/menupage.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
@@ -97,7 +97,7 @@ class OpenBillingPageAction extends Action<OpenBillingPageIntent> {
 
 class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   bool isTamil = false;
-  bool isLoggedin = login.isLoggedin;
+  bool isLoggedin = false;
   int canteenId = 0;
 
   @override
@@ -118,9 +118,6 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
       }
       if (mounted) {
         updateLoginState(false, 0, '');
-      } else {
-        login.isLoggedin = false;
-        login.canteenId = 0;
       }
     };
     ApiClient.onForbidden = () {
@@ -161,9 +158,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
     if (session != null && !session.isExpired) {
       setState(() {
         isLoggedin = true;
-        login.isLoggedin = true;
         canteenId = session.canteenId ?? 0;
-        login.canteenId = canteenId;
         name = (session.canteenName ?? " ").trim().toUpperCase();
       });
     }
@@ -178,9 +173,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   void updateLoginState(bool loggedIn, int id, String canteenname) {
     setState(() {
       isLoggedin = loggedIn;
-      login.isLoggedin = loggedIn;
       canteenId = id;
-      login.canteenId = id;
       name = canteenname;
     });
   }
@@ -287,7 +280,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
                   isLoggedin: isLoggedin,
                   updateLoginState: updateLoginState,
                 )
-              : login.Login(updateLoginState: updateLoginState),
+              : Login(updateLoginState: updateLoginState),
         ),
       ),
     );

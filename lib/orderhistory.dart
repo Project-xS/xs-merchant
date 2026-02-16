@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
+import 'package:merchant/common/button_styles.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +15,8 @@ class OrderHistory extends StatefulWidget {
   State<OrderHistory> createState() => _OrderHistoryState();
 }
 
-class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClientMixin{
+class _OrderHistoryState extends State<OrderHistory>
+    with AutomaticKeepAliveClientMixin {
   Map<int, Map<String, dynamic>> orderhistory = {};
 
   List<int> searchResults = [];
@@ -40,8 +42,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
     if (orderHistoryString != null && mounted) {
       setState(() {
         Map<String, dynamic> decoded = jsonDecode(orderHistoryString);
-        orderhistory = decoded.map((key, value) =>
-            MapEntry(int.parse(key), Map<String, dynamic>.from(value)));
+        orderhistory = decoded.map(
+          (key, value) =>
+              MapEntry(int.parse(key), Map<String, dynamic>.from(value)),
+        );
       });
     }
   }
@@ -53,12 +57,12 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
     );
 
     final encoded = deliverlaterOrders.map(
-        (key, value) => MapEntry(key.toString(), value));
+      (key, value) => MapEntry(key.toString(), value),
+    );
     final orderHistoryString = json.encode(encoded);
 
     await prefs.setString('orderHistory', orderHistoryString);
   }
-
 
   void _clearOrderHistoryIfNewDay() async {
     final prefs = await SharedPreferences.getInstance();
@@ -74,10 +78,12 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
       await prefs.setString('lastClearedDate', today);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Cleared yesterday's order details successfully"),
-          backgroundColor: Colors.amber,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Cleared yesterday's order details successfully"),
+            backgroundColor: Colors.amber,
+          ),
+        );
       }
     }
   }
@@ -110,8 +116,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
             orderverfication();
           },
           icon: const Icon(Icons.room_service),
-          label: Text(AppLocalizations.of(context)!.deliver,
-              style: theme.textTheme.labelLarge),
+          label: Text(
+            AppLocalizations.of(context)!.deliver,
+            style: theme.textTheme.labelLarge,
+          ),
         ),
       ),
       body: CustomScrollView(
@@ -123,15 +131,19 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                 children: [
                   SearchBar(
                     padding: const WidgetStatePropertyAll(
-                        EdgeInsets.symmetric(horizontal: 15.00)),
+                      EdgeInsets.symmetric(horizontal: 15.00),
+                    ),
                     controller: controller,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.search,
                     hintText: AppLocalizations.of(context)!.s_order,
                     leading: const Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: 5.00, horizontal: 12.00),
-                        child: Icon(Icons.search, color: Colors.grey)),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 5.00,
+                        horizontal: 12.00,
+                      ),
+                      child: Icon(Icons.search, color: Colors.grey),
+                    ),
                     trailing: [
                       IconButton(
                         icon: const Icon(Icons.clear),
@@ -146,23 +158,27 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         },
                       ),
                       IconButton(
-                          icon: const Icon(Icons.restart_alt),
-                          onPressed: () {
-                            setState(() {
-                              searchResults.clear();
-                              buildSearchList([]);
-                            });
-                          }),
-                      const SizedBox(width: 10.00)
+                        icon: const Icon(Icons.restart_alt),
+                        onPressed: () {
+                          setState(() {
+                            searchResults.clear();
+                            buildSearchList([]);
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 10.00),
                     ],
                     onChanged: (value) {
-                      String filteredValue =
-                          value.replaceAll(RegExp(r'[^0-9]'), '');
+                      String filteredValue = value.replaceAll(
+                        RegExp(r'[^0-9]'),
+                        '',
+                      );
                       if (value != filteredValue) {
                         controller.value = TextEditingValue(
                           text: filteredValue,
                           selection: TextSelection.collapsed(
-                              offset: filteredValue.length),
+                            offset: filteredValue.length,
+                          ),
                         );
                       }
                     },
@@ -182,33 +198,35 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
   SliverList buildSearchList(List<int> searchResults) {
     final keys = searchResults.isEmpty ? deliverlater.toList() : searchResults;
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (keys.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Text("No orders to be delivered later"),
-              ),
-            );
-          }
-          final orderId = keys[index];
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: generateList(orderId),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (keys.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Text("No orders to be delivered later"),
             ),
           );
-        },
-        childCount: keys.isEmpty ? 1 : keys.length,
-      ),
+        }
+        final orderId = keys[index];
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: generateList(orderId),
+          ),
+        );
+      }, childCount: keys.isEmpty ? 1 : keys.length),
     );
   }
 
   Widget generateList(int orderId) {
     final theme = Theme.of(context);
     final isHoldOrder = orderhistory[orderId]?['submitted'] == null;
-    final holdOrderStyle = TextStyle(color: theme.colorScheme.primary, fontSize: theme.textTheme.titleLarge?.fontSize, fontWeight: theme.textTheme.titleLarge?.fontWeight, fontFamily: theme.textTheme.titleLarge?.fontFamily);
+    final holdOrderStyle = TextStyle(
+      color: theme.colorScheme.primary,
+      fontSize: theme.textTheme.titleLarge?.fontSize,
+      fontWeight: theme.textTheme.titleLarge?.fontWeight,
+      fontFamily: theme.textTheme.titleLarge?.fontFamily,
+    );
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -219,8 +237,10 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(AppLocalizations.of(context)!.order_items,
-                    style: theme.textTheme.titleLarge),
+                Text(
+                  AppLocalizations.of(context)!.order_items,
+                  style: theme.textTheme.titleLarge,
+                ),
                 RichText(
                   text: TextSpan(
                     style: theme.textTheme.titleLarge,
@@ -232,7 +252,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -245,13 +265,13 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       orderhistory[orderId]!['status'][i] == true
                           ? Icons.check_circle
                           : orderhistory[orderId]!['status'][i] == null
-                              ? Icons.help_outline
-                              : Icons.cancel,
+                          ? Icons.help_outline
+                          : Icons.cancel,
                       color: orderhistory[orderId]!['status'][i] == true
                           ? Colors.green
                           : orderhistory[orderId]!['status'][i] == null
-                              ? Colors.yellow
-                              : Colors.red,
+                          ? Colors.yellow
+                          : Colors.red,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -277,43 +297,53 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                     style: theme.textTheme.titleLarge,
                     children: [
                       TextSpan(
-                          text:
-                              "${AppLocalizations.of(context)!.total}: "),
+                        text: "${AppLocalizations.of(context)!.total}: ",
+                      ),
                       TextSpan(
                         text: "₹${orderhistory[orderId]!['price']}",
                         style: isHoldOrder ? holdOrderStyle : null,
                       ),
                     ],
                   ),
-                )
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  void markdelivered(bool submit, int orderId) async{
-    try{
-        final action = submit ? 'delivered' : 'cancelled';
-        final response = await ApiClient.put('/orders/$orderId/$action');
-        if (response.statusCode == 200){
-          if(mounted){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Order $orderId ${(submit)?"Delivered":"Cancelled"} Successfully")));
-            }
-          }
-          else{
-            if(mounted){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Submiting order : ${response.statusCode}")));
-            }
-          }
-        } on Exception catch (e){
-          if(mounted){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
-            }
+  void markdelivered(bool submit, int orderId) async {
+    try {
+      final action = submit ? 'delivered' : 'cancelled';
+      final response = await ApiClient.put('/orders/$orderId/$action');
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Order $orderId ${(submit) ? "Delivered" : "Cancelled"} Successfully",
+              ),
+            ),
+          );
         }
-    
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Error Submiting order : ${response.statusCode}"),
+            ),
+          );
+        }
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+      }
+    }
   }
 
   void orderverfication() {
@@ -326,27 +356,31 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
     final FocusNode searchBarFocus = FocusNode();
     TextEditingController controller = TextEditingController();
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return StatefulBuilder(builder: (context, setState) {
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
             final theme = Theme.of(context);
             return AlertDialog(
               backgroundColor: theme.colorScheme.surface,
-              title: Text(AppLocalizations.of(context)!.item_delivery,
-                  style: theme.textTheme.titleLarge),
+              title: Text(
+                AppLocalizations.of(context)!.item_delivery,
+                style: theme.textTheme.titleLarge,
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SearchBar(
-                    backgroundColor:
-                        const WidgetStatePropertyAll(Colors.black),
+                    backgroundColor: const WidgetStatePropertyAll(Colors.black),
                     autoFocus: true,
                     focusNode: searchBarFocus,
                     padding: (widget.portrait)
                         ? const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 5))
+                            EdgeInsets.symmetric(horizontal: 5),
+                          )
                         : WidgetStateProperty.all(
-                            const EdgeInsets.symmetric(horizontal: 10.0)),
+                            const EdgeInsets.symmetric(horizontal: 10.0),
+                          ),
                     controller: controller,
                     keyboardType: TextInputType.number,
                     leading: const Icon(Icons.verified),
@@ -359,35 +393,35 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         },
                       ),
                       IconButton(
-                          icon: const Icon(Icons.restart_alt),
-                          onPressed: () {
-                            setState(() {
-                              controller.clear();
-                              orderId = 0;
-                              FocusScope.of(context)
-                                  .requestFocus(searchBarFocus);
-                            });
-                          }),
+                        icon: const Icon(Icons.restart_alt),
+                        onPressed: () {
+                          setState(() {
+                            controller.clear();
+                            orderId = 0;
+                            FocusScope.of(context).requestFocus(searchBarFocus);
+                          });
+                        },
+                      ),
                     ],
                     onChanged: (value) async {
-                      controller.text =
-                          value.replaceAll(RegExp(r'[^0-9]'), '');
+                      controller.text = value.replaceAll(RegExp(r'[^0-9]'), '');
                       controller.selection = TextSelection.fromPosition(
-                          TextPosition(offset: controller.text.length));
+                        TextPosition(offset: controller.text.length),
+                      );
                       if (value.isEmpty ||
                           controller.text.isEmpty ||
                           controller.text == "") {
                         return;
                       }
                       try {
-                        await Future.delayed(
-                            const Duration(milliseconds: 200));
+                        await Future.delayed(const Duration(milliseconds: 200));
                         final response = await ApiClient.get(
                           "/orders/by_user?${rfid ? "rfid=${controller.text}" : "user_id=${controller.text}"}",
                         );
                         if (response.statusCode == 200) {
-                          Map<String, dynamic> decodedJson =
-                              jsonDecode(response.body);
+                          Map<String, dynamic> decodedJson = jsonDecode(
+                            response.body,
+                          );
                           setState(() {
                             for (var order in decodedJson["data"]) {
                               orderId = order["order_id"];
@@ -405,17 +439,20 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                 'count': count,
                                 'price': price,
                                 'status': status,
-                                'submitted': null
+                                'submitted': null,
                               };
-                              _saveOrderHistory();                          
+                              _saveOrderHistory();
                             }
                           });
                         } else {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        "Error Getting Order : ${response.statusCode}")));
+                              SnackBar(
+                                content: Text(
+                                  "Error Getting Order : ${response.statusCode}",
+                                ),
+                              ),
+                            );
                           }
                           setState(() {
                             orderId = 0;
@@ -424,7 +461,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       } on Exception catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Not Connected, $e")));
+                            SnackBar(content: Text("Not Connected, $e")),
+                          );
                         }
                       }
                     },
@@ -436,8 +474,7 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("User ID",
-                              style: theme.textTheme.bodyLarge),
+                          Text("User ID", style: theme.textTheme.bodyLarge),
                           Switch(
                             value: rfid,
                             onChanged: (value) {
@@ -445,17 +482,19 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                                 rfid = value;
                                 controller.clear();
                                 orderId = 0;
-                                FocusScope.of(context)
-                                    .requestFocus(searchBarFocus);
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(searchBarFocus);
                               });
                             },
                           ),
-                          Text("RFID", style: theme.textTheme.bodyLarge)
+                          Text("RFID", style: theme.textTheme.bodyLarge),
                         ],
                       ),
                     ),
                   ),
-                  if (orderId != 0 && orderhistory.keys.any((e) => e == orderId))
+                  if (orderId != 0 &&
+                      orderhistory.keys.any((e) => e == orderId))
                     Flexible(
                       child: SingleChildScrollView(
                         child: buildVerificationCard(orderId),
@@ -464,65 +503,37 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                   else
                     Expanded(
                       child: Center(
-                          child: Text(
-                        AppLocalizations.of(context)!.not_found,
-                        style: theme.textTheme.titleLarge,
-                      )),
-                    )
+                        child: Text(
+                          AppLocalizations.of(context)!.not_found,
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );
-          });
-        });
-  }
-
-  ButtonStyle _getButtonStyle(BuildContext context, bool isPrimary,
-      {bool isYellow = false}) {
-    final theme = Theme.of(context);
-    Color color;
-    if (isYellow) {
-      color = Colors.yellowAccent;
-    } else {
-      color = isPrimary ? theme.colorScheme.primary : theme.colorScheme.error;
-    }
-
-    return ButtonStyle(
-      padding: WidgetStateProperty.all(
-        const EdgeInsets.symmetric(
-            horizontal: 15, vertical: 20),
-      ),
-      backgroundColor: WidgetStateProperty.resolveWith<Color?>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.hovered)) return Colors.black;
-          return color;
-        },
-      ),
-      foregroundColor: WidgetStateProperty.resolveWith<Color?>(
-        (Set<WidgetState> states) {
-          if (states.contains(WidgetState.hovered)) return color;
-          return Colors.black;
-        },
-      ),
-      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
-        RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30.0),
-          side: const BorderSide(color: Colors.black, width: 2),
-        ),
-      ),
+          },
+        );
+      },
     );
   }
 
   Widget buildVerificationCard(int orderId) {
     final theme = Theme.of(context);
-    List<bool?> currentStatus =
-        List<bool?>.from(orderhistory[orderId]!['status']);
-    bool? isSubmitted = (orderhistory[orderId]!['submitted'] == null) ? null : false;
+    List<bool?> currentStatus = List<bool?>.from(
+      orderhistory[orderId]!['status'],
+    );
+    bool? isSubmitted = (orderhistory[orderId]!['submitted'] == null)
+        ? null
+        : false;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: Padding(
         padding: EdgeInsets.symmetric(
-            horizontal: (widget.portrait) ? 10 : 30, vertical: 10.0),
+          horizontal: (widget.portrait) ? 10 : 30,
+          vertical: 10.0,
+        ),
         child: StatefulBuilder(
           builder: (context, setState) {
             return Column(
@@ -537,7 +548,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         style: theme.textTheme.titleLarge,
                         children: [
                           TextSpan(
-                              text: "${AppLocalizations.of(context)!.order_id} #"),
+                            text: "${AppLocalizations.of(context)!.order_id} #",
+                          ),
                           TextSpan(
                             text: orderId.toString(),
                             style: TextStyle(color: theme.colorScheme.primary),
@@ -571,24 +583,27 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                               currentStatus[i] == true
                                   ? Icons.check_circle
                                   : currentStatus[i] == false
-                                      ? Icons.cancel
-                                      : Icons.help_outline,
+                                  ? Icons.cancel
+                                  : Icons.help_outline,
                               color: currentStatus[i] == true
                                   ? Colors.green
                                   : currentStatus[i] == false
-                                      ? Colors.red
-                                      : Colors.yellow,
+                                  ? Colors.red
+                                  : Colors.yellow,
                             ),
                           ),
                           Expanded(
                             flex: 1,
                             child: Text(
-                                "${orderhistory[orderId]!['name'][i]}",
-                                style: theme.textTheme.bodyLarge),
+                              "${orderhistory[orderId]!['name'][i]}",
+                              style: theme.textTheme.bodyLarge,
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          Text("x ${orderhistory[orderId]!['count'][i]}",
-                              style: theme.textTheme.bodyLarge),
+                          Text(
+                            "x ${orderhistory[orderId]!['count'][i]}",
+                            style: theme.textTheme.bodyLarge,
+                          ),
                           Checkbox(
                             tristate: true,
                             value: currentStatus[i],
@@ -614,7 +629,8 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                         style: theme.textTheme.titleLarge,
                         children: [
                           TextSpan(
-                              text: "${AppLocalizations.of(context)!.price}: "),
+                            text: "${AppLocalizations.of(context)!.price}: ",
+                          ),
                           TextSpan(
                             text: "₹${orderhistory[orderId]!['price']}",
                             style: TextStyle(color: theme.colorScheme.primary),
@@ -623,189 +639,252 @@ class _OrderHistoryState extends State<OrderHistory> with AutomaticKeepAliveClie
                       ),
                     ),
                     ElevatedButton(
-                      style: _getButtonStyle(context, true),
+                      style: getActionButtonStyle(context, true),
                       onPressed: isSubmitted == true
                           ? null
                           : () {
                               showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: Text(AppLocalizations.of(context)!
-                                          .confirm_order_changes),
-                                      content: SingleChildScrollView(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            for (int i = 0; i <orderhistory[orderId]!['name'].length;i++)
-                                              Column(
-                                                children: [
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Expanded(
-                                                        flex: 2,
-                                                        child: Text(
-                                                          "${orderhistory[orderId]!['name'][i]}",
-                                                          style: theme.textTheme.bodyLarge?.copyWith(
-                                                            color: currentStatus[i] == true
-                                                                ? Colors.green
-                                                                : currentStatus[i] == null
-                                                                    ? Colors.yellow
-                                                                    : Colors.red,
-                                                            fontSize: 18,
-                                                            fontWeight: FontWeight.bold,
-                                                          ),
-                                                        ),
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.confirm_order_changes,
+                                    ),
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          for (
+                                            int i = 0;
+                                            i <
+                                                orderhistory[orderId]!['name']
+                                                    .length;
+                                            i++
+                                          )
+                                            Column(
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      flex: 2,
+                                                      child: Text(
+                                                        "${orderhistory[orderId]!['name'][i]}",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyLarge
+                                                            ?.copyWith(
+                                                              color:
+                                                                  currentStatus[i] ==
+                                                                      true
+                                                                  ? Colors.green
+                                                                  : currentStatus[i] ==
+                                                                        null
+                                                                  ? Colors
+                                                                        .yellow
+                                                                  : Colors.red,
+                                                              fontSize: 18,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
                                                       ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Text(
-                                                            "x ${orderhistory[orderId]!['count'][i]}",
-                                                            style: theme.textTheme.bodyLarge?.copyWith(
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Text(
+                                                        "x ${orderhistory[orderId]!['count'][i]}",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyLarge
+                                                            ?.copyWith(
                                                               fontSize: 16,
                                                             ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Text(
+                                                        currentStatus[i] == true
+                                                            ? AppLocalizations.of(
+                                                                context,
+                                                              )!.accept
+                                                            : currentStatus[i] ==
+                                                                  null
+                                                            ? AppLocalizations.of(
+                                                                context,
+                                                              )!.deliver_later
+                                                            : AppLocalizations.of(
+                                                                context,
+                                                              )!.reject,
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyLarge
+                                                            ?.copyWith(
+                                                              color:
+                                                                  currentStatus[i] ==
+                                                                      true
+                                                                  ? Colors.green
+                                                                  : currentStatus[i] ==
+                                                                        null
+                                                                  ? Colors
+                                                                        .yellow
+                                                                  : Colors.red,
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
                                                             ),
                                                       ),
-                                                          const SizedBox(width: 8),
-                                                          Expanded(
-                                                            flex: 1,
-                                                            child: Text(
-                                                              currentStatus[i] == true
-                                                                  ? AppLocalizations.of(context)!.accept
-                                                                  : currentStatus[i] == null
-                                                                      ? AppLocalizations.of(context)!.deliver_later
-                                                                      : AppLocalizations.of(context)!.reject,
-                                                              style: theme.textTheme.bodyLarge?.copyWith(
-                                                                color: currentStatus[i] == true
-                                                                    ? Colors.green
-                                                                    : currentStatus[i] == null
-                                                                        ? Colors.yellow
-                                                                        : Colors.red,
-                                                                fontSize: 16,
-                                                                fontWeight: FontWeight.bold,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                    ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                const Divider(
+                                                  thickness: 1,
+                                                  color: Colors.white24,
+                                                ),
+                                              ],
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    actions: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              style: getActionButtonStyle(
+                                                context,
+                                                false,
+                                              ),
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(Icons.close),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.cancel,
                                                   ),
-                                                  const Divider(
-                                                      thickness: 1,
-                                                      color: Colors.white24),
                                                 ],
                                               ),
-                                          ],
-                                        ),
-                                      ),
-                                      actions: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: ElevatedButton(
-                                                style: _getButtonStyle(
-                                                    context, false),
-                                                onPressed: () =>
-                                                    Navigator.pop(context, false),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    const Icon(Icons.close),
-                                                    const SizedBox(width: 8),
-                                                    Text(AppLocalizations.of(
-                                                            context)!
-                                                        .cancel),
-                                                  ],
-                                                ),
-                                              ),
                                             ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: ElevatedButton(
-                                                style: _getButtonStyle(context, true),
-                                                onPressed: () {
-                                                  setState(() {
-                                                    bool isAllTrue = currentStatus
-                                                        .every((e) => e == true);
-                                                    bool isAllFalse = currentStatus
-                                                        .every((e) => e == false);
-                                                    if (isAllTrue == false &&
-                                                        isAllFalse == false) {
-                                                      orderhistory[orderId]![
-                                                          'submitted'] = null;
-                                                      orderhistory[orderId]![
-                                                              'status'] =
-                                                          List<bool?>.from(
-                                                              currentStatus);
-                                                      isSubmitted =
-                                                          orderhistory[orderId]![
-                                                              'submitted'];
-                                                      ScaffoldMessenger.of(context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: (currentStatus.any(
-                                                                  (e) => e == null))
-                                                              ? Text(
-                                                                  "Made order(s) to be delivered later")
-                                                              : Text(
-                                                                  "Accepted/Rejected Order"),
-                                                          backgroundColor:
-                                                              (currentStatus.any(
-                                                                      (e) => e == null))
-                                                                  ? Colors.yellowAccent
-                                                                  : Colors.orangeAccent,
-                                                        ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              style: getActionButtonStyle(
+                                                context,
+                                                true,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  bool isAllTrue = currentStatus
+                                                      .every((e) => e == true);
+                                                  bool isAllFalse =
+                                                      currentStatus.every(
+                                                        (e) => e == false,
                                                       );
-                                                    } else if (isAllFalse) {
-                                                      orderhistory[orderId]![
-                                                              'status'] =
-                                                          List<bool?>.from(
-                                                              currentStatus);
-                                                      orderhistory[orderId]![
-                                                          'submitted'] = true;
-                                                      isSubmitted =
-                                                          orderhistory[orderId]![
-                                                              'submitted'] ??
-                                                              false;
-                                                      markdelivered(false, orderId);
-                                                    } else if (isAllTrue == true) {
-                                                      orderhistory[orderId]![
-                                                              'status'] =
-                                                          List<bool?>.from(
-                                                              currentStatus);
-                                                      orderhistory[orderId]![
-                                                          'submitted'] = true;
-                                                      isSubmitted =
-                                                          orderhistory[orderId]![
-                                                              'submitted'] ??
-                                                              false;
-                                                      markdelivered(true, orderId);
-                                                    }
-                                                  });
-                                                  Navigator.pop(context);
-                                                  buildSearchList([]);
-                                                },
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    const Icon(Icons.check),
-                                                    const SizedBox(width: 8),
-                                                    Text(AppLocalizations.of(
-                                                            context)!
-                                                        .submit),
-                                                  ],
-                                                ),
+                                                  if (isAllTrue == false &&
+                                                      isAllFalse == false) {
+                                                    orderhistory[orderId]!['submitted'] =
+                                                        null;
+                                                    orderhistory[orderId]!['status'] =
+                                                        List<bool?>.from(
+                                                          currentStatus,
+                                                        );
+                                                    isSubmitted =
+                                                        orderhistory[orderId]!['submitted'];
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content:
+                                                            (currentStatus.any(
+                                                              (e) => e == null,
+                                                            ))
+                                                            ? Text(
+                                                                "Made order(s) to be delivered later",
+                                                              )
+                                                            : Text(
+                                                                "Accepted/Rejected Order",
+                                                              ),
+                                                        backgroundColor:
+                                                            (currentStatus.any(
+                                                              (e) => e == null,
+                                                            ))
+                                                            ? Colors
+                                                                  .yellowAccent
+                                                            : Colors
+                                                                  .orangeAccent,
+                                                      ),
+                                                    );
+                                                  } else if (isAllFalse) {
+                                                    orderhistory[orderId]!['status'] =
+                                                        List<bool?>.from(
+                                                          currentStatus,
+                                                        );
+                                                    orderhistory[orderId]!['submitted'] =
+                                                        true;
+                                                    isSubmitted =
+                                                        orderhistory[orderId]!['submitted'] ??
+                                                        false;
+                                                    markdelivered(
+                                                      false,
+                                                      orderId,
+                                                    );
+                                                  } else if (isAllTrue ==
+                                                      true) {
+                                                    orderhistory[orderId]!['status'] =
+                                                        List<bool?>.from(
+                                                          currentStatus,
+                                                        );
+                                                    orderhistory[orderId]!['submitted'] =
+                                                        true;
+                                                    isSubmitted =
+                                                        orderhistory[orderId]!['submitted'] ??
+                                                        false;
+                                                    markdelivered(
+                                                      true,
+                                                      orderId,
+                                                    );
+                                                  }
+                                                });
+                                                Navigator.pop(context);
+                                                buildSearchList([]);
+                                              },
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(Icons.check),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.submit,
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                          ],
-                                        )
-                                      ],
-                                    );
-                                  });
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
                             },
                       child: Row(
                         children: [
