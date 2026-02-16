@@ -106,9 +106,20 @@ class _EditItemDialogState extends State<EditItemDialog> {
                 keyboardType: const TextInputType.numberWithOptions(
                   signed: true,
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
+                ],
                 validator: (value) {
-                  if (value == null || value.isEmpty)
+                  if (value == null || value.isEmpty) {
                     return 'Stock is required';
+                  }
+                  final parsed = int.tryParse(value);
+                  if (parsed == null) {
+                    return 'Stock must be a number';
+                  }
+                  if (parsed < -1) {
+                    return 'Stock must be -1 or >= 0';
+                  }
                   return null;
                 },
                 onSaved: (value) => _stock = int.parse(value!),

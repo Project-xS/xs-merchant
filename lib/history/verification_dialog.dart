@@ -215,7 +215,8 @@ class _VerificationDialogState extends State<VerificationDialog> {
               ),
             )
           else
-            Expanded(
+            SizedBox(
+              height: 120,
               child: Center(
                 child: Text(
                   localizations.not_found,
