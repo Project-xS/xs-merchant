@@ -267,14 +267,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
           fetchedOrders[time] = {'name': name, 'count': count};
         }
         onOrdersUpdated(fetchedOrders);
-        if (mounted && Scaffold.maybeOf(context) != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Order Details Fetched Successfully"),
-              backgroundColor: Colors.cyanAccent,
-            ),
-          );
-        }
+        // No success toast for order fetch; keep UI quiet on background refresh.
       } else {
         if (mounted && Scaffold.maybeOf(context) != null) {
           final msg = ApiClient.tryExtractErrorMessage(response);
