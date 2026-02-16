@@ -146,7 +146,6 @@ class _VerificationDialogState extends State<VerificationDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SearchBar(
-            backgroundColor: const WidgetStatePropertyAll(Colors.black),
             autoFocus: true,
             focusNode: _searchBarFocus,
             padding: WidgetStatePropertyAll(
@@ -274,7 +273,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                   ],
                 ),
                 const SizedBox(height: 15.00),
-                const Divider(thickness: 1, color: Colors.white24),
+                Divider(thickness: 1, color: theme.dividerColor),
                 ...List.generate(names.length, (i) {
                   return Column(
                     children: [
@@ -300,9 +299,9 @@ class _VerificationDialogState extends State<VerificationDialog> {
                                   ? Icons.cancel
                                   : Icons.help_outline,
                               color: currentStatus[i] == true
-                                  ? Colors.green
+                                  ? theme.colorScheme.secondary
                                   : currentStatus[i] == false
-                                  ? Colors.red
+                                  ? theme.colorScheme.error
                                   : Colors.yellow,
                             ),
                           ),
@@ -331,7 +330,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                           ),
                         ],
                       ),
-                      const Divider(thickness: 1, color: Colors.white24),
+                      const Divider(thickness: 1),
                     ],
                   );
                 }),
@@ -411,10 +410,10 @@ class _VerificationDialogState extends State<VerificationDialog> {
                               "${names[i]}",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: currentStatus[i] == true
-                                    ? Colors.green
+                                    ? theme.colorScheme.secondary
                                     : currentStatus[i] == null
                                     ? Colors.yellow
-                                    : Colors.red,
+                                    : theme.colorScheme.error,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -440,10 +439,10 @@ class _VerificationDialogState extends State<VerificationDialog> {
                                   : localizations.reject,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: currentStatus[i] == true
-                                    ? Colors.green
+                                    ? theme.colorScheme.secondary
                                     : currentStatus[i] == null
                                     ? Colors.yellow
-                                    : Colors.red,
+                                    : theme.colorScheme.error,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -451,7 +450,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                           ),
                         ],
                       ),
-                      const Divider(thickness: 1, color: Colors.white24),
+                      const Divider(thickness: 1),
                     ],
                   ),
               ],

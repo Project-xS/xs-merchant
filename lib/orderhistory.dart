@@ -83,7 +83,7 @@ class _OrderHistoryState extends State<OrderHistory>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Cleared yesterday's order details successfully"),
-            backgroundColor: Colors.amber,
+            backgroundColor: Theme.of(context).colorScheme.secondary,
           ),
         );
       }
@@ -139,12 +139,17 @@ class _OrderHistoryState extends State<OrderHistory>
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.search,
                     hintText: AppLocalizations.of(context)!.s_order,
-                    leading: const Padding(
+                    leading: Padding(
                       padding: EdgeInsets.symmetric(
                         vertical: 5.00,
                         horizontal: 12.00,
                       ),
-                      child: Icon(Icons.search, color: Colors.grey),
+                      child: Icon(
+                        Icons.search,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
                     ),
                     trailing: [
                       IconButton(
@@ -234,6 +239,7 @@ class _OrderHistoryState extends State<OrderHistory>
               content: Text(
                 "Order $orderId ${(submit) ? "Delivered" : "Cancelled"} Successfully",
               ),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
           );
         }
@@ -242,15 +248,19 @@ class _OrderHistoryState extends State<OrderHistory>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Error Submiting order : ${response.statusCode}"),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
       }
     } on Exception catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Not Connected, $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }

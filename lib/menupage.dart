@@ -128,7 +128,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                   }
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text("Item Already Exists, Updated its details"),
                     backgroundColor: Colors.yellowAccent,
                   ),
@@ -149,7 +149,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text("Item : \"$name\" Added Successfully"),
-                    backgroundColor: Colors.cyanAccent,
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
                   ),
                 );
               }
@@ -218,7 +218,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   //         } else {
   //           if (mounted) {
   //             ScaffoldMessenger.of(context).showSnackBar(
-  //               const SnackBar(
+  //               SnackBar(
   //                 content: Text("Image Upload Failed: Get Stage"),
   //                 backgroundColor: Colors.redAccent,
   //               ),
@@ -229,7 +229,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   //       } else {
   //         if (mounted) {
   //           ScaffoldMessenger.of(context).showSnackBar(
-  //             const SnackBar(
+  //             SnackBar(
   //               content: Text("Image Upload Failed: 2nd Stage"),
   //               backgroundColor: Colors.redAccent,
   //             ),
@@ -406,7 +406,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text("Error performing search : $e"),
-                                  backgroundColor: Colors.redAccent,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.error,
                                 ),
                               );
                             }
@@ -444,9 +446,12 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                           return Container(
                             decoration: BoxDecoration(
                               border: (!widget.portrait && index % 2 != 0)
-                                  ? const Border(
+                                  ? Border(
                                       left: BorderSide(
-                                        color: Colors.white54,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.54),
                                         width: 1.0,
                                       ),
                                     )
@@ -653,9 +658,11 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                     }
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text("Item Changes are Successful"),
-                          backgroundColor: Colors.cyanAccent,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
                         ),
                       );
                       if (!isWindows) {
@@ -731,9 +738,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         // Removed internal image upload logic dependent on pngn
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text("Item Created Succesfully"),
-              backgroundColor: Colors.cyanAccent,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
           );
         }
@@ -746,7 +753,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                 ApiClient.tryExtractErrorMessage(response) ??
                     "Error: ${response.body}",
               ),
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -757,7 +764,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Not Connected, $e"),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -787,9 +794,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
       if (response.statusCode == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text("Item Update Successful"),
-              backgroundColor: Colors.cyanAccent,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
           );
           setState(() {
@@ -810,7 +817,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Error Updating Items : ${response.statusCode}"),
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -820,7 +827,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Not Connected, $e"),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -847,9 +854,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text("Item Deleted Successfully"),
-              backgroundColor: Colors.cyanAccent,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
             ),
           );
         }
@@ -858,7 +865,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Error Deleting Item : ${response.statusCode}"),
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -868,7 +875,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Not Connected, $e"),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -887,8 +894,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           icon: Icons.add,
           activeIcon: Icons.close,
           backgroundColor: theme.colorScheme.primary,
-          foregroundColor: Colors.white,
-          overlayColor: Colors.black,
+          foregroundColor: theme.colorScheme.onPrimary,
+          overlayColor: theme.colorScheme.surface,
           overlayOpacity: 0.4,
           spacing: 12,
           spaceBetweenChildren: 12,
@@ -935,7 +942,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                       Text("Sort:", style: theme.textTheme.titleMedium),
                       const SizedBox(width: 8),
                       Container(
-                        color: Colors.black,
+                        color: theme.colorScheme.surface,
                         padding: const EdgeInsets.symmetric(horizontal: 12.0),
                         child: DropdownButton<String>(
                           value: value,
@@ -993,7 +1000,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                       Text("Sort:", style: theme.textTheme.titleMedium),
                       const SizedBox(width: 8),
                       Container(
-                        color: Colors.black,
+                        color: theme.colorScheme.surface,
                         padding: const EdgeInsets.symmetric(horizontal: 12.0),
                         child: DropdownButton<String>(
                           value: value,
