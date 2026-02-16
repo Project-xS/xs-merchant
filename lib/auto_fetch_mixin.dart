@@ -37,9 +37,23 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
     });
   }
 
+  bool isLoading = false;
+
   // uncomment below for caching
   Future<void> fetchAndCacheAndNotify() async {
     if (!mounted) return;
+
+    // Only set loading to true if we don't have items yet (initial load)
+    // or if we want to show loading on refresh.
+    // For auto-fetch in background, maybe we don't want full screen shimmer?
+    // But user reported "no spinner", implying they want to see loading.
+    // Let's set it if the cache is empty.
+    if (GlobalMenuCache.items.isEmpty) {
+      setState(() {
+        isLoading = true;
+      });
+    }
+
     final url = "/menu/items";
     // final cacheManager = JsonCacheManager.instance;
     // dynamic combinedJson;
@@ -55,11 +69,16 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
         debugPrint("Fetched: ${decodedJson.toString()}");
         List<dynamic> dataList = decodedJson["data"];
         if (!mounted) return;
+
+        // We shouldn't clear here if we want to avoid flickering,
+        // but the original logic cleared it.
+        // Let's keep existing logic but wrapped in safety.
         setState(() {
           GlobalMenuCache.availableid.clear();
           GlobalMenuCache.navailableid.clear();
           GlobalMenuCache.items.clear();
         });
+
         for (var item1 in dataList) {
           if (item1["is_available"] == true &&
               (item1["stock"] == -1 || item1["stock"] >= 1)) {
@@ -88,15 +107,8 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             GlobalMenuCache.availableid,
             GlobalMenuCache.navailableid,
           );
-          // onDataUpdated(GlobalMenuCache.items, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
+          isLoading = false;
         });
-
-        // combinedJson = jsonEncode({
-        //   "items": fetchedItems.map((key, value) => MapEntry(key.toString(), value)),
-        //   "availableid": fetchedAid.toList(),
-        //   "navailableid": fetchedNaid.toList(),
-        // });
-        // debugPrint("$combinedJson");
 
         if (mounted && Scaffold.maybeOf(context) != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -106,11 +118,6 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             ),
           );
         }
-        // await cacheManager.putFile(
-        //   id.toString(),
-        //   Uint8List.fromList(utf8.encode(combinedJson)),
-        //   fileExtension: "json",
-        // );
       } else {
         if (mounted && Scaffold.maybeOf(context) != null) {
           final msg = ApiClient.tryExtractErrorMessage(response);
@@ -128,8 +135,15 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             '[menu] non-200: ${response.statusCode} body=${response.body}',
           );
         }
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint("Failed to load data: ${response.statusCode}");
+        }
+
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
         return;
       }
     } catch (e) {
@@ -142,6 +156,11 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
         );
       }
       if (kDebugMode) debugPrint('[menu] exception: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -156,8 +175,10 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
 
     int Function(int, int) getComparator(int sortOption) {
       return (idA, idB) {
-        Map<String, dynamic> itemA = dataToSort[idA]!;
-        Map<String, dynamic> itemB = dataToSort[idB]!;
+        Map<String, dynamic>? itemA = dataToSort[idA];
+        Map<String, dynamic>? itemB = dataToSort[idB];
+
+        if (itemA == null || itemB == null) return 0;
 
         if (sortOption == 1) {
           return itemA["name"]

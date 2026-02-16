@@ -46,10 +46,19 @@ class _VerificationDialogState extends State<VerificationDialog> {
     });
   }
 
+  bool _isLoading = false;
+
   Future<void> _fetchOrder(String value) async {
     if (value.isEmpty) return;
 
+    setState(() {
+      _isLoading = true;
+      _orderId = 0;
+      _currentOrderData = null;
+    });
+
     try {
+      // Small delay to prevent rapid flickering if API is too fast, and to let UI update
       await Future.delayed(const Duration(milliseconds: 200));
       final queryParam = _rfid ? "rfid=$value" : "user_id=$value";
       final response = await ApiClient.get("/orders/by_user?$queryParam");
@@ -58,10 +67,6 @@ class _VerificationDialogState extends State<VerificationDialog> {
         final decodedJson = jsonDecode(response.body);
         if (decodedJson["data"] != null &&
             (decodedJson["data"] as List).isNotEmpty) {
-          // Provide the first order found? Or handle multiple?
-          // Original code iterated but seemingly only displayed one if set to orderId.
-          // It iterated and set `orderId` to the last one.
-          // We will handle the last one for now to match logic, or improve.
           for (var order in decodedJson["data"]) {
             final int orderId = order["order_id"];
             final int price = order["total_price"];
@@ -89,8 +94,15 @@ class _VerificationDialogState extends State<VerificationDialog> {
               setState(() {
                 _orderId = orderId;
                 _currentOrderData = orderData;
+                _isLoading = false;
               });
             }
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
           }
         }
       } else {
@@ -103,6 +115,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
           setState(() {
             _orderId = 0;
             _currentOrderData = null;
+            _isLoading = false;
           });
         }
       }
@@ -111,6 +124,9 @@ class _VerificationDialogState extends State<VerificationDialog> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Not Connected, $e")));
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -185,7 +201,12 @@ class _VerificationDialogState extends State<VerificationDialog> {
               ),
             ),
           ),
-          if (_orderId != 0 && _currentOrderData != null)
+          if (_isLoading)
+            const SizedBox(
+              height: 100,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_orderId != 0 && _currentOrderData != null)
             Flexible(
               child: SingleChildScrollView(
                 child: _buildVerificationCard(theme, localizations),

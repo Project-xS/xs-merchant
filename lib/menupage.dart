@@ -11,6 +11,7 @@ import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/menu/menu_item_card.dart';
 import 'package:merchant/menu/edit_item_dialog.dart';
+import 'package:merchant/common/shimmer_loading.dart';
 import 'package:merchant/menu/add_item_dialog.dart';
 import 'package:merchant/main.dart';
 
@@ -171,7 +172,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                   if (mounted) {
                     setState(() {
                       GlobalMenuCache.items[id!]?['pic'] = url;
-                      changeimage(id!, url);
+                      changeimage(id, url);
                     });
                   }
                 }
@@ -1046,7 +1047,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
       future: ImageUploadState().buildImageDisplay(itemId.toString(), 160, 160),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          return const MenuGridShimmer();
         } else if (snapshot.hasError || !snapshot.hasData) {
           return Text("${snapshot.error}");
         } else {
@@ -1058,6 +1059,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
 
   Widget buildGridSection(Set<int> menuSet, bool available) {
     if (menuSet.isEmpty) {
+      if (isLoading) {
+        return const SliverToBoxAdapter(child: MenuGridShimmer());
+      }
       return SliverToBoxAdapter(
         child: Center(
           child: Padding(
