@@ -34,7 +34,10 @@ void changeimage(int id, String url) async {
   list.map((itemId, url) => MapEntry(itemId.toString(), url));
   list[id.toString()] = url;
   cache.setString("piclink", jsonEncode(list));
-  GlobalMenuCache.items[id]?['pic'] = url;
+  final item = GlobalMenuCache.items[id];
+  if (item != null) {
+    GlobalMenuCache.items[id] = item.copyWith(pic: url);
+  }
 }
 
 String name = "";

@@ -168,7 +168,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
     final normalized = name.trim().toLowerCase().replaceAll(' ', '');
     final exists = GlobalMenuCache.items.values.any(
       (item) =>
-          item['name'].trim().toLowerCase().replaceAll(' ', '') == normalized,
+          item.name.trim().toLowerCase().replaceAll(' ', '') == normalized,
     );
 
     if (exists != _isDuplicate) {

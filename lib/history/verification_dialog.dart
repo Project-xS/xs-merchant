@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
+import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/common/button_styles.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 
@@ -61,7 +62,9 @@ class _VerificationDialogState extends State<VerificationDialog> {
       // Small delay to prevent rapid flickering if API is too fast, and to let UI update
       await Future.delayed(const Duration(milliseconds: 200));
       final queryParam = _rfid ? "rfid=$value" : "user_id=$value";
-      final response = await ApiClient.get("/orders/by_user?$queryParam");
+      final response = await ApiClient.get(
+        ApiConstants.ordersByUser(queryParam),
+      );
 
       if (response.statusCode == 200) {
         final decodedJson = jsonDecode(response.body);

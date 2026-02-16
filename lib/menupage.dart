@@ -7,8 +7,10 @@ import 'package:merchant/api/api_client.dart';
 import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/common/button_styles.dart';
 import 'package:merchant/image_upload.dart';
+import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/common/global_menu_cache.dart';
+import 'package:merchant/models/menu_item.dart';
 import 'package:merchant/menu/menu_item_card.dart';
 import 'package:merchant/menu/edit_item_dialog.dart';
 import 'package:merchant/common/shimmer_loading.dart';
@@ -54,7 +56,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           itemId: itemId,
           initialName: oldName,
           initialPrice: oldRate,
-          initialStock: GlobalMenuCache.items[itemId]?['stocks'] ?? 0,
+          initialStock: GlobalMenuCache.items[itemId]?.stock ?? 0,
           initialIsVeg: isveg,
           initialAvailable: available,
           canteenId: widget.canteenId,
@@ -69,8 +71,11 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                 if (mounted) {
                   // Check mounted before setState
                   setState(() {
-                    GlobalMenuCache.items[itemId]?['pic'] = url;
-                    changeimage(itemId, url);
+                    final item = GlobalMenuCache.items[itemId];
+                    if (item != null) {
+                      GlobalMenuCache.items[itemId] = item.copyWith(pic: url);
+                      changeimage(itemId, url);
+                    }
                   });
                 }
               }
@@ -81,7 +86,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
               'is_veg': isVeg,
               'available': isAvailable,
               'stocks': stock,
-              'pic': GlobalMenuCache.items[itemId]?['pic'],
+              'pic': GlobalMenuCache.items[itemId]?.pic,
             });
           },
         );
@@ -102,7 +107,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
             // Check for duplicate
             int foundItemId = GlobalMenuCache.items.keys.firstWhere(
               (key) =>
-                  GlobalMenuCache.items[key]?['name']
+                  GlobalMenuCache.items[key]!.name
                       .trim()
                       .toLowerCase()
                       .replaceAll(' ', '') ==
@@ -114,14 +119,18 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
               // Update existing
               if (mounted) {
                 setState(() {
-                  GlobalMenuCache.items[foundItemId] = {
-                    'name': name,
-                    'price': price,
-                    'is_veg': isVeg,
-                    'available': isAvailable,
-                    'stocks': stock,
-                  };
-                  updateitem(foundItemId, GlobalMenuCache.items[foundItemId]);
+                  final existing = GlobalMenuCache.items[foundItemId]!;
+                  GlobalMenuCache.items[foundItemId] = existing.copyWith(
+                    name: name,
+                    price: price,
+                    isVeg: isVeg,
+                    available: isAvailable,
+                    stock: stock,
+                  );
+                  updateitem(
+                    foundItemId,
+                    GlobalMenuCache.items[foundItemId]!.toJson(),
+                  );
                   if (GlobalMenuCache.navailableid.contains(foundItemId)) {
                     GlobalMenuCache.navailableid.remove(foundItemId);
                     GlobalMenuCache.availableid.add(foundItemId);
@@ -171,8 +180,11 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                 if (url != null && url.isNotEmpty) {
                   if (mounted) {
                     setState(() {
-                      GlobalMenuCache.items[id!]?['pic'] = url;
-                      changeimage(id, url);
+                      final item = GlobalMenuCache.items[id!];
+                      if (item != null) {
+                        GlobalMenuCache.items[id!] = item.copyWith(pic: url);
+                        changeimage(id, url);
+                      }
                     });
                   }
                 }
@@ -294,16 +306,21 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                     if (!mounted) return;
                     setState(() {
                       if (isAdd == true) {
-                        if (GlobalMenuCache.items[itemId]?['available']) {
-                          GlobalMenuCache.availableid.remove(itemId);
-                          GlobalMenuCache.navailableid.add(itemId);
-                          GlobalMenuCache.items[itemId]?['available'] = false;
-                          updateitem(itemId, GlobalMenuCache.items[itemId]);
-                        } else {
-                          GlobalMenuCache.items[itemId]?['available'] = true;
-                          GlobalMenuCache.availableid.add(itemId);
-                          GlobalMenuCache.navailableid.remove(itemId);
-                          updateitem(itemId, GlobalMenuCache.items[itemId]);
+                        final item = GlobalMenuCache.items[itemId];
+                        if (item != null) {
+                          if (item.available) {
+                            GlobalMenuCache.availableid.remove(itemId);
+                            GlobalMenuCache.navailableid.add(itemId);
+                            final updated = item.copyWith(available: false);
+                            GlobalMenuCache.items[itemId] = updated;
+                            updateitem(itemId, updated.toJson());
+                          } else {
+                            GlobalMenuCache.availableid.add(itemId);
+                            GlobalMenuCache.navailableid.remove(itemId);
+                            final updated = item.copyWith(available: true);
+                            GlobalMenuCache.items[itemId] = updated;
+                            updateitem(itemId, updated.toJson());
+                          }
                         }
                       } else {
                         deleteitem(itemId);
@@ -467,7 +484,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                   child: TextFormField(
                                     key: ValueKey("name_$itemId"),
                                     initialValue:
-                                        GlobalMenuCache.items[itemId]?['name'],
+                                        GlobalMenuCache.items[itemId]?.name,
                                     decoration: const InputDecoration(
                                       labelText: "Name",
                                     ),
@@ -488,7 +505,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                   child: TextFormField(
                                     key: ValueKey("price_$itemId"),
                                     initialValue: GlobalMenuCache
-                                        .items[itemId]?['price']
+                                        .items[itemId]
+                                        ?.price
                                         .toString(),
                                     keyboardType: TextInputType.number,
                                     decoration: const InputDecoration(
@@ -511,7 +529,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                   child: TextFormField(
                                     key: ValueKey("stock_$itemId"),
                                     initialValue: GlobalMenuCache
-                                        .items[itemId]?['stocks']
+                                        .items[itemId]
+                                        ?.stock
                                         .toString(),
                                     keyboardType: TextInputType.number,
                                     decoration: const InputDecoration(
@@ -544,7 +563,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                         value:
                                             changes[itemId]?['is_veg'] ??
                                             GlobalMenuCache
-                                                .items[itemId]?['is_veg'],
+                                                .items[itemId]
+                                                ?.isVeg,
                                         onChanged: (value) {
                                           if (mounted) {
                                             setState(() {
@@ -575,7 +595,8 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                         value:
                                             changes[itemId]?['available'] ??
                                             GlobalMenuCache
-                                                .items[itemId]?['available'],
+                                                .items[itemId]
+                                                ?.available,
                                         onChanged: (value) {
                                           if (mounted) {
                                             setState(() {
@@ -638,20 +659,25 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                       if (originalItem == null) continue;
 
                       final updatedItem = {
-                        'name': itemChanges['name'] ?? originalItem['name'],
-                        'price': itemChanges['price'] ?? originalItem['price'],
-                        'is_veg':
-                            itemChanges['is_veg'] ?? originalItem['is_veg'],
+                        'name': itemChanges['name'] ?? originalItem.name,
+                        'price': itemChanges['price'] ?? originalItem.price,
+                        'is_veg': itemChanges['is_veg'] ?? originalItem.isVeg,
                         'available':
-                            itemChanges['available'] ??
-                            originalItem['available'],
-                        'stocks':
-                            itemChanges['stocks'] ?? originalItem['stocks'],
-                        'pic': originalItem['pic'],
+                            itemChanges['available'] ?? originalItem.available,
+                        'stocks': itemChanges['stocks'] ?? originalItem.stock,
+                        'pic': originalItem.pic,
                       };
                       if (mounted) {
                         setState(() {
-                          GlobalMenuCache.items[i] = updatedItem;
+                          GlobalMenuCache.items[i] = MenuItem(
+                            id: i,
+                            name: updatedItem['name'],
+                            price: updatedItem['price'],
+                            isVeg: updatedItem['is_veg'],
+                            available: updatedItem['available'],
+                            stock: updatedItem['stocks'],
+                            pic: updatedItem['pic'],
+                          );
                         });
                       }
                       await updateitem(i, updatedItem);
@@ -700,7 +726,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     try {
       final internalCanteenId = AuthService.canteenId ?? widget.canteenId;
       final response = await ApiClient.post(
-        '/menu/create',
+        ApiConstants.menuCreate,
         headers: {
           "accept": "application/json",
           "Content-Type": "application/json",
@@ -724,14 +750,15 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         if (mounted) {
           setState(() {
             if (createdItemId != null) {
-              GlobalMenuCache.items[createdItemId] = {
-                "name": name,
-                "price": price,
-                "is_veg": isveg,
-                "available": available,
-                "stocks": stocks,
-                "pic": decodedJson["pic_link"],
-              };
+              GlobalMenuCache.items[createdItemId] = MenuItem(
+                id: createdItemId,
+                name: name,
+                price: price,
+                isVeg: isveg,
+                available: available,
+                stock: stocks,
+                pic: decodedJson["pic_link"],
+              );
             }
           });
         }
@@ -775,7 +802,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   dynamic updateitem(int itemId, Map<String, dynamic>? item) async {
     try {
       final response = await ApiClient.put(
-        "/menu/update",
+        ApiConstants.menuUpdate,
         headers: {
           'accept': 'application/json',
           'Content-Type': 'application/json',
@@ -800,15 +827,16 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
             ),
           );
           setState(() {
-            GlobalMenuCache.items[itemId] = {
-              "available": item?["available"],
-              "is_veg": item?['is_veg'],
-              "name": item?["name"],
-              "pic": GlobalMenuCache.items[itemId]?['pic'],
-              "etag": GlobalMenuCache.items[itemId]?['etag'],
-              "price": item?["price"],
-              "stocks": item?["stocks"],
-            };
+            final oldItem = GlobalMenuCache.items[itemId];
+            if (oldItem != null) {
+              GlobalMenuCache.items[itemId] = oldItem.copyWith(
+                available: item?["available"],
+                isVeg: item?['is_veg'],
+                name: item?["name"],
+                price: item?["price"],
+                stock: item?["stocks"],
+              );
+            }
           });
           return true;
         }
@@ -837,13 +865,13 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   void deleteitem(int itemId) async {
     try {
       final response = await ApiClient.delete(
-        "/menu/delete/$itemId",
+        ApiConstants.menuDelete(itemId),
         headers: {'accept': 'application/json'},
       );
       if (response.statusCode == 200) {
         if (mounted) {
           setState(() {
-            if (GlobalMenuCache.items[itemId]?['available']) {
+            if (GlobalMenuCache.items[itemId]?.available ?? false) {
               GlobalMenuCache.availableid.remove(itemId);
             } else {
               GlobalMenuCache.navailableid.remove(itemId);
@@ -1103,15 +1131,10 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           item: item,
           isTamil: widget.isTamil,
           available: available,
-          onTap: () => delAddItem(itemId, item['name'], true, available),
-          onEdit: () => modifyItem(
-            itemId,
-            item['name'],
-            item['price'],
-            item['is_veg'],
-            available,
-          ),
-          onDelete: () => delAddItem(itemId, item['name'], false, false),
+          onTap: () => delAddItem(itemId, item.name, true, available),
+          onEdit: () =>
+              modifyItem(itemId, item.name, item.price, item.isVeg, available),
+          onDelete: () => delAddItem(itemId, item.name, false, false),
         );
       }, childCount: menuSet.length),
     );

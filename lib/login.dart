@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
+import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/auth/auth_service.dart';
 
 class Login extends StatefulWidget {
@@ -69,7 +70,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
     });
     try {
       final response = await ApiClient.post(
-        '/canteen/login',
+        ApiConstants.login,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username, 'password': password}),
       );

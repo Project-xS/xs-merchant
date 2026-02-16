@@ -4,11 +4,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:merchant/api/api_client.dart';
+import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/common/global_menu_cache.dart';
+import 'package:merchant/models/menu_item.dart';
 
 mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   Timer? timer;
-  Map<int, Map<String, dynamic>> fetchedItems = {};
+  Map<int, MenuItem> fetchedItems = {};
   LinkedHashSet<int> fetchedAid = LinkedHashSet();
   LinkedHashSet<int> fetchedNaid = LinkedHashSet();
   Map<String, Map<String, dynamic>> orders = {};
@@ -86,15 +88,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
           } else {
             fetchedNaid.add(item1["item_id"]);
           }
-          fetchedItems[item1["item_id"]] = {
-            "name": item1["name"],
-            "price": item1["price"],
-            "is_veg": item1["is_veg"],
-            "available": item1["is_available"],
-            "stocks": item1["stock"],
-            "pic": item1["pic_link"],
-            "etag": item1["pic_etag"]?.toString().replaceAll('"', ''),
-          };
+          fetchedItems[item1["item_id"]] = MenuItem.fromJson(item1);
         }
         if (!mounted) return;
         setState(() {
@@ -165,7 +159,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   }
 
   dynamic applySorting(
-    Map<int, Map<String, dynamic>> dataToSort,
+    Map<int, MenuItem> dataToSort,
     int s,
     LinkedHashSet<int> availableId,
     LinkedHashSet<int> navailableId,
@@ -175,23 +169,23 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
 
     int Function(int, int) getComparator(int sortOption) {
       return (idA, idB) {
-        Map<String, dynamic>? itemA = dataToSort[idA];
-        Map<String, dynamic>? itemB = dataToSort[idB];
+        MenuItem? itemA = dataToSort[idA];
+        MenuItem? itemB = dataToSort[idB];
 
         if (itemA == null || itemB == null) return 0;
 
         if (sortOption == 1) {
-          return itemA["name"]
+          return itemA.name
               .toLowerCase()
               .replaceAll(' ', '')
-              .compareTo(itemB["name"].toLowerCase().replaceAll(' ', ''));
+              .compareTo(itemB.name.toLowerCase().replaceAll(' ', ''));
         } else if (sortOption == 2) {
-          return itemB["price"].compareTo(itemA["price"]);
+          return itemB.price.compareTo(itemA.price);
         } else if (sortOption == 3) {
-          int getPriority(Map<String, dynamic> item) {
-            if (item["stocks"] == 0 && item["available"] == true) return 0;
-            if (item["stocks"] == 0 && item["available"] == false) return 1;
-            if (item["stocks"] == -1) return 3;
+          int getPriority(MenuItem item) {
+            if (item.stock == 0 && item.available == true) return 0;
+            if (item.stock == 0 && item.available == false) return 1;
+            if (item.stock == -1) return 3;
             return 2;
           }
 
@@ -202,7 +196,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             return priorityA.compareTo(priorityB);
           }
           if (priorityA == 2) {
-            return itemA["stocks"].compareTo(itemB["stocks"]);
+            return itemA.stock.compareTo(itemB.stock);
           }
           return 0;
         }
@@ -256,7 +250,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
     final int id = canteenIdForOrders;
     if (kDebugMode) debugPrint("Fetching orders for canteen ID: $id");
     try {
-      final response = await ApiClient.get('/orders');
+      final response = await ApiClient.get(ApiConstants.orders);
 
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);

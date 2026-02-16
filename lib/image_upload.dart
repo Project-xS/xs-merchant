@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:merchant/api/api_client.dart';
+import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/settings_modal.dart';
@@ -178,7 +179,7 @@ class ImageUploadState extends State<ImageUpload> {
         debugPrint("[imageupload] Sending PUT to /menu/upload_pic/$id");
       }
       final response1 = await ApiClient.put(
-        "/menu/upload_pic/$id",
+        ApiConstants.menuUploadPic(id),
         headers: {'accept': 'application/json'},
       );
       if (kDebugMode) {
@@ -212,7 +213,7 @@ class ImageUploadState extends State<ImageUpload> {
           }
           await Future.delayed(Duration(seconds: 1));
           final setimage = await ApiClient.put(
-            "/menu/set_pic/$id",
+            ApiConstants.menuSetPic(id),
             headers: {'accept': 'application/json'},
           );
           if (kDebugMode) {
@@ -225,7 +226,7 @@ class ImageUploadState extends State<ImageUpload> {
           }
           await Future.delayed(Duration(seconds: 1));
           final response2 = await ApiClient.get(
-            "/assets/$id",
+            ApiConstants.assets(id),
             headers: {'Content-Type': 'application/json'},
           );
           if (kDebugMode) {
@@ -238,10 +239,13 @@ class ImageUploadState extends State<ImageUpload> {
             if (kDebugMode) {
               debugPrint("[imageupload] Image Uploaded Successfully");
               debugPrint(
-                "[imageupload] GlobalMenuCache: ${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}",
+                "[imageupload] GlobalMenuCache: ${GlobalMenuCache.items[id]?.pic} ${data1['item_id']} ${data1['url']}",
               );
             }
-            GlobalMenuCache.items[id]?['pic'] = data1['url'];
+            final item = GlobalMenuCache.items[id];
+            if (item != null) {
+              GlobalMenuCache.items[id] = item.copyWith(pic: data1['url']);
+            }
             return data1['url'];
           } else {
             if (kDebugMode) {
@@ -302,7 +306,10 @@ class ImageUploadState extends State<ImageUpload> {
         setState(() {
           isLoading = false;
           if (data1 != null) {
-            GlobalMenuCache.items[id]?['pic'] = data1['url'];
+            final item = GlobalMenuCache.items[id];
+            if (item != null) {
+              GlobalMenuCache.items[id] = item.copyWith(pic: data1['url']);
+            }
             if (kDebugMode) {
               debugPrint("[imageupload] Image Uploaded Successfully (finally)");
             }
@@ -323,15 +330,15 @@ class ImageUploadState extends State<ImageUpload> {
     double width,
     double height,
   ) async {
-    final imageUrl = GlobalMenuCache.items[int.parse(itemId)]?['pic'];
+    final imageUrl = GlobalMenuCache.items[int.parse(itemId)]?.pic;
     if (imageUrl != null && imageUrl.isNotEmpty) {
       bool found = await cachedImageExists(
         imageUrl,
-        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
+        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?.etag,
       );
       File? file = await getCachedImageFile(
         imageUrl,
-        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
+        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?.etag,
       );
       if (found && file != null) {
         return Image.file(file);
@@ -339,7 +346,7 @@ class ImageUploadState extends State<ImageUpload> {
       return ExtendedImage.network(
         imageUrl,
         filterQuality: FilterQuality.high,
-        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
+        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?.etag,
         cache: true,
         // width: (isAndroid) ? 115 : width,
         // height: (isAndroid) ? 115 : height,
@@ -483,7 +490,7 @@ Future<void> pickAndUploadCanteenImage(
 
   try {
     final response1 = await ApiClient.put(
-      "/canteen/upload_pic/$effectiveCanteenId",
+      ApiConstants.canteenUploadPic(effectiveCanteenId),
       headers: {'accept': 'application/json'},
     );
 
@@ -497,7 +504,7 @@ Future<void> pickAndUploadCanteenImage(
 
       if (response.statusCode == 200) {
         await ApiClient.put(
-          "/canteen/set_pic/$effectiveCanteenId",
+          ApiConstants.canteenSetPic(effectiveCanteenId),
           headers: {'accept': 'application/json'},
         );
 

@@ -59,7 +59,7 @@ class _TallyViewState extends State<TallyView> {
               children: [
                 Icon(
                   Icons.circle,
-                  color: GlobalMenuCache.items[itemId]?['is_veg'] == true
+                  color: GlobalMenuCache.items[itemId]?.isVeg == true
                       ? Colors.green
                       : theme.colorScheme.error,
                   size: 14,
@@ -71,7 +71,7 @@ class _TallyViewState extends State<TallyView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item['name'],
+                        item.name,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -80,7 +80,7 @@ class _TallyViewState extends State<TallyView> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "₹${item['price']}",
+                        "₹${item.price}",
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -110,7 +110,7 @@ class _TallyViewState extends State<TallyView> {
                                 widget.bill[itemId]!['count'] =
                                     currentCount - 1;
                                 widget.bill[itemId]!['price'] =
-                                    item['price'] * (currentCount - 1);
+                                    item.price * (currentCount - 1);
                               }
                               widget.onBillUpdate(widget.bill);
                             });
@@ -136,15 +136,15 @@ class _TallyViewState extends State<TallyView> {
                                 widget.bill[itemId]?['count'] ?? 0;
                             if (currentCount == 0) {
                               widget.bill[itemId] = {
-                                'name': item['name'],
-                                'price': item['price'],
+                                'name': item.name,
+                                'price': item.price,
                                 'count': 1,
                                 'id': itemId,
                               };
                             } else {
                               widget.bill[itemId]!['count'] = currentCount + 1;
                               widget.bill[itemId]!['price'] =
-                                  item['price'] * (currentCount + 1);
+                                  item.price * (currentCount + 1);
                             }
                             widget.onBillUpdate(widget.bill);
                           });

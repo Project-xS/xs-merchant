@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
+import 'package:merchant/api/api_constants.dart';
 
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -231,7 +232,9 @@ class _OrderHistoryState extends State<OrderHistory>
   void markdelivered(bool submit, int orderId) async {
     try {
       final action = submit ? 'delivered' : 'cancelled';
-      final response = await ApiClient.put('/orders/$orderId/$action');
+      final response = await ApiClient.put(
+        ApiConstants.orderAction(orderId, action),
+      );
       if (response.statusCode == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

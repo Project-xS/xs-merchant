@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/menupage.dart';
+import 'package:merchant/models/menu_item.dart';
 
 class BillMenu extends StatefulWidget {
   final int canteenId;
@@ -95,7 +96,7 @@ class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu> {
 
 class BillMenuItemCard extends StatefulWidget {
   final int itemId;
-  final Map<String, dynamic> item;
+  final MenuItem item;
   final bool isTamil;
   final Map<int, Map<String, dynamic>> bill;
   final Function(Map<int, Map<String, dynamic>>) onBillUpdate;
@@ -125,7 +126,7 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
           Positioned(
             child: MenupageState().showImage(
               widget.itemId,
-              widget.item['available'] ?? false,
+              widget.item.available,
             ),
           ),
           Positioned.fill(
@@ -150,7 +151,7 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
             child: SizedBox(
               height: 48,
               child: Image.asset(
-                widget.item['is_veg']
+                widget.item.isVeg
                     ? "assets/images/veg.png"
                     : "assets/images/nonveg.png",
                 width: 24,
@@ -169,7 +170,7 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Text(
-                    widget.item['name'] ?? "Unknown Item",
+                    widget.item.name,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -186,7 +187,7 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "₹${widget.item['price'] ?? 'N/A'}",
+                        "₹${widget.item.price}",
                         style: TextStyle(
                           fontSize: 18,
                           color: theme.colorScheme.primary,
@@ -194,7 +195,7 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                         ),
                       ),
                       Text(
-                        "Stock: ${widget.item['stocks'] == -1 ? '∞' : widget.item['stocks']}",
+                        "Stock: ${widget.item.stock == -1 ? '∞' : widget.item.stock}",
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.white,
@@ -231,8 +232,8 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                                 } else {
                                   count -= 1;
                                   widget.bill[widget.itemId] = {
-                                    'name': widget.item['name'],
-                                    'price': widget.item['price'] * count,
+                                    'name': widget.item.name,
+                                    'price': widget.item.price * count,
                                     'count': count,
                                     'id': widget.itemId,
                                   };
@@ -265,16 +266,16 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                               .isNotEmpty) {
                             count += 1;
                             widget.bill[widget.itemId] = {
-                              'name': widget.item['name'],
-                              'price': widget.item['price'] * count,
+                              'name': widget.item.name,
+                              'price': widget.item.price * count,
                               'count': count,
                               'id': widget.itemId,
                             };
                             widget.onBillUpdate(widget.bill);
                           } else {
                             widget.bill[widget.itemId] = {
-                              'name': widget.item['name'],
-                              'price': widget.item['price'],
+                              'name': widget.item.name,
+                              'price': widget.item.price,
                               'count': 1,
                               'id': widget.itemId,
                             };

@@ -2,10 +2,11 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/models/menu_item.dart';
 
 class MenuItemCard extends StatelessWidget {
   final int itemId;
-  final Map<String, dynamic> item;
+  final MenuItem item;
   final bool isTamil;
   final bool available;
   final VoidCallback onTap;
@@ -27,8 +28,8 @@ class MenuItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
-    final isVeg = item['is_veg'] ?? true;
-    final stockValue = item['stocks'];
+    final isVeg = item.isVeg;
+    final stockValue = item.stock;
     final stockDisplay = stockValue == -1 ? '∞' : stockValue.toString();
 
     return GestureDetector(
@@ -144,7 +145,7 @@ class MenuItemCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    item['name'] ?? "Unknown Item",
+                    item.name,
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -157,7 +158,7 @@ class MenuItemCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "₹${item['price'] ?? '0'}",
+                        "₹${item.price}",
                         style: theme.textTheme.titleLarge?.copyWith(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.bold,
@@ -192,8 +193,8 @@ class MenuItemCard extends StatelessWidget {
   }
 
   Widget _buildImage(int itemId) {
-    final imageUrl = GlobalMenuCache.items[itemId]?['pic'];
-    final etag = GlobalMenuCache.items[itemId]?['etag'];
+    final imageUrl = GlobalMenuCache.items[itemId]?.pic;
+    final etag = GlobalMenuCache.items[itemId]?.etag;
 
     if (imageUrl != null && imageUrl.toString().isNotEmpty) {
       return ExtendedImage.network(
