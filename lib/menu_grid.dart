@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
-import 'package:merchant/main.dart';
+import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/menupage.dart';
 
 class BillMenu extends StatefulWidget {
@@ -11,7 +11,14 @@ class BillMenu extends StatefulWidget {
   final Map<int, Map<String, dynamic>> bill;
   final List<int> searchitems;
   final Function(Map<int, Map<String, dynamic>>) onBillUpdate;
-  const BillMenu(this.canteenId, this.isTamil, this.searchitems, this.bill, this.onBillUpdate, {super.key});
+  const BillMenu(
+    this.canteenId,
+    this.isTamil,
+    this.searchitems,
+    this.bill,
+    this.onBillUpdate, {
+    super.key,
+  });
 
   @override
   State<BillMenu> createState() => Billmenu();
@@ -49,7 +56,7 @@ class Billmenu extends State<BillMenu> with AutoFetchMixin<BillMenu> {
           crossAxisCount = 3;
         } else if (constraints.maxWidth < 830) {
           crossAxisCount = 4;
-        } else if (constraints.maxWidth < 1100){
+        } else if (constraints.maxWidth < 1100) {
           crossAxisCount = 5;
         }
 
@@ -116,7 +123,10 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
       child: Stack(
         children: [
           Positioned(
-            child: MenupageState().showImage(widget.itemId, widget.item['available'] ?? false),
+            child: MenupageState().showImage(
+              widget.itemId,
+              widget.item['available'] ?? false,
+            ),
           ),
           Positioned.fill(
             child: Container(
@@ -161,9 +171,10 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                   child: Text(
                     widget.item['name'] ?? "Unknown Item",
                     style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -177,16 +188,18 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                       Text(
                         "₹${widget.item['price'] ?? 'N/A'}",
                         style: TextStyle(
-                            fontSize: 18,
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold),
+                          fontSize: 18,
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         "Stock: ${widget.item['stocks'] == -1 ? '∞' : widget.item['stocks']}",
                         style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600),
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -196,46 +209,59 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     IconButton(
-                        icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
-                        onPressed: !(widget.bill.containsKey(widget.itemId))
-                            ? null
-                            : () {
-                                setState(() {
-                                  int count = widget.bill[widget.itemId]?['count'] ?? 0;
-                                  if (count - 1 <= 0) {
-                                    if (widget.bill.keys.contains(widget.itemId)) {
-                                      widget.bill.removeWhere(
-                                          (key, value) => key == widget.itemId);
-                                      widget.onBillUpdate(widget.bill);
-                                    }
-                                  } else {
-                                    count -= 1;
-                                    widget.bill[widget.itemId] = {
-                                      'name': widget.item['name'],
-                                      'price': widget.item['price'] * count,
-                                      'count': count,
-                                      'id': widget.itemId,
-                                    };
+                      icon: const Icon(
+                        Icons.remove_circle_outline,
+                        color: Colors.white,
+                      ),
+                      onPressed: !(widget.bill.containsKey(widget.itemId))
+                          ? null
+                          : () {
+                              setState(() {
+                                int count =
+                                    widget.bill[widget.itemId]?['count'] ?? 0;
+                                if (count - 1 <= 0) {
+                                  if (widget.bill.keys.contains(
+                                    widget.itemId,
+                                  )) {
+                                    widget.bill.removeWhere(
+                                      (key, value) => key == widget.itemId,
+                                    );
                                     widget.onBillUpdate(widget.bill);
                                   }
-                                });
-                              },
-                        ),
+                                } else {
+                                  count -= 1;
+                                  widget.bill[widget.itemId] = {
+                                    'name': widget.item['name'],
+                                    'price': widget.item['price'] * count,
+                                    'count': count,
+                                    'id': widget.itemId,
+                                  };
+                                  widget.onBillUpdate(widget.bill);
+                                }
+                              });
+                            },
+                    ),
                     Text(
                       (widget.bill[widget.itemId]?['count'] ?? 0).toString(),
                       style: const TextStyle(
-                          fontSize: 22,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
+                        fontSize: 22,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.add_circle, color: theme.colorScheme.primary, size: 28),
+                      icon: Icon(
+                        Icons.add_circle,
+                        color: theme.colorScheme.primary,
+                        size: 28,
+                      ),
                       onPressed: () {
                         setState(() {
                           int count = widget.bill[widget.itemId]?['count'] ?? 0;
                           if (widget.bill.values
-                              .where((element) =>
-                                  element['id'] == widget.itemId)
+                              .where(
+                                (element) => element['id'] == widget.itemId,
+                              )
                               .isNotEmpty) {
                             count += 1;
                             widget.bill[widget.itemId] = {
@@ -258,7 +284,7 @@ class _BillMenuItemCardState extends State<BillMenuItemCard> {
                       },
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),

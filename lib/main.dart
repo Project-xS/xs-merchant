@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
@@ -12,6 +11,7 @@ import 'package:merchant/billing.dart';
 import 'package:merchant/mobile_billing.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/login.dart';
 import 'package:merchant/menupage.dart';
 import 'package:merchant/orderhistory.dart';
@@ -54,12 +54,6 @@ class MyApp extends StatefulWidget {
 
   @override
   MyAppState createState() => MyAppState();
-}
-
-class GlobalMenuCache {
-  static Map<int, Map<String, dynamic>> items = {};
-  static LinkedHashSet<int> availableid = LinkedHashSet();
-  static LinkedHashSet<int> navailableid = LinkedHashSet();
 }
 
 class OpenBillingPageIntent extends Intent {

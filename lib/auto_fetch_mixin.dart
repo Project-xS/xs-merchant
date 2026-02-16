@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:merchant/api/api_client.dart';
-import 'package:merchant/main.dart';
+import 'package:merchant/common/global_menu_cache.dart';
 
 mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   Timer? timer;

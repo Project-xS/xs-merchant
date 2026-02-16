@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/auth/auth_service.dart';
-import 'package:merchant/main.dart';
+import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/settings_modal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

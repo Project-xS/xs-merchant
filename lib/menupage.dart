@@ -8,6 +8,10 @@ import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/common/button_styles.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/common/global_menu_cache.dart';
+import 'package:merchant/menu/menu_item_card.dart';
+import 'package:merchant/menu/edit_item_dialog.dart';
+import 'package:merchant/menu/add_item_dialog.dart';
 import 'package:merchant/main.dart';
 
 class Menupage extends StatefulWidget {
@@ -22,10 +26,6 @@ class Menupage extends StatefulWidget {
 
 class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   int sortmenu = 1;
-  Uint8List? png, pngn;
-  int? pngid;
-  bool isLoading = false;
-  Map<String, String> piclink = {};
 
   @override
   int get canteenIdToFetch => widget.canteenId;
@@ -38,23 +38,6 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     super.initState();
   }
 
-  dynamic onImageUpdate(int id, Uint8List? image, bool loading) {
-    if (!mounted) return;
-    setState(() {
-      png = image;
-      pngid = id;
-      isLoading = loading;
-    });
-  }
-
-  dynamic onImageUpdate1(int id, Uint8List? image, bool loading) {
-    if (!mounted) return;
-    setState(() {
-      pngn = image;
-      isLoading = loading;
-    });
-  }
-
   void modifyItem(
     int itemId,
     String oldName,
@@ -62,563 +45,140 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     bool isveg,
     bool available,
   ) {
-    bool isError = false;
-    String name = "";
-    int? rate;
-    int stocks = GlobalMenuCache.items[itemId]?['stocks'] ?? 0;
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) {
-        bool loading = false;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              title: Text(
-                AppLocalizations.of(context)!.modify_item(oldName),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              content: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Form(
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          maxLength: 40,
-                          initialValue: oldName,
-                          autofocus: true,
-                          autocorrect: false,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp('[a-zA-Z ]'),
-                            ),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.new_name,
-                            counterText: "",
-                            errorText: isError ? "Item Already Present" : null,
-                          ),
-                          onChanged: (value) {
-                            if (!mounted) return;
-                            setState(() {
-                              if (GlobalMenuCache.items.values
-                                  .where(
-                                    (item) =>
-                                        item != GlobalMenuCache.items[itemId],
-                                  )
-                                  .any(
-                                    (item) =>
-                                        item['name']
-                                            .trim()
-                                            .toLowerCase()
-                                            .replaceAll(' ', '') ==
-                                        value.trim().toLowerCase().replaceAll(
-                                          ' ',
-                                          '',
-                                        ),
-                                  )) {
-                                isError = true;
-                              } else {
-                                isError = false;
-                                name = value;
-                              }
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 20.0),
-                        TextFormField(
-                          maxLength: 4,
-                          initialValue: oldRate.toInt().toString(),
-                          autofocus: true,
-                          autocorrect: false,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.new_price,
-                          ),
-                          onChanged: (value) {
-                            if (!mounted) return;
-                            setState(() {
-                              rate = (int.tryParse(value) != null)
-                                  ? int.parse(value)
-                                  : oldRate;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 5.0),
-                        TextFormField(
-                          maxLength: 5,
-                          initialValue:
-                              "${GlobalMenuCache.items[itemId]?['stocks']}",
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^-?([1-9][0-9]*|0)?$'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value.isEmpty || value == "-") {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Error: Stocks can be either -1 or finite",
-                                  ),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                            } else {
-                              int parsedValue = int.tryParse(value) ?? stocks;
-                              if (parsedValue < -1) {
-                                stocks = 1;
-                              } else {
-                                stocks = parsedValue;
-                              }
-                            }
-                          },
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.stock,
-                            hintText: "Enter -1 for Unlimited",
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text("${AppLocalizations.of(context)!.veg} : "),
-                            Checkbox(
-                              value: isveg,
-                              onChanged: (value) {
-                                if (!mounted) return;
-                                setState(() {
-                                  isveg = value ?? false;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 0),
-                        ImageUpload(
-                          widget.canteenId,
-                          widget.portrait,
-                          onImageUpdate,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      style: getActionButtonStyle(context, false),
-                      onPressed: () => Navigator.pop(context),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.close),
-                          const SizedBox(width: 8),
-                          Text(AppLocalizations.of(context)!.cancel),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton(
-                      style: getActionButtonStyle(context, true),
-                      onPressed: (loading)
-                          ? null
-                          : () async {
-                              setState(() {
-                                loading = true;
-                              });
-                              try {
-                                if (!isError) {
-                                  if (png != null) {
-                                    String? url = await ImageUploadState()
-                                        .imageupload(itemId, png);
-                                    if (url != null && url.isNotEmpty) {
-                                      this.setState(() {
-                                        GlobalMenuCache.items[itemId]?['pic'] =
-                                            url;
-                                        final Map<String, dynamic> list =
-                                            jsonDecode(
-                                              cache.getString("piclink")!,
-                                            );
-                                        list.map(
-                                          (itemId, url) =>
-                                              MapEntry(itemId.toString(), url),
-                                        );
-                                        list[itemId.toString()] = url;
-                                        changeimage(itemId, url);
-                                      });
-                                    }
-                                  }
-                                  await updateitem(itemId, {
-                                    'name': name.isNotEmpty ? name : oldName,
-                                    'price': rate ?? oldRate,
-                                    'is_veg': isveg,
-                                    'available': available,
-                                    'stocks': stocks,
-                                    'pic':
-                                        GlobalMenuCache.items[itemId]?['pic'],
-                                  });
-                                }
-                              } finally {
-                                if (context.mounted) {
-                                  setState(() {
-                                    png = null;
-                                    loading = false;
-                                  });
-                                  Navigator.pop(context);
-                                }
-                              }
-                            },
-                      child: (loading)
-                          ? const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text("Submitting..."),
-                              ],
-                            )
-                          : Row(
-                              children: [
-                                const Icon(Icons.check),
-                                const SizedBox(width: 8),
-                                Text(AppLocalizations.of(context)!.submit),
-                              ],
-                            ),
-                    ),
-                  ],
-                ),
-              ],
-            );
+      builder: (context) {
+        return EditItemDialog(
+          itemId: itemId,
+          initialName: oldName,
+          initialPrice: oldRate,
+          initialStock: GlobalMenuCache.items[itemId]?['stocks'] ?? 0,
+          initialIsVeg: isveg,
+          initialAvailable: available,
+          canteenId: widget.canteenId,
+          isPortrait: widget.portrait,
+          onUpdate: (name, price, stock, isVeg, isAvailable, imageBytes) async {
+            if (imageBytes != null) {
+              String? url = await ImageUploadState().imageupload(
+                itemId,
+                imageBytes,
+              );
+              if (url != null && url.isNotEmpty) {
+                if (mounted) {
+                  // Check mounted before setState
+                  setState(() {
+                    GlobalMenuCache.items[itemId]?['pic'] = url;
+                    changeimage(itemId, url);
+                  });
+                }
+              }
+            }
+            await updateitem(itemId, {
+              'name': name,
+              'price': price,
+              'is_veg': isVeg,
+              'available': isAvailable,
+              'stocks': stock,
+              'pic': GlobalMenuCache.items[itemId]?['pic'],
+            });
           },
         );
       },
     );
   }
 
-  void addNewItem() async {
-    bool isError = false;
-    String name = "";
-    String priceText = "";
-    int stocks = 0;
-    int? id;
-    bool isveg = false;
-    bool available = true;
+  void addNewItem() {
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (BuildContext context) {
-        bool loading = false;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              title: Text(
-                AppLocalizations.of(context)!.add_item_head,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              content: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Form(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          maxLength: 40,
-                          autocorrect: false,
-                          textCapitalization: TextCapitalization.words,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp('[a-zA-Z ]'),
-                            ),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.name,
-                            errorText: isError
-                                ? "Item Already Exists, this Updates the existing item"
-                                : null,
-                            errorMaxLines: 2,
-                          ),
-                          onChanged: (value) {
-                            if (!mounted) return;
-                            setState(() {
-                              name = value;
-                              isError = GlobalMenuCache.items.values.any(
-                                (item) =>
-                                    item['name']
-                                        .trim()
-                                        .toLowerCase()
-                                        .replaceAll(' ', '') ==
-                                    value.trim().toLowerCase().replaceAll(
-                                      ' ',
-                                      '',
-                                    ),
-                              );
-                            });
-                          },
-                        ),
-                        TextFormField(
-                          maxLength: 4,
-                          autocorrect: false,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.price,
-                          ),
-                          onChanged: (value) {
-                            if (!mounted) return;
-                            setState(() {
-                              priceText = value;
-                            });
-                          },
-                        ),
-                        TextFormField(
-                          maxLength: 5,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'^-?([1-9][0-9]*|0)?$'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value.isEmpty || value == "-") {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Error: Stocks can be either -1 or finite",
-                                  ),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                            } else {
-                              int? parsedValue = int.tryParse(value);
-                              if (parsedValue != null) {
-                                if (parsedValue < -1) {
-                                  stocks = 1;
-                                } else {
-                                  stocks = parsedValue;
-                                }
-                              } else {
-                                stocks = 0;
-                              }
-                            }
-                          },
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.stock,
-                            hintText: "Enter -1 for Unlimited",
-                          ),
-                        ),
-                        const SizedBox(height: 15.0),
-                        StatefulBuilder(
-                          builder: (context, setState) {
-                            return Row(
-                              children: [
-                                Text("${AppLocalizations.of(context)!.veg} : "),
-                                Checkbox(
-                                  value: isveg,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      isveg = value ?? false;
-                                    });
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 0),
-                        ImageUpload(
-                          widget.canteenId,
-                          widget.portrait,
-                          onImageUpdate1,
-                          newitem: true,
-                          onImageUpdate1: onImageUpdate1,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      style: getActionButtonStyle(context, false),
-                      onPressed: () => Navigator.pop(context),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.close),
-                          const SizedBox(width: 8),
-                          Text(AppLocalizations.of(context)!.cancel),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton(
-                      style: getActionButtonStyle(context, true),
-                      onPressed: (loading == true)
-                          ? null
-                          : () async {
-                              setState(() {
-                                loading = true;
-                              });
-                              try {
-                                bool found = false;
-                                if (name.isEmpty ||
-                                    priceText.isEmpty ||
-                                    int.tryParse(priceText) == null ||
-                                    int.parse(priceText) == 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Error - Don't feed Empty or Invalid Values",
-                                      ),
-                                      backgroundColor: Colors.redAccent,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                int olditemid = 0;
-                                int foundItemId = GlobalMenuCache.items.keys
-                                    .firstWhere(
-                                      (key) =>
-                                          GlobalMenuCache.items[key]?['name']
-                                              .trim()
-                                              .toLowerCase()
-                                              .replaceAll(' ', '') ==
-                                          name.trim().toLowerCase().replaceAll(
-                                            ' ',
-                                            '',
-                                          ),
-                                      orElse: () => olditemid,
-                                    );
-                                if (foundItemId != olditemid) {
-                                  this.setState(() {
-                                    GlobalMenuCache.items[foundItemId] = {
-                                      'name': name,
-                                      'price': int.parse(priceText),
-                                      'is_veg': isveg,
-                                      'available': available,
-                                      'stocks': stocks,
-                                    };
-                                    updateitem(
-                                      foundItemId,
-                                      GlobalMenuCache.items[foundItemId],
-                                    );
-                                    if (GlobalMenuCache.navailableid.contains(
-                                      foundItemId,
-                                    )) {
-                                      GlobalMenuCache.navailableid.remove(
-                                        foundItemId,
-                                      );
-                                      GlobalMenuCache.availableid.add(
-                                        foundItemId,
-                                      );
-                                      found = true;
-                                    }
-                                  });
-                                }
-
-                                if (found == false) {
-                                  id = await addnewitem(
-                                    name,
-                                    int.parse(priceText),
-                                    isveg,
-                                    stocks,
-                                    available,
-                                  );
-                                }
-                                if (id != null) {
-                                  String? url = await ImageUploadState()
-                                      .imageupload(id!, pngn);
-                                  if (url != null && url.isNotEmpty) {
-                                    this.setState(() {
-                                      GlobalMenuCache.items[id]?['pic'] = url;
-                                      final Map<String, dynamic> list =
-                                          jsonDecode(
-                                            cache.getString("piclink")!,
-                                          );
-                                      list.map(
-                                        (itemId, url) =>
-                                            MapEntry(itemId.toString(), url),
-                                      );
-                                      list[id.toString()] = url;
-                                      changeimage(id!, url);
-                                    });
-                                  }
-                                  fetchAndCacheAndNotify();
-                                }
-                                if (isError && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        "Item: $name Already Exists, Updated its details",
-                                      ),
-                                      backgroundColor: Colors.yellowAccent,
-                                    ),
-                                  );
-                                } else {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          "Item : \"$name\" Added Successfully",
-                                        ),
-                                        backgroundColor: Colors.cyanAccent,
-                                      ),
-                                    );
-                                  }
-                                }
-                              } finally {
-                                if (context.mounted) {
-                                  setState(() {
-                                    loading = false;
-                                  });
-                                  Navigator.pop(context);
-                                }
-                              }
-                            },
-                      child: (loading)
-                          ? const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text("Submitting..."),
-                              ],
-                            )
-                          : Row(
-                              children: [
-                                const Icon(Icons.check),
-                                const SizedBox(width: 8),
-                                Text(AppLocalizations.of(context)!.submit),
-                              ],
-                            ),
-                    ),
-                  ],
-                ),
-              ],
+      builder: (context) {
+        return AddItemDialog(
+          canteenId: widget.canteenId,
+          isPortrait: widget.portrait,
+          onAdd: (name, price, stock, isVeg, isAvailable, imageBytes) async {
+            int? id;
+            // Check for duplicate
+            int foundItemId = GlobalMenuCache.items.keys.firstWhere(
+              (key) =>
+                  GlobalMenuCache.items[key]?['name']
+                      .trim()
+                      .toLowerCase()
+                      .replaceAll(' ', '') ==
+                  name.trim().toLowerCase().replaceAll(' ', ''),
+              orElse: () => -1,
             );
+
+            if (foundItemId != -1) {
+              // Update existing
+              if (mounted) {
+                setState(() {
+                  GlobalMenuCache.items[foundItemId] = {
+                    'name': name,
+                    'price': price,
+                    'is_veg': isVeg,
+                    'available': isAvailable,
+                    'stocks': stock,
+                  };
+                  updateitem(foundItemId, GlobalMenuCache.items[foundItemId]);
+                  if (GlobalMenuCache.navailableid.contains(foundItemId)) {
+                    GlobalMenuCache.navailableid.remove(foundItemId);
+                    GlobalMenuCache.availableid.add(foundItemId);
+                  }
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Item Already Exists, Updated its details"),
+                    backgroundColor: Colors.yellowAccent,
+                  ),
+                );
+              }
+              id = foundItemId;
+            } else {
+              // Add new
+              id = await addnewitem(
+                name,
+                price,
+                isVeg,
+                stock,
+                isAvailable,
+                hasPic: imageBytes != null,
+              );
+              if (id != null && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Item : \"$name\" Added Successfully"),
+                    backgroundColor: Colors.cyanAccent,
+                  ),
+                );
+              }
+            }
+
+            if (id != null) {
+              if (imageBytes != null) {
+                // Use ImageUploadState().imageupload without instance if method allows it,
+                // OR duplicate logic?
+                // Based on investigation, imageupload method is safe to call on detached instance
+                // if it doesn't access widget properties.
+                // But wait, in AddItemDialog/menupage callback, I don't have an ImageUpload widget instance to call state method on!
+                // The original code instantiated `ImageUploadState()`.
+                // I will do the same.
+                String? url = await ImageUploadState().imageupload(
+                  id,
+                  imageBytes,
+                );
+                if (url != null && url.isNotEmpty) {
+                  if (mounted) {
+                    setState(() {
+                      GlobalMenuCache.items[id!]?['pic'] = url;
+                      changeimage(id!, url);
+                    });
+                  }
+                }
+              }
+              // Refresh logic
+              fetchAndCacheAndNotify();
+            }
           },
         );
       },
@@ -1127,7 +687,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     bool isveg,
     int stocks,
     bool available, {
-    String? pic,
+    bool hasPic = false,
   }) async {
     try {
       final internalCanteenId = AuthService.canteenId ?? widget.canteenId;
@@ -1144,7 +704,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           "is_veg": isveg,
           "is_available": available,
           "stock": stocks,
-          "has_pic": pngn != null,
+          "has_pic": hasPic,
         }),
       );
 
@@ -1167,9 +727,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
             }
           });
         }
-        if (createdItemId != null && pngn != null) {
-          ImageUploadState().imageupload(createdItemId, pngn);
-        }
+        // Removed internal image upload logic dependent on pngn
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1545,194 +1103,6 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           onDelete: () => delAddItem(itemId, item['name'], false, false),
         );
       }, childCount: menuSet.length),
-    );
-  }
-}
-
-class MenuItemCard extends StatelessWidget {
-  final int itemId;
-  final Map<String, dynamic> item;
-  final bool isTamil;
-  final bool available;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const MenuItemCard({
-    super.key,
-    required this.itemId,
-    required this.item,
-    required this.isTamil,
-    required this.available,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final localizations = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned(child: MenupageState().showImage(itemId, available)),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      const Color.fromARGB(153, 0, 0, 0),
-                      const Color.fromARGB(255, 0, 0, 0),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.5, 0.7, 0.8],
-                  ),
-                ),
-              ),
-            ),
-            if (!available)
-              Positioned.fill(
-                child: Container(
-                  color: const Color.fromARGB(128, 0, 0, 0),
-                  child: Center(
-                    child: Text(
-                      localizations.off_menu,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(175, 0, 0, 0),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Image.asset(
-                  item['is_veg']
-                      ? "assets/images/veg.png"
-                      : "assets/images/nonveg.png",
-                  width: 24,
-                  height: 24,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(175, 0, 0, 0),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: PopupMenuButton(
-                    borderRadius: BorderRadius.circular(8),
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(
-                      Icons.more_vert,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        onEdit();
-                      } else if (value == 'delete') {
-                        onDelete();
-                      }
-                    },
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: ListTile(
-                          leading: Icon(Icons.edit),
-                          title: Text('Edit'),
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: ListTile(
-                          leading: Icon(Icons.delete),
-                          title: Text('Delete'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 8,
-              left: 8,
-              right: 8,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['name'] ?? "Unknown Item",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "₹${item['price'] ?? 'N/A'}",
-                        style: TextStyle(
-                          fontSize: 19,
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "${localizations.stock}:",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextSpan(
-                              text:
-                                  " ${item['stocks'] == -1 ? '∞' : item['stocks']}",
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
