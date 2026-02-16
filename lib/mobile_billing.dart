@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/l10n/app_localizations.dart';
-import 'package:merchant/posprint.dart';
+
 import 'package:merchant/tally_view.dart';
+import 'package:merchant/billing/bill_summary_view.dart';
 
 class MobileBilling extends StatefulWidget {
   final String name;
@@ -30,15 +31,9 @@ class _MobileBillingState extends State<MobileBilling> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    int subtotal = 0;
-    bill.forEach((key, value) {
-      subtotal += (value['price'] ?? 0) as int;
-    });
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.billing),
-      ),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.billing)),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -47,11 +42,17 @@ class _MobileBillingState extends State<MobileBilling> {
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: SearchBar(
                 controller: controller,
-                backgroundColor: WidgetStateProperty.all(theme.colorScheme.surfaceContainerHighest),
-                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10)),
+                backgroundColor: WidgetStateProperty.all(
+                  theme.colorScheme.surfaceContainerHighest,
+                ),
+                padding: const WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 10),
+                ),
                 leading: Icon(Icons.search, color: theme.colorScheme.primary),
                 hintText: AppLocalizations.of(context)!.search_name,
-                hintStyle: WidgetStatePropertyAll(TextStyle(color: theme.colorScheme.primary)),
+                hintStyle: WidgetStatePropertyAll(
+                  TextStyle(color: theme.colorScheme.primary),
+                ),
                 onChanged: (value) async {
                   if (value.isEmpty) {
                     setState(() => searchitems.clear());
@@ -59,23 +60,33 @@ class _MobileBillingState extends State<MobileBilling> {
                   }
                   await Future.delayed(const Duration(milliseconds: 300));
                   try {
-                    final response = await ApiClient.get('/search/${Uri.encodeComponent(value)}');
+                    final response = await ApiClient.get(
+                      '/search/${Uri.encodeComponent(value)}',
+                    );
                     if (response.statusCode != 200) {
-                      final msg = ApiClient.tryExtractErrorMessage(response) ??
+                      final msg =
+                          ApiClient.tryExtractErrorMessage(response) ??
                           'Search failed: ${response.statusCode}';
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+                          SnackBar(
+                            content: Text(msg),
+                            backgroundColor: Colors.redAccent,
+                          ),
                         );
                       }
                       return;
                     }
-                    Map<String, dynamic> decodedJson = jsonDecode(response.body);
+                    Map<String, dynamic> decodedJson = jsonDecode(
+                      response.body,
+                    );
                     List<dynamic> idList = decodedJson["data"];
                     setState(() {
                       searchitems.clear();
                       for (var i in idList) {
-                        int? itemId = i["item_id"] is int ? i["item_id"] : int.tryParse(i["item_id"].toString());
+                        int? itemId = i["item_id"] is int
+                            ? i["item_id"]
+                            : int.tryParse(i["item_id"].toString());
                         if (itemId != null && i["is_available"] == true) {
                           searchitems.add(itemId);
                         }
@@ -83,7 +94,12 @@ class _MobileBillingState extends State<MobileBilling> {
                     });
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.redAccent));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Error: $e"),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
                     }
                   }
                 },
@@ -97,7 +113,7 @@ class _MobileBillingState extends State<MobileBilling> {
                         focus.requestFocus();
                       });
                     },
-                  )
+                  ),
                 ],
               ),
             ),
@@ -118,29 +134,15 @@ class _MobileBillingState extends State<MobileBilling> {
               margin: const EdgeInsets.all(8.0),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text("Total: ₹$subtotal", style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      ),
-                      onPressed: bill.isEmpty
-                          ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => PrintBill(bill: bill)),
-                              );
-                            },
-                      child: Text("Print Bill", style: TextStyle(color: theme.colorScheme.onPrimary, fontSize: 18)),
-                    ),
-                  ],
+                child: SizedBox(
+                  height: 300, // Fixed height for mobile view bill summary
+                  child: BillSummaryView(
+                    bill: bill,
+                    onBillUpdate: updateBillItems,
+                  ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
