@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/auth/auth_service.dart';
@@ -41,12 +42,10 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
 
     _snowfallController = AnimationController(
       vsync: this,
@@ -90,8 +89,9 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         final int? responseCanteenId = (data is Map<String, dynamic>)
             ? int.tryParse('${data['canteen_id']}')
             : null;
-        final String? responseCanteenName =
-            (data is Map<String, dynamic>) ? data['canteen_name']?.toString() : null;
+        final String? responseCanteenName = (data is Map<String, dynamic>)
+            ? data['canteen_name']?.toString()
+            : null;
 
         await AuthService.setToken(
           token: token,
@@ -102,14 +102,19 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         final int effectiveCanteenId =
             AuthService.canteenId ?? responseCanteenId ?? 0;
         final String effectiveName =
-            (AuthService.canteenName ?? responseCanteenName ?? username).toString();
+            (AuthService.canteenName ?? responseCanteenName ?? username)
+                .toString();
 
         setState(() {
           isLoggedin = true;
           isLoading = false;
-          widget.updateLoginState(isLoggedin, effectiveCanteenId, effectiveName);
+          widget.updateLoginState(
+            isLoggedin,
+            effectiveCanteenId,
+            effectiveName,
+          );
         });
-        debugPrint('Login successful.');
+        if (kDebugMode) debugPrint('Login successful.');
       } else if (response.statusCode == 401) {
         setState(() {
           isLoggedin = false;
@@ -117,8 +122,10 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
           error = 401;
         });
       } else {
-        debugPrint('Login failed: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
+        if (kDebugMode) {
+          debugPrint('Login failed: ${response.statusCode}');
+          debugPrint('Response body: ${response.body}');
+        }
         setState(() {
           error = 0;
           isLoggedin = false;
@@ -126,7 +133,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         });
       }
     } catch (e) {
-      debugPrint('Error during login: $e');
+      if (kDebugMode) debugPrint('Error during login: $e');
       setState(() {
         isLoggedin = false;
         isLoading = false;
@@ -149,10 +156,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
               ),
             ),
           ),
-          CustomPaint(
-            painter: MountainPainter(),
-            size: Size.infinite,
-          ),
+          CustomPaint(painter: MountainPainter(), size: Size.infinite),
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _snowfallController,
@@ -187,7 +191,12 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset('assets/images/logo.png', height: 150, width: 150, fit: BoxFit.fill),
+                            Image.asset(
+                              'assets/images/logo.png',
+                              height: 150,
+                              width: 150,
+                              fit: BoxFit.fill,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               "Welcome Back",
@@ -208,17 +217,19 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                               controller: controller1,
                               label: "Username",
                               icon: Icons.person_outline,
+                              maxLength: 256,
                               errorText: error == 401
                                   ? "ID or Password Wrong"
                                   : error == 0
-                                      ? "Check Internet Connection"
-                                      : null,
+                                  ? "Check Internet Connection"
+                                  : null,
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
                               controller: controller2,
                               label: "Password",
                               icon: Icons.lock_outline,
+                              maxLength: 256,
                               obscureText: !isPasswordVisible,
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -257,10 +268,12 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
     String? errorText,
     bool obscureText = false,
     Widget? suffixIcon,
+    int? maxLength,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
+      maxLength: maxLength,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -270,8 +283,10 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         errorText: errorText,
         errorStyle: const TextStyle(color: Colors.redAccent),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),          borderSide: const BorderSide(color: Color.fromARGB(77, 255, 255, 255)),
-
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color.fromARGB(77, 255, 255, 255),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -344,12 +359,15 @@ class MountainPainter extends CustomPainter {
     const double moonRadius = 60;
 
     final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color.fromARGB(80, 255, 255, 255),
-          const Color.fromARGB(0, 255, 255, 255),
-        ],
-      ).createShader(Rect.fromCircle(center: moonCenter, radius: moonRadius * 2));
+      ..shader =
+          RadialGradient(
+            colors: [
+              const Color.fromARGB(80, 255, 255, 255),
+              const Color.fromARGB(0, 255, 255, 255),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: moonCenter, radius: moonRadius * 2),
+          );
     canvas.drawCircle(moonCenter, moonRadius * 2, glowPaint);
 
     final moonPaint = Paint()
@@ -362,7 +380,8 @@ class MountainPainter extends CustomPainter {
       ).createShader(Rect.fromCircle(center: moonCenter, radius: moonRadius));
     canvas.drawCircle(moonCenter, moonRadius, moonPaint);
 
-    final craterPaint = Paint()..color = const Color.fromARGB(200, 120, 120, 120);
+    final craterPaint = Paint()
+      ..color = const Color.fromARGB(200, 120, 120, 120);
 
     final List<Map<String, dynamic>> craters = [
       {"offset": Offset(-20, -10), "radius": 10.0},
@@ -384,12 +403,30 @@ class MountainPainter extends CustomPainter {
     // Mountains
     Path mountainPath = Path();
     mountainPath.moveTo(0, size.height * 0.75);
-    mountainPath.cubicTo(size.width * 0.1, size.height * 0.65,
-        size.width * 0.2, size.height * 0.7, size.width * 0.3, size.height * 0.6);
-    mountainPath.cubicTo(size.width * 0.4, size.height * 0.5,
-        size.width * 0.55, size.height * 0.55, size.width * 0.65, size.height * 0.7);
-    mountainPath.cubicTo(size.width * 0.75, size.height * 0.85,
-        size.width * 0.85, size.height * 0.8, size.width, size.height * 0.75);
+    mountainPath.cubicTo(
+      size.width * 0.1,
+      size.height * 0.65,
+      size.width * 0.2,
+      size.height * 0.7,
+      size.width * 0.3,
+      size.height * 0.6,
+    );
+    mountainPath.cubicTo(
+      size.width * 0.4,
+      size.height * 0.5,
+      size.width * 0.55,
+      size.height * 0.55,
+      size.width * 0.65,
+      size.height * 0.7,
+    );
+    mountainPath.cubicTo(
+      size.width * 0.75,
+      size.height * 0.85,
+      size.width * 0.85,
+      size.height * 0.8,
+      size.width,
+      size.height * 0.75,
+    );
     mountainPath.lineTo(size.width, size.height);
     mountainPath.lineTo(0, size.height);
     mountainPath.close();
@@ -413,16 +450,19 @@ class SnowfallPainter extends CustomPainter {
   }
 
   @override
-  void paint(Canvas canvas, Size size) {    final paint = Paint()..color = const Color.fromARGB(204, 255, 255, 255);
-
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color.fromARGB(204, 255, 255, 255);
 
     for (var snowflake in _snowflakes) {
       snowflake.update(animationValue, size);
       canvas.drawCircle(
-          Offset(snowflake.position.dx * size.width,
-              snowflake.position.dy * size.height),
-          snowflake.size,
-          paint);
+        Offset(
+          snowflake.position.dx * size.width,
+          snowflake.position.dy * size.height,
+        ),
+        snowflake.size,
+        paint,
+      );
     }
   }
 
@@ -455,6 +495,5 @@ class Snowflake {
     } else {
       position = Offset(x, y);
     }
-
   }
 }

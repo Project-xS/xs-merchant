@@ -1,12 +1,20 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:merchant/auth/auth_service.dart';
 
 typedef ApiVoidCallback = void Function();
 
 class ApiClient {
-  static const String baseUrl = 'https://proj-xs.fly.dev';
+  static String get baseUrl {
+    final url = dotenv.env['BASE_URL'];
+    if (url == null || url.isEmpty) {
+      throw StateError('BASE_URL is not set in .env');
+    }
+    return url;
+  }
 
   static ApiVoidCallback? onUnauthorized;
   static ApiVoidCallback? onForbidden;
@@ -58,12 +66,18 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path');
 
     final mergedHeaders = <String, String>{
+      // Default JSON content-type for mutating requests
+      if (method != 'GET' && body != null) 'Content-Type': 'application/json',
       if (headers != null) ...headers,
     };
 
     final token = AuthService.token;
     if (_shouldAttachAuthHeader(path) && token != null && token.isNotEmpty) {
       mergedHeaders['Authorization'] = 'Bearer $token';
+    }
+
+    if (kDebugMode) {
+      debugPrint('[ApiClient] $method $path');
     }
 
     http.Response response;
@@ -82,6 +96,10 @@ class ApiClient {
         break;
       default:
         throw ArgumentError('Unsupported method: $method');
+    }
+
+    if (kDebugMode) {
+      debugPrint('[ApiClient] $method $path → ${response.statusCode}');
     }
 
     if (response.statusCode == 401) {

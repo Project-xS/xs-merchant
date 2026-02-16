@@ -15,10 +15,9 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   int sort = 1;
   int get canteenIdToFetch;
 
-
   @override
   void initState() {
-    if (timer?.isActive == null){
+    if (timer?.isActive == null) {
       startAutoFetch();
     }
     super.initState();
@@ -37,8 +36,9 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
       fetchAndCacheAndNotify();
     });
   }
+
   // uncomment below for caching
-  Future<void> fetchAndCacheAndNotify() async {    
+  Future<void> fetchAndCacheAndNotify() async {
     if (!mounted) return;
     final url = "/menu/items";
     // final cacheManager = JsonCacheManager.instance;
@@ -55,13 +55,14 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
         debugPrint("Fetched: ${decodedJson.toString()}");
         List<dynamic> dataList = decodedJson["data"];
         if (!mounted) return;
-        setState((){
+        setState(() {
           GlobalMenuCache.availableid.clear();
           GlobalMenuCache.navailableid.clear();
-          GlobalMenuCache.items.clear();          
+          GlobalMenuCache.items.clear();
         });
         for (var item1 in dataList) {
-          if (item1["is_available"] == true && (item1["stock"] == -1 || item1["stock"] >= 1)) {
+          if (item1["is_available"] == true &&
+              (item1["stock"] == -1 || item1["stock"] >= 1)) {
             fetchedAid.add(item1["item_id"]);
           } else {
             fetchedNaid.add(item1["item_id"]);
@@ -73,15 +74,20 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             "available": item1["is_available"],
             "stocks": item1["stock"],
             "pic": item1["pic_link"],
-            "etag": item1["pic_etag"]?.toString().replaceAll('"','')
+            "etag": item1["pic_etag"]?.toString().replaceAll('"', ''),
           };
         }
         if (!mounted) return;
-        setState((){
+        setState(() {
           GlobalMenuCache.items = fetchedItems;
           GlobalMenuCache.availableid = fetchedAid;
           GlobalMenuCache.navailableid = fetchedNaid;
-          applySorting(GlobalMenuCache.items, sort, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
+          applySorting(
+            GlobalMenuCache.items,
+            sort,
+            GlobalMenuCache.availableid,
+            GlobalMenuCache.navailableid,
+          );
           // onDataUpdated(GlobalMenuCache.items, GlobalMenuCache.availableid, GlobalMenuCache.navailableid);
         });
 
@@ -110,7 +116,9 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
           final msg = ApiClient.tryExtractErrorMessage(response);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(msg ?? "Error Getting Items : ${response.statusCode}"),
+              content: Text(
+                msg ?? "Error Getting Items : ${response.statusCode}",
+              ),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -120,7 +128,8 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             '[menu] non-200: ${response.statusCode} body=${response.body}',
           );
         }
-        debugPrint("Failed to load data: ${response.statusCode}");
+        if (kDebugMode)
+          debugPrint("Failed to load data: ${response.statusCode}");
         return;
       }
     } catch (e) {
@@ -132,62 +141,68 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
           ),
         );
       }
-      if (kDebugMode) {
-        debugPrint('[menu] exception: $e');
-      }
-      debugPrint("$e");
+      if (kDebugMode) debugPrint('[menu] exception: $e');
     }
   }
 
-  dynamic applySorting(Map<int, Map<String, dynamic>> dataToSort, int s, LinkedHashSet<int> availableId, LinkedHashSet<int> navailableId) {
-  List<int> avail = availableId.toList();
-  List<int> navail = navailableId.toList();
+  dynamic applySorting(
+    Map<int, Map<String, dynamic>> dataToSort,
+    int s,
+    LinkedHashSet<int> availableId,
+    LinkedHashSet<int> navailableId,
+  ) {
+    List<int> avail = availableId.toList();
+    List<int> navail = navailableId.toList();
 
-  int Function(int, int) getComparator(int sortOption) {
-    return (idA, idB) {
-      Map<String, dynamic> itemA = dataToSort[idA]!;
-      Map<String, dynamic> itemB = dataToSort[idB]!;
+    int Function(int, int) getComparator(int sortOption) {
+      return (idA, idB) {
+        Map<String, dynamic> itemA = dataToSort[idA]!;
+        Map<String, dynamic> itemB = dataToSort[idB]!;
 
-      if (sortOption == 1) {
-        return itemA["name"].toLowerCase().replaceAll(' ', '').compareTo(itemB["name"].toLowerCase().replaceAll(' ', ''));
-      } else if (sortOption == 2) {
-        return itemB["price"].compareTo(itemA["price"]);
-      } else if (sortOption == 3) {
-        int getPriority(Map<String, dynamic> item) {
-          if (item["stocks"] == 0 && item["available"] == true) return 0;
-          if (item["stocks"] == 0 && item["available"] == false) return 1;
-          if (item["stocks"] == -1) return 3;
-          return 2;
-        }
-        int priorityA = getPriority(itemA);
-        int priorityB = getPriority(itemB);
+        if (sortOption == 1) {
+          return itemA["name"]
+              .toLowerCase()
+              .replaceAll(' ', '')
+              .compareTo(itemB["name"].toLowerCase().replaceAll(' ', ''));
+        } else if (sortOption == 2) {
+          return itemB["price"].compareTo(itemA["price"]);
+        } else if (sortOption == 3) {
+          int getPriority(Map<String, dynamic> item) {
+            if (item["stocks"] == 0 && item["available"] == true) return 0;
+            if (item["stocks"] == 0 && item["available"] == false) return 1;
+            if (item["stocks"] == -1) return 3;
+            return 2;
+          }
 
-        if (priorityA != priorityB) {
-          return priorityA.compareTo(priorityB);
-        }
-        if (priorityA == 2) {
-          return itemA["stocks"].compareTo(itemB["stocks"]);
+          int priorityA = getPriority(itemA);
+          int priorityB = getPriority(itemB);
+
+          if (priorityA != priorityB) {
+            return priorityA.compareTo(priorityB);
+          }
+          if (priorityA == 2) {
+            return itemA["stocks"].compareTo(itemB["stocks"]);
+          }
+          return 0;
         }
         return 0;
-      }
-      return 0;
-    };
-  }
+      };
+    }
 
-  avail.sort(getComparator(s));
-  navail.sort(getComparator(s));
+    avail.sort(getComparator(s));
+    navail.sort(getComparator(s));
 
-  if (mounted) {
-    setState(() {
-      fetchedAid = LinkedHashSet<int>.from(avail);
-      fetchedNaid = LinkedHashSet<int>.from(navail);
-      GlobalMenuCache.items = fetchedItems;
-      GlobalMenuCache.availableid = fetchedAid;
-      GlobalMenuCache.navailableid = fetchedNaid;
-      sort = s;
-    });
+    if (mounted) {
+      setState(() {
+        fetchedAid = LinkedHashSet<int>.from(avail);
+        fetchedNaid = LinkedHashSet<int>.from(navail);
+        GlobalMenuCache.items = fetchedItems;
+        GlobalMenuCache.availableid = fetchedAid;
+        GlobalMenuCache.navailableid = fetchedNaid;
+        sort = s;
+      });
+    }
   }
-}
 }
 
 mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
@@ -218,14 +233,14 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
 
   Future<void> triggerOrderFetch() async {
     final int id = canteenIdForOrders;
-    debugPrint("Fetching orders for canteen ID: $id");
+    if (kDebugMode) debugPrint("Fetching orders for canteen ID: $id");
     try {
       final response = await ApiClient.get('/orders');
-      
+
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         Map<String, dynamic> dataList = decodedJson["data"];
-        
+
         Map<String, Map<String, dynamic>> fetchedOrders = {};
         for (String time in dataList.keys) {
           List<String> name = [];
@@ -234,10 +249,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
             name.add(order["item_name"]);
             count.add(order["num_ordered"]);
           }
-          fetchedOrders[time] = {
-            'name': name,
-            'count': count,
-          };
+          fetchedOrders[time] = {'name': name, 'count': count};
         }
         onOrdersUpdated(fetchedOrders);
         if (mounted && Scaffold.maybeOf(context) != null) {
@@ -253,7 +265,9 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
           final msg = ApiClient.tryExtractErrorMessage(response);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(msg ?? "Error Fetching Order Details: ${response.statusCode}"),
+              content: Text(
+                msg ?? "Error Fetching Order Details: ${response.statusCode}",
+              ),
               backgroundColor: Colors.redAccent,
             ),
           );

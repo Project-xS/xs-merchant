@@ -17,6 +17,7 @@ import 'package:merchant/menupage.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
 import 'package:merchant/sales_prediction.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_size/window_size.dart';
 
@@ -40,6 +41,7 @@ String name = "";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowMinSize(const Size(1025, 1025));
   }
@@ -187,7 +189,8 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   Widget build(BuildContext context) {
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
-        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB): const OpenBillingPageIntent(),
+        LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
+            const OpenBillingPageIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
@@ -216,15 +219,30 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
             ),
             textTheme: const TextTheme(
               displayLarge: TextStyle(
-                  fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
               titleLarge: TextStyle(
-                  fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
               bodyLarge: TextStyle(
-                  fontSize: 16, color: Colors.white, fontWeight: FontWeight.normal),
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.normal,
+              ),
               bodyMedium: TextStyle(
-                  fontSize: 14, color: Color(0xFF8B949E), fontWeight: FontWeight.normal),
+                fontSize: 14,
+                color: Color(0xFF8B949E),
+                fontWeight: FontWeight.normal,
+              ),
               labelLarge: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             cardTheme: const CardThemeData(
               elevation: 4,
@@ -235,7 +253,10 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
             ),
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -251,10 +272,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
             ),
           ),
           locale: isTamil ? const Locale('ta', '') : const Locale('en', ''),
-          supportedLocales: const [
-            Locale('en', ''),
-            Locale('ta', ''),
-          ],
+          supportedLocales: const [Locale('en', ''), Locale('ta', '')],
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -267,7 +285,8 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
                   isTamil: isTamil,
                   canteenId: canteenId,
                   isLoggedin: isLoggedin,
-                  updateLoginState: updateLoginState)
+                  updateLoginState: updateLoginState,
+                )
               : login.Login(updateLoginState: updateLoginState),
         ),
       ),
@@ -282,13 +301,14 @@ class HomePage extends StatefulWidget {
   final int canteenId;
   final Function(bool, int, String) updateLoginState;
 
-  const HomePage(
-      {super.key,
-      required this.isLoggedin,
-      required this.changeLanguage,
-      required this.isTamil,
-      required this.canteenId,
-      required this.updateLoginState});
+  const HomePage({
+    super.key,
+    required this.isLoggedin,
+    required this.changeLanguage,
+    required this.isTamil,
+    required this.canteenId,
+    required this.updateLoginState,
+  });
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -329,10 +349,7 @@ class _HomePageState extends State<HomePage> {
       key: _scaffoldKey,
       extendBody: true,
       appBar: AppBar(
-        title: Text(
-          localizations.app_name,
-          style: theme.textTheme.titleLarge,
-        ),
+        title: Text(localizations.app_name, style: theme.textTheme.titleLarge),
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Image.asset('assets/images/logo.png'),
@@ -351,16 +368,21 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.transparent,
         child: ClipRRect(
           borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20), bottomLeft: Radius.circular(20)),
+            topLeft: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+          ),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
                 color: const Color.fromARGB(178, 22, 27, 34),
                 borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    bottomLeft: Radius.circular(20)),
-                border: Border.all(color: const Color.fromARGB(51, 255, 255, 255)),
+                  topLeft: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                ),
+                border: Border.all(
+                  color: const Color.fromARGB(51, 255, 255, 255),
+                ),
               ),
               child: SafeArea(
                 minimum: const EdgeInsets.only(top: 40, bottom: 20),
@@ -371,14 +393,18 @@ class _HomePageState extends State<HomePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         localizations.language,
-                        style: theme.textTheme.titleLarge?.copyWith(color: const Color.fromARGB(204, 255, 255, 255)),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: const Color.fromARGB(204, 255, 255, 255),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
                     SwitchListTile(
                       title: Text(
                         widget.isTamil ? "English" : "தமிழ்",
-                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       value: widget.isTamil,
                       onChanged: widget.changeLanguage,
@@ -389,7 +415,9 @@ class _HomePageState extends State<HomePage> {
                       leading: const Icon(Icons.receipt_long, size: 28),
                       title: Text(
                         localizations.billing,
-                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       onTap: () {
                         Navigator.push(
@@ -397,9 +425,16 @@ class _HomePageState extends State<HomePage> {
                           MaterialPageRoute(
                             builder: (context) => portrait
                                 ? MobileBilling(
-                                    name, widget.isTamil, widget.canteenId)
+                                    name,
+                                    widget.isTamil,
+                                    widget.canteenId,
+                                  )
                                 : Billing(
-                                    name, portrait, widget.isTamil, widget.canteenId),
+                                    name,
+                                    portrait,
+                                    widget.isTamil,
+                                    widget.canteenId,
+                                  ),
                           ),
                         );
                       },
@@ -408,11 +443,16 @@ class _HomePageState extends State<HomePage> {
                       leading: const Icon(Icons.image_outlined, size: 28),
                       title: Text(
                         "Set new Canteen Image",
-                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       onTap: () async {
-                        await pickAndUploadCanteenImage(context, widget.canteenId);
-                        if(context.mounted){
+                        await pickAndUploadCanteenImage(
+                          context,
+                          widget.canteenId,
+                        );
+                        if (context.mounted) {
                           Navigator.pop(context);
                         }
                       },
@@ -421,7 +461,9 @@ class _HomePageState extends State<HomePage> {
                       leading: const Icon(Icons.online_prediction, size: 28),
                       title: Text(
                         "Prediction",
-                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       onTap: () {
                         Navigator.push(
@@ -435,16 +477,25 @@ class _HomePageState extends State<HomePage> {
                     const Spacer(),
                     const Divider(color: Colors.white24),
                     ListTile(
-                      leading: Icon(Icons.logout, size: 28, color: theme.colorScheme.error),
+                      leading: Icon(
+                        Icons.logout,
+                        size: 28,
+                        color: theme.colorScheme.error,
+                      ),
                       title: Text(
                         "Log Out",
                         style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.error),
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.error,
+                        ),
                       ),
                       onTap: () {
                         AuthService.logout();
-                        widget.updateLoginState(false, widget.canteenId, name.toLowerCase());
+                        widget.updateLoginState(
+                          false,
+                          widget.canteenId,
+                          name.toLowerCase(),
+                        );
                         Navigator.pop(context);
                       },
                     ),
@@ -458,9 +509,12 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Center(
-                child: Text(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Center(
+              child: Text(
                 (name.trim().isEmpty) ? "Welcome" : "Welcome, $name",
                 style: theme.textTheme.displayLarge,
               ),

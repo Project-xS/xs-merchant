@@ -20,7 +20,14 @@ class ImageUpload extends StatefulWidget {
   final Function(int id, Uint8List? image, bool loading) onImageUpdate;
   final bool newitem;
   final Function(int id, Uint8List? image, bool loading)? onImageUpdate1;
-  const ImageUpload(this.canteenId, this.isAndroid, this.onImageUpdate,{this.newitem = false, this.onImageUpdate1, super.key});
+  const ImageUpload(
+    this.canteenId,
+    this.isAndroid,
+    this.onImageUpdate, {
+    this.newitem = false,
+    this.onImageUpdate1,
+    super.key,
+  });
 
   @override
   State<ImageUpload> createState() => ImageUploadState();
@@ -41,7 +48,11 @@ class ImageUploadState extends State<ImageUpload> {
   String base64image = "";
   bool isProcessingImage = false;
 
-  Future<void> pickImage({int height = 300, int width = 300, bool item = true}) async {
+  Future<void> pickImage({
+    int height = 300,
+    int width = 300,
+    bool item = true,
+  }) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -76,25 +87,28 @@ class ImageUploadState extends State<ImageUpload> {
         final croppedResult = await showCupertinoImageCropper(
           context,
           imageProvider: FileImage(pickedFile),
-          allowedAspectRatios: [
-            CropAspectRatio(width: width, height: height),
-          ],
+          allowedAspectRatios: [CropAspectRatio(width: width, height: height)],
           showLoadingIndicatorOnSubmit: false,
         );
 
         if (croppedResult != null && mounted) {
           ui.Image finalImage = croppedResult.uiImage;
           if (finalImage.width != width || finalImage.height != height) {
-            final ByteData? byteData =
-                await finalImage.toByteData(format: ui.ImageByteFormat.png);
+            final ByteData? byteData = await finalImage.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
             if (byteData != null) {
               final List<int> bytes = byteData.buffer.asUint8List();
               img.Image? decodedImage = img.decodeImage(bytes);
               if (decodedImage != null) {
-                img.Image resizedImage =
-                    img.copyResize(decodedImage, width: width, height: height);
-                final Uint8List resizedBytes =
-                    Uint8List.fromList(img.encodePng(resizedImage));
+                img.Image resizedImage = img.copyResize(
+                  decodedImage,
+                  width: width,
+                  height: height,
+                );
+                final Uint8List resizedBytes = Uint8List.fromList(
+                  img.encodePng(resizedImage),
+                );
                 finalImage = await decodeImageFromList(resizedBytes);
               }
             }
@@ -106,7 +120,7 @@ class ImageUploadState extends State<ImageUpload> {
         }
       }
     } catch (e) {
-      debugPrint("Error during image pick/crop: $e");
+      if (kDebugMode) debugPrint("Error during image pick/crop: $e");
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -117,176 +131,240 @@ class ImageUploadState extends State<ImageUpload> {
     if (image == null) return;
 
     final byte = await image.toByteData(format: ui.ImageByteFormat.png);
-    debugPrint("Image converted to PNG: ${byte?.lengthInBytes} bytes");
+    if (kDebugMode)
+      debugPrint("Image converted to PNG: ${byte?.lengthInBytes} bytes");
     if (byte == null) return;
 
     setState(() {
       png = byte.buffer.asUint8List();
-      if(widget.newitem){
+      if (widget.newitem) {
         widget.onImageUpdate1!(widget.canteenId, png, false);
-      }
-      else{        
+      } else {
         widget.onImageUpdate(widget.canteenId, png, false);
       }
-      debugPrint("Image picked and converted to PNG: ${png?.lengthInBytes} bytes");
+      if (kDebugMode)
+        debugPrint(
+          "Image picked and converted to PNG: ${png?.lengthInBytes} bytes",
+        );
     });
   }
 
-Future<String?> imageupload(int id, Uint8List? image, {int height = 300, int width = 300}) async{
-  dynamic data, data1;
-  debugPrint("[imageupload] Called with id: $id, image: ${image != null ? image.length : 'null'} bytes");
-  if(image == null) {
-    debugPrint("[imageupload] image is null, returning early");
-    return null;
-  }
-  try{
-    debugPrint("[imageupload] Setting isLoading true");
-    if(mounted && Scaffold.maybeOf(context) != null){
-      setState((){      
-        isLoading = true;
-      });
-    }
-    debugPrint("[imageupload] Sending PUT to /menu/upload_pic/$id");
-    final response1 = await ApiClient.put(
-      "/menu/upload_pic/$id",
-      headers: {'accept': 'application/json'},
-    );
-    debugPrint("[imageupload] POST /menu/upload_pic/$id status: ${response1.statusCode}, body: ${response1.body}");
-    if(response1.statusCode == 200){
-      data = jsonDecode(response1.body);
-      await Future.delayed(Duration(seconds: 1));
-      debugPrint("[imageupload] POST response data: ${data.toString()}");
-      debugPrint("[imageupload] Sending PUT to presigned url: ${data['url']}");
-      final response = await http.put(
-        Uri.parse("${data['presigned_url']}"),
-        body: image, 
-        headers: {'accept': 'image/png'}
+  Future<String?> imageupload(
+    int id,
+    Uint8List? image, {
+    int height = 300,
+    int width = 300,
+  }) async {
+    dynamic data, data1;
+    if (kDebugMode) {
+      debugPrint(
+        "[imageupload] Called with id: $id, image: ${image != null ? image.length : 'null'} bytes",
       );
-      debugPrint("[imageupload] PUT presigned url status: ${response.statusCode}, body: ${response.body}");
-      if(response.statusCode == 200){
-        debugPrint("[imageupload] PUT to presigned url succeeded");
-        debugPrint("[imageupload] Sending PUT to /menu/set_pic/$id");
-        await Future.delayed(Duration(seconds: 1));
-        final setimage = await ApiClient.put(
-          "/menu/set_pic/$id",
-          headers: {'accept': 'application/json'},
+    }
+    if (image == null) {
+      if (kDebugMode) {
+        debugPrint("[imageupload] image is null, returning early");
+      }
+      return null;
+    }
+    try {
+      if (kDebugMode) debugPrint("[imageupload] Setting isLoading true");
+      if (mounted && Scaffold.maybeOf(context) != null) {
+        setState(() {
+          isLoading = true;
+        });
+      }
+      if (kDebugMode) {
+        debugPrint("[imageupload] Sending PUT to /menu/upload_pic/$id");
+      }
+      final response1 = await ApiClient.put(
+        "/menu/upload_pic/$id",
+        headers: {'accept': 'application/json'},
+      );
+      if (kDebugMode) {
+        debugPrint(
+          "[imageupload] POST /menu/upload_pic/$id status: ${response1.statusCode}, body: ${response1.body}",
         );
-        debugPrint("[imageupload] PUT /menu/set_pic/$id status: ${setimage.statusCode}, body: ${setimage.body}");
-        debugPrint("[imageupload] Sending GET to /assets/$id");
+      }
+      if (response1.statusCode == 200) {
+        data = jsonDecode(response1.body);
         await Future.delayed(Duration(seconds: 1));
-        final response2 = await ApiClient.get(
-          "/assets/$id",
-          headers: {'Content-Type': 'application/json'},
+        if (kDebugMode) {
+          debugPrint("[imageupload] POST response data: ${data.toString()}");
+          debugPrint(
+            "[imageupload] Sending PUT to presigned url: ${data['url']}",
+          );
+        }
+        final response = await http.put(
+          Uri.parse("${data['presigned_url']}"),
+          body: image,
+          headers: {'accept': 'image/png'},
         );
-        debugPrint("[imageupload] GET /assets/$id status: ${response2.statusCode}, body: ${response2.body}");
-        if (response2.statusCode == 200){
-          data1 = jsonDecode(response2.body);
-          debugPrint("[imageupload] Image Uploaded Successfully");
-          isLoading = false;
-          debugPrint("[imageupload] GlobalMenuCache: ${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}");
-          GlobalMenuCache.items[id]?['pic'] = data1['url'];
-          return data1['url'];      
-        }else{
-          debugPrint("[imageupload] GET /assets/$id failed");
-          if(mounted && Scaffold.maybeOf(context) != null){
+        if (kDebugMode) {
+          debugPrint(
+            "[imageupload] PUT presigned url status: ${response.statusCode}, body: ${response.body}",
+          );
+        }
+        if (response.statusCode == 200) {
+          if (kDebugMode) {
+            debugPrint("[imageupload] PUT to presigned url succeeded");
+            debugPrint("[imageupload] Sending PUT to /menu/set_pic/$id");
+          }
+          await Future.delayed(Duration(seconds: 1));
+          final setimage = await ApiClient.put(
+            "/menu/set_pic/$id",
+            headers: {'accept': 'application/json'},
+          );
+          if (kDebugMode) {
+            debugPrint(
+              "[imageupload] PUT /menu/set_pic/$id status: ${setimage.statusCode}, body: ${setimage.body}",
+            );
+          }
+          if (kDebugMode) {
+            debugPrint("[imageupload] Sending GET to /assets/$id");
+          }
+          await Future.delayed(Duration(seconds: 1));
+          final response2 = await ApiClient.get(
+            "/assets/$id",
+            headers: {'Content-Type': 'application/json'},
+          );
+          if (kDebugMode) {
+            debugPrint(
+              "[imageupload] GET /assets/$id status: ${response2.statusCode}, body: ${response2.body}",
+            );
+          }
+          if (response2.statusCode == 200) {
+            data1 = jsonDecode(response2.body);
+            if (kDebugMode) {
+              debugPrint("[imageupload] Image Uploaded Successfully");
+              debugPrint(
+                "[imageupload] GlobalMenuCache: ${GlobalMenuCache.items[id]?['pic']} ${data1['item_id']} ${data1['url']}",
+              );
+            }
+            GlobalMenuCache.items[id]?['pic'] = data1['url'];
+            return data1['url'];
+          } else {
+            if (kDebugMode) {
+              debugPrint("[imageupload] GET /assets/$id failed");
+            }
+            if (mounted && Scaffold.maybeOf(context) != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Image Upload Failed: Get Stage, , ${response2.body}",
+                  ),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
+            return "";
+          }
+        } else {
+          if (kDebugMode) {
+            debugPrint("[imageupload] PUT to presigned url failed");
+          }
+          if (mounted && Scaffold.maybeOf(context) != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("Image Upload Failed: Get Stage, , ${response2.body}"),
+                content: Text(
+                  "Image Upload Failed: 2nd Stage, ${response1.body}",
+                ),
                 backgroundColor: Colors.redAccent,
               ),
             );
           }
           return "";
         }
-      }else{
-        debugPrint("[imageupload] PUT to presigned url failed");
-        if(mounted && Scaffold.maybeOf(context) != null){
+      } else {
+        if (kDebugMode) {
+          debugPrint("[imageupload] POST /assets/upload/$id failed");
+        }
+        if (mounted && Scaffold.maybeOf(context) != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Image Upload Failed: 2nd Stage, ${response1.body}"),
+              content: Text(
+                "Image Upload Failed: 1st Stage, ${response1.body}",
+              ),
               backgroundColor: Colors.redAccent,
             ),
           );
         }
         return "";
       }
-    }
-    else{
-      debugPrint("[imageupload] POST /assets/upload/$id failed");
-      if(mounted && Scaffold.maybeOf(context) != null){
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Image Upload Failed: 1st Stage, ${response1.body}"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+    } on Exception catch (e) {
+      if (kDebugMode) debugPrint("[imageupload] Exception: $e");
       return "";
-    }
-  } on Exception catch(e){
-    debugPrint("[imageupload] Exception: $e");
-    return "";
-  } finally{
-    debugPrint("[imageupload] finally block, isLoading set to false");
-    if(mounted && Scaffold.maybeOf(context) != null){
-      setState((){
-        isLoading = false;
-        if(data1 != null){
-          GlobalMenuCache.items[id]?['pic'] = data1['url'];
-          debugPrint("[imageupload] Image Uploaded Successfully (finally)");
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Image Uploaded Successfully"),
-              backgroundColor: Colors.cyanAccent,
-            ),
-          );
-        }
-      });
+    } finally {
+      if (kDebugMode) {
+        debugPrint("[imageupload] finally block, isLoading set to false");
+      }
+      if (mounted && Scaffold.maybeOf(context) != null) {
+        setState(() {
+          isLoading = false;
+          if (data1 != null) {
+            GlobalMenuCache.items[id]?['pic'] = data1['url'];
+            if (kDebugMode) {
+              debugPrint("[imageupload] Image Uploaded Successfully (finally)");
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Image Uploaded Successfully"),
+                backgroundColor: Colors.cyanAccent,
+              ),
+            );
+          }
+        });
+      }
     }
   }
-}
 
-Future<Widget> buildImageDisplay(String itemId, double width, double height) async {
-  final imageUrl = GlobalMenuCache.items[int.parse(itemId)]?['pic'];
-  if (imageUrl != null && imageUrl.isNotEmpty) {
-    bool found = await cachedImageExists(imageUrl, cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag']);
-    File? file = await getCachedImageFile(imageUrl, cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag']);
-    if (found && file != null) {
-      return Image.file(file);
+  Future<Widget> buildImageDisplay(
+    String itemId,
+    double width,
+    double height,
+  ) async {
+    final imageUrl = GlobalMenuCache.items[int.parse(itemId)]?['pic'];
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      bool found = await cachedImageExists(
+        imageUrl,
+        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
+      );
+      File? file = await getCachedImageFile(
+        imageUrl,
+        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
+      );
+      if (found && file != null) {
+        return Image.file(file);
+      }
+      return ExtendedImage.network(
+        imageUrl,
+        filterQuality: FilterQuality.high,
+        cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
+        cache: true,
+        // width: (isAndroid) ? 115 : width,
+        // height: (isAndroid) ? 115 : height,
+        loadStateChanged: (ExtendedImageState state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(child: CircularProgressIndicator());
+            case LoadState.completed:
+              return ExtendedRawImage(
+                image: state.extendedImageInfo?.image,
+                fit: BoxFit.cover,
+              );
+            case LoadState.failed:
+              return const Center(child: Icon(Icons.fastfood, size: 50));
+          }
+        },
+      );
+    } else {
+      return const Center(child: Icon(Icons.fastfood, size: 50));
     }
-    return ExtendedImage.network(
-      imageUrl,
-      filterQuality: FilterQuality.high,
-      cacheKey: GlobalMenuCache.items[int.parse(itemId)]?['etag'],
-      cache: true,
-      // width: (isAndroid) ? 115 : width,
-      // height: (isAndroid) ? 115 : height,
-      loadStateChanged: (ExtendedImageState state) {
-        switch (state.extendedImageLoadState) {
-          case LoadState.loading:
-            return const Center(child: CircularProgressIndicator());
-          case LoadState.completed:
-            return ExtendedRawImage(
-              image: state.extendedImageInfo?.image,
-              fit: BoxFit.cover,
-            );
-          case LoadState.failed:
-            return const Center(
-              child: Icon(Icons.fastfood, size: 50),
-            );
-        }
-      },
-    );
-  } else {
-    return const Center(
-      child: Icon(Icons.fastfood, size: 50),
-    );
   }
-}
 
-Future<void> removeImageFromCache(String url,String itemId) async {
-  await clearDiskCachedImage(url, cacheKey: itemId);
-}
+  Future<void> removeImageFromCache(String url, String itemId) async {
+    await clearDiskCachedImage(url, cacheKey: itemId);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +386,10 @@ Future<void> removeImageFromCache(String url,String itemId) async {
   }
 }
 
-Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) async {
+Future<void> pickAndUploadCanteenImage(
+  BuildContext context,
+  int canteenId,
+) async {
   final effectiveCanteenId = AuthService.canteenId ?? canteenId;
   if (effectiveCanteenId == 0) {
     if (context.mounted) {
@@ -356,36 +437,40 @@ Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) asyn
       final path = result.files.first.path!;
       final pickedFile = File(path);
       final croppedResult = await showCupertinoImageCropper(
-        context.mounted?context:context,
+        context.mounted ? context : context,
         imageProvider: FileImage(pickedFile),
-        allowedAspectRatios: [
-          CropAspectRatio(width: 1280, height: 500),
-        ],
+        allowedAspectRatios: [CropAspectRatio(width: 1280, height: 500)],
         showLoadingIndicatorOnSubmit: false,
       );
 
       if (croppedResult != null) {
         ui.Image finalImage = croppedResult.uiImage;
         if (finalImage.width != 1280 || finalImage.height != 500) {
-            final ByteData? byteData =
-                await finalImage.toByteData(format: ui.ImageByteFormat.png);
-            if (byteData != null) {
-              final List<int> bytes = byteData.buffer.asUint8List();
-              img.Image? decodedImage = img.decodeImage(bytes);
-              if (decodedImage != null) {
-                img.Image resizedImage =
-                    img.copyResize(decodedImage, width: 1280, height: 500);
-                imageBytes = Uint8List.fromList(img.encodePng(resizedImage));
-              }
+          final ByteData? byteData = await finalImage.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+          if (byteData != null) {
+            final List<int> bytes = byteData.buffer.asUint8List();
+            img.Image? decodedImage = img.decodeImage(bytes);
+            if (decodedImage != null) {
+              img.Image resizedImage = img.copyResize(
+                decodedImage,
+                width: 1280,
+                height: 500,
+              );
+              imageBytes = Uint8List.fromList(img.encodePng(resizedImage));
             }
+          }
         } else {
-            final byteData = await finalImage.toByteData(format: ui.ImageByteFormat.png);
-            imageBytes = byteData?.buffer.asUint8List();
+          final byteData = await finalImage.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+          imageBytes = byteData?.buffer.asUint8List();
         }
       }
     }
   } catch (e) {
-    debugPrint("Error during image pick/crop: $e");
+    if (kDebugMode) debugPrint("Error during image pick/crop: $e");
     if (context.mounted && Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -406,8 +491,8 @@ Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) asyn
       final data = jsonDecode(response1.body);
       final response = await http.put(
         Uri.parse("${data['presigned_url']}"),
-        body: imageBytes, 
-        headers: {'accept': 'image/png'}
+        body: imageBytes,
+        headers: {'accept': 'image/png'},
       );
 
       if (response.statusCode == 200) {
@@ -415,44 +500,44 @@ Future<void> pickAndUploadCanteenImage(BuildContext context, int canteenId) asyn
           "/canteen/set_pic/$effectiveCanteenId",
           headers: {'accept': 'application/json'},
         );
-        
+
         if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Canteen Image Updated Successfully"),
-                backgroundColor: Colors.cyanAccent,
-              ),
-            );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Canteen Image Updated Successfully"),
+              backgroundColor: Colors.cyanAccent,
+            ),
+          );
         }
       } else {
         if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Image Upload Failed: 2nd Stage, ${response.body}"),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Image Upload Failed: 2nd Stage, ${response.body}"),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
         }
       }
     } else {
-        if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Image Upload Failed: 1st Stage, ${response1.body}"),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-        }
-    }
-  } on Exception catch(e) {
-    debugPrint("[imageupload] Exception: $e");
-    if (context.mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("An error occurred during upload."),
+            content: Text("Image Upload Failed: 1st Stage, ${response1.body}"),
             backgroundColor: Colors.redAccent,
           ),
         );
+      }
+    }
+  } on Exception catch (e) {
+    if (kDebugMode) debugPrint("[imageupload] Exception: $e");
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("An error occurred during upload."),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 }
