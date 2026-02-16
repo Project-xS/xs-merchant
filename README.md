@@ -1,5 +1,13 @@
 # Xs-merchant
 
+## Configuration
+
+Set the API base URL using `--dart-define` (overrides `.env` and fallback):
+
+```bash
+flutter run --dart-define=BASE_URL=https://your-api.example.com
+```
+
 Features:
 
  - Orders history and Verification Page with working search and delivering order works(Rfid yet to find)
@@ -88,4 +96,3 @@ Features:
 9. Added Delete Item Feature:
 
 ![alt text](docs-image/image-1.png)
-

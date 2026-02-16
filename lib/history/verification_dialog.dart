@@ -28,7 +28,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
   final FocusNode _searchBarFocus = FocusNode();
 
   int _orderId = 0;
-  bool _rfid = true;
+  bool _rfid = false;
   Map<String, dynamic>? _currentOrderData;
 
   @override

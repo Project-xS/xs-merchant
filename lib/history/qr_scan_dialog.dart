@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/l10n/app_localizations.dart';
@@ -21,13 +23,14 @@ class QrScanDialog extends StatefulWidget {
 }
 
 class _QrScanDialogState extends State<QrScanDialog> {
-  final TextEditingController _controller = TextEditingController();
-  final FocusNode _inputFocus = FocusNode();
+  final FocusNode _scanFocus = FocusNode();
   final MobileScannerController _scannerController = MobileScannerController();
 
   bool _isProcessing = false;
   Map<String, dynamic>? _orderData;
   String? _error;
+  String _scanBuffer = '';
+  Timer? _scanDebounce;
 
   bool get _useCamera {
     if (kIsWeb) return false;
@@ -36,10 +39,20 @@ class _QrScanDialogState extends State<QrScanDialog> {
 
   @override
   void dispose() {
-    _controller.dispose();
-    _inputFocus.dispose();
+    _scanDebounce?.cancel();
+    _scanFocus.dispose();
     _scannerController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_useCamera && mounted) {
+        _scanFocus.requestFocus();
+      }
+    });
   }
 
   Future<void> _submitToken(String token) async {
@@ -58,23 +71,46 @@ class _QrScanDialogState extends State<QrScanDialog> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'token': trimmed}),
       );
+      if (kDebugMode) {
+        debugPrint(
+          '[QR] scan status=${response.statusCode} body=${response.body}',
+        );
+      }
 
-      final decoded = jsonDecode(response.body);
+      final body = response.body.trim();
+      if (body.isEmpty) {
+        setState(() {
+          _error = "Scan failed: empty server response";
+        });
+        return;
+      }
+
+      Map<String, dynamic>? decoded;
+      try {
+        final json = jsonDecode(body);
+        if (json is Map<String, dynamic>) {
+          decoded = json;
+        }
+      } catch (_) {
+        decoded = null;
+      }
+
       if (response.statusCode == 200 &&
-          decoded is Map<String, dynamic> &&
+          decoded != null &&
           decoded['status'] == 'ok') {
         setState(() {
-          _orderData = decoded['data'] as Map<String, dynamic>?;
+          _orderData = decoded?['data'] as Map<String, dynamic>?;
           _error = null;
         });
-      } else {
-        final msg = ApiClient.tryExtractErrorMessage(response) ??
-            (decoded is Map<String, dynamic> ? decoded['error'] : null) ??
-            "Scan failed (${response.statusCode})";
-        setState(() {
-          _error = msg;
-        });
+        return;
       }
+
+      final msg = ApiClient.tryExtractErrorMessage(response) ??
+          decoded?['error']?.toString() ??
+          "Scan failed (${response.statusCode})";
+      setState(() {
+        _error = msg;
+      });
     } catch (e) {
       setState(() {
         _error = "Scan failed: $e";
@@ -97,87 +133,104 @@ class _QrScanDialogState extends State<QrScanDialog> {
       title: Text(localizations.item_delivery),
       content: SizedBox(
         width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_useCamera)
-              Container(
-                height: 220,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.dividerColor),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_useCamera)
+                Container(
+                  height: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.dividerColor),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: MobileScanner(
+                      controller: _scannerController,
+                      onDetect: (capture) {
+                        if (_isProcessing) return;
+                        final barcodes = capture.barcodes;
+                        final raw = barcodes.isNotEmpty
+                            ? barcodes.first.rawValue
+                            : null;
+                        if (raw != null && raw.isNotEmpty) {
+                          _submitToken(raw);
+                        }
+                      },
+                    ),
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: MobileScanner(
-                    controller: _scannerController,
-                    onDetect: (capture) {
-                      if (_isProcessing) return;
-                      final barcodes = capture.barcodes;
-                      final raw =
-                          barcodes.isNotEmpty ? barcodes.first.rawValue : null;
-                      if (raw != null && raw.isNotEmpty) {
-                        _submitToken(raw);
-                      }
+              const SizedBox(height: 12),
+              if (!_useCamera)
+                Focus(
+                  autofocus: true,
+                  focusNode: _scanFocus,
+                  onKeyEvent: _handleKeyEvent,
+                  child: GestureDetector(
+                    onTap: () => _scanFocus.requestFocus(),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.dividerColor),
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Scanner input active",
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _scanBuffer.isEmpty
+                                ? "Waiting for scan..."
+                                : "Captured ${_scanBuffer.length} chars",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _scanBuffer = '';
+                        _orderData = null;
+                        _error = null;
+                      });
+                      _scanFocus.requestFocus();
                     },
+                    child: const Text("Clear"),
+                  ),
+                  const Spacer(),
+                  if (_isProcessing)
+                    const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    _error!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
                   ),
                 ),
-              ),
-            if (_useCamera) const SizedBox(height: 12),
-            TextField(
-              controller: _controller,
-              focusNode: _inputFocus,
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                labelText: _useCamera
-                    ? "Scan fallback (paste token)"
-                    : "Scan QR (hardware scanner)",
-                hintText: "Paste or scan token",
-              ),
-              onSubmitted: _submitToken,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: _isProcessing
-                      ? null
-                      : () => _submitToken(_controller.text),
-                  child: const Text("Verify"),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () {
-                    _controller.clear();
-                    setState(() {
-                      _orderData = null;
-                      _error = null;
-                    });
-                    _inputFocus.requestFocus();
-                  },
-                  child: const Text("Clear"),
-                ),
-                const Spacer(),
-                if (_isProcessing)
-                  const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  _error!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ),
-            if (_orderData != null) _buildOrderDetails(theme),
-          ],
+              if (_orderData != null) _buildOrderDetails(theme),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -200,6 +253,38 @@ class _QrScanDialogState extends State<QrScanDialog> {
         ),
       ],
     );
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (_isProcessing) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter) {
+      _scanDebounce?.cancel();
+      final token = _scanBuffer;
+      _scanBuffer = '';
+      if (token.isNotEmpty) {
+        _submitToken(token);
+      }
+      return KeyEventResult.handled;
+    }
+
+    final ch = event.character;
+    if (ch == null || ch.isEmpty) return KeyEventResult.ignored;
+    if (ch == '\n' || ch == '\r') return KeyEventResult.ignored;
+
+    _scanBuffer += ch;
+    _scanDebounce?.cancel();
+    _scanDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (_scanBuffer.length >= 16) {
+        final token = _scanBuffer;
+        _scanBuffer = '';
+        _submitToken(token);
+      }
+    });
+    setState(() {});
+    return KeyEventResult.handled;
   }
 
   Widget _buildOrderDetails(ThemeData theme) {

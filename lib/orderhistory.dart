@@ -109,107 +109,155 @@ class _OrderHistoryState extends State<OrderHistory>
     super.build(context);
     final theme = Theme.of(context);
     TextEditingController controller = TextEditingController();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final contentWidth = screenWidth > 900 ? 720.0 : double.infinity;
+
+    Widget alignSection(Widget child) {
+      return Align(
+        alignment: Alignment.center,
+        child: SizedBox(width: contentWidth, child: child),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 60.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FloatingActionButton.extended(
-              heroTag: 'deliver-manual',
-              elevation: 10.00,
-              backgroundColor: theme.colorScheme.secondary,
-              onPressed: orderverfication,
-              icon: const Icon(Icons.room_service),
-              label: Text(
-                AppLocalizations.of(context)!.deliver,
-                style: theme.textTheme.labelLarge,
-              ),
-            ),
-            const SizedBox(height: 12),
-            FloatingActionButton.extended(
-              heroTag: 'deliver-qr',
-              elevation: 10.00,
-              backgroundColor: theme.colorScheme.primary,
-              onPressed: qrVerification,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: Text(
-                "Scan QR",
-                style: theme.textTheme.labelLarge,
-              ),
-            ),
-          ],
-        ),
-      ),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SearchBar(
-                    padding: const WidgetStatePropertyAll(
-                      EdgeInsets.symmetric(horizontal: 15.00),
-                    ),
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.search,
-                    hintText: AppLocalizations.of(context)!.s_order,
-                    leading: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 5.00,
-                        horizontal: 12.00,
-                      ),
-                      child: Icon(
-                        Icons.search,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    trailing: [
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          controller.clear();
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.done),
-                        onPressed: () {
-                          search(controller.text);
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.restart_alt),
-                        onPressed: () {
-                          setState(() {
-                            searchResults.clear();
-                            buildSearchList([]);
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 10.00),
-                    ],
-                    onChanged: (value) {
-                      String filteredValue = value.replaceAll(
-                        RegExp(r'[^0-9]'),
-                        '',
-                      );
-                      if (value != filteredValue) {
-                        controller.value = TextEditingValue(
-                          text: filteredValue,
-                          selection: TextSelection.collapsed(
-                            offset: filteredValue.length,
+                  alignSection(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Order Verification",
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Scan a QR code or enter RFID/User ID to verify an order.",
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        Card(
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Verify Order",
+                                  style:
+                                      theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Use QR scanning when available. On PC, use a hardware scanner (acts like keyboard input).",
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    FilledButton.icon(
+                                      onPressed: qrVerification,
+                                      icon: const Icon(Icons.qr_code_scanner),
+                                      label: const Text("Scan QR"),
+                                    ),
+                                    OutlinedButton.icon(
+                                      onPressed: orderverfication,
+                                      icon: const Icon(Icons.badge),
+                                      label: const Text("Enter RFID / ID"),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      }
-                    },
-                    onSubmitted: search,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          "Deliver Later Queue",
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Orders saved for later delivery appear here.",
+                          style: theme.textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        SearchBar(
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: 15.00),
+                          ),
+                          controller: controller,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.search,
+                          hintText: AppLocalizations.of(context)!.s_order,
+                          leading: Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: 5.00,
+                              horizontal: 12.00,
+                            ),
+                            child: Icon(
+                              Icons.search,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          trailing: [
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                controller.clear();
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.done),
+                              onPressed: () {
+                                search(controller.text);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.restart_alt),
+                              onPressed: () {
+                                setState(() {
+                                  searchResults.clear();
+                                  buildSearchList([]);
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 10.00),
+                          ],
+                          onChanged: (value) {
+                            String filteredValue = value.replaceAll(
+                              RegExp(r'[^0-9]'),
+                              '',
+                            );
+                            if (value != filteredValue) {
+                              controller.value = TextEditingValue(
+                                text: filteredValue,
+                                selection: TextSelection.collapsed(
+                                  offset: filteredValue.length,
+                                ),
+                              );
+                            }
+                          },
+                          onSubmitted: search,
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -228,7 +276,7 @@ class _OrderHistoryState extends State<OrderHistory>
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: Text("No orders to be delivered later"),
+              child: Text("No deliver-later orders right now"),
             ),
           );
         }
