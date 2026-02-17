@@ -13,10 +13,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 class QrScanDialog extends StatefulWidget {
   final void Function(int orderId) onDeliver;
 
-  const QrScanDialog({
-    super.key,
-    required this.onDeliver,
-  });
+  const QrScanDialog({super.key, required this.onDeliver});
 
   @override
   State<QrScanDialog> createState() => _QrScanDialogState();
@@ -110,7 +107,19 @@ class _QrScanDialogState extends State<QrScanDialog> {
         return;
       }
 
-      final msg = ApiClient.tryExtractErrorMessage(response) ??
+      if (response.statusCode == 403) {
+        final msg =
+            decoded?['error']?.toString() ??
+            "Valid QR but order is for a different canteen";
+        setState(() {
+          _error = msg;
+        });
+        _recordResult(trimmed);
+        return;
+      }
+
+      final msg =
+          ApiClient.tryExtractErrorMessage(response) ??
           decoded?['error']?.toString() ??
           "Scan failed (${response.statusCode})";
       setState(() {
@@ -156,17 +165,17 @@ class _QrScanDialogState extends State<QrScanDialog> {
                     child: MobileScanner(
                       controller: _scannerController,
                       onDetect: (capture) {
-                      if (_isProcessing || _orderData != null) return;
-                      final barcodes = capture.barcodes;
-                      final raw = barcodes.isNotEmpty
-                          ? barcodes.first.rawValue
-                          : null;
-                      if (raw != null && raw.isNotEmpty) {
-                        if (_shouldIgnoreToken(raw)) return;
-                        _submitToken(raw);
-                      }
-                    },
-                  ),
+                        if (_isProcessing || _orderData != null) return;
+                        final barcodes = capture.barcodes;
+                        final raw = barcodes.isNotEmpty
+                            ? barcodes.first.rawValue
+                            : null;
+                        if (raw != null && raw.isNotEmpty) {
+                          if (_shouldIgnoreToken(raw)) return;
+                          _submitToken(raw);
+                        }
+                      },
+                    ),
                   ),
                 ),
               const SizedBox(height: 12),
@@ -226,30 +235,30 @@ class _QrScanDialogState extends State<QrScanDialog> {
                     ),
                 ],
               ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.error.withValues(alpha: 0.1),
-                    border: Border.all(color: theme.colorScheme.error),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.error,
-                      fontWeight: FontWeight.bold,
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.error.withValues(alpha: 0.1),
+                      border: Border.all(color: theme.colorScheme.error),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            if (_orderData != null) _buildOrderDetails(theme),
-          ],
+              if (_orderData != null) _buildOrderDetails(theme),
+            ],
+          ),
         ),
-      ),
       ),
       actions: [
         TextButton(
@@ -343,19 +352,13 @@ class _QrScanDialogState extends State<QrScanDialog> {
                     final item = items[index] as Map<String, dynamic>;
                     final name = item['name']?.toString() ?? 'Item';
                     final qty = item['quantity'];
-                    final price = item['price'];
+                    final price = item['price'] ?? 0;
                     return Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            name,
-                            style: theme.textTheme.bodyMedium,
-                          ),
+                          child: Text(name, style: theme.textTheme.bodyMedium),
                         ),
-                        Text(
-                          "x$qty",
-                          style: theme.textTheme.bodyMedium,
-                        ),
+                        Text("x$qty", style: theme.textTheme.bodyMedium),
                         const SizedBox(width: 12),
                         Text(
                           "₹$price",
@@ -374,7 +377,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
                 children: [
                   Text("Total", style: theme.textTheme.titleSmall),
                   Text(
-                    "₹$totalPrice",
+                    "₹${totalPrice ?? 0}",
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,

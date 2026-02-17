@@ -7,4 +7,3 @@ final FlutterSecureStorage secureStorage = FlutterSecureStorage(
       ? const AndroidOptions(encryptedSharedPreferences: true)
       : AndroidOptions.defaultOptions,
 );
-

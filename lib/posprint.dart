@@ -14,52 +14,62 @@ class PrintBill extends StatefulWidget {
 }
 
 class _PrintBillState extends State<PrintBill> {
-// Future<void> _sendToUsbPrinter(List<int> bytes) async {
-//   try {
-//     if (!Platform.isWindows) {
-//       await FlutterThermalPrinter.instance.getPrinters();
-//     }
+  // Future<void> _sendToUsbPrinter(List<int> bytes) async {
+  //   try {
+  //     if (!Platform.isWindows) {
+  //       await FlutterThermalPrinter.instance.getPrinters();
+  //     }
 
-//     final printers = await FlutterThermalPrinter.instance.devicesStream.first;
+  //     final printers = await FlutterThermalPrinter.instance.devicesStream.first;
 
-//     final usbPrinters = printers.where((p) => p.connectionType == ConnectionType.USB).toList();
+  //     final usbPrinters = printers.where((p) => p.connectionType == ConnectionType.USB).toList();
 
-//     if (usbPrinters.isEmpty) {
-//       debugPrint("❌ No USB printers found.");
-//       return;
-//     }
+  //     if (usbPrinters.isEmpty) {
+  //       debugPrint("❌ No USB printers found.");
+  //       return;
+  //     }
 
-//     Printer selectedPrinter = usbPrinters.first;
+  //     Printer selectedPrinter = usbPrinters.first;
 
-//     bool connected = await FlutterThermalPrinter.instance.connect(selectedPrinter);
-//     if (!connected) {
-//       debugPrint("❌ Failed to connect to USB printer.");
-//       return;
-//     }
+  //     bool connected = await FlutterThermalPrinter.instance.connect(selectedPrinter);
+  //     if (!connected) {
+  //       debugPrint("❌ Failed to connect to USB printer.");
+  //       return;
+  //     }
 
-//     await FlutterThermalPrinter.instance.printData(
-//       selectedPrinter,
-//       bytes,
-//       longData: bytes.length > 2000,
-//     );
+  //     await FlutterThermalPrinter.instance.printData(
+  //       selectedPrinter,
+  //       bytes,
+  //       longData: bytes.length > 2000,
+  //     );
 
-//     debugPrint("✅ Print job sent to USB printer.");
-//   } catch (e) {
-//     debugPrint("❌ Error printing via USB: $e");
-//   }
-// }
+  //     debugPrint("✅ Print job sent to USB printer.");
+  //   } catch (e) {
+  //     debugPrint("❌ Error printing via USB: $e");
+  //   }
+  // }
 
-
-  Future<void> _generatePrintData(BuildContext context, Map<int, Map<String, dynamic>> bill) async {
+  Future<void> _generatePrintData(
+    BuildContext context,
+    Map<int, Map<String, dynamic>> bill,
+  ) async {
     try {
       final profile = await CapabilityProfile.load();
-      final Generator generator = Generator(PaperSize.mm58, profile); // PaperSize.mm80
+      final Generator generator = Generator(
+        PaperSize.mm58,
+        profile,
+      ); // PaperSize.mm80
 
       List<int> bytes = [];
 
       bytes += generator.text(
         'PKS',
-        styles: PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2),
+        styles: PosStyles(
+          align: PosAlign.center,
+          bold: true,
+          height: PosTextSize.size2,
+          width: PosTextSize.size2,
+        ),
         linesAfter: 1,
       );
       bytes += generator.text(
@@ -76,14 +86,28 @@ class _PrintBillState extends State<PrintBill> {
         styles: PosStyles(align: PosAlign.center),
         linesAfter: 1,
       );
-      bytes += generator.text('--------------------------------', styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text(
+        '--------------------------------',
+        styles: PosStyles(align: PosAlign.center),
+      );
 
       bytes += generator.row([
         PosColumn(text: 'Item', width: 6, styles: PosStyles(bold: true)),
-        PosColumn(text: 'Count', width: 3, styles: PosStyles(bold: true, align: PosAlign.center)),
-        PosColumn(text: 'Price', width: 3, styles: PosStyles(bold: true, align: PosAlign.right)),
+        PosColumn(
+          text: 'Count',
+          width: 3,
+          styles: PosStyles(bold: true, align: PosAlign.center),
+        ),
+        PosColumn(
+          text: 'Price',
+          width: 3,
+          styles: PosStyles(bold: true, align: PosAlign.right),
+        ),
       ]);
-      bytes += generator.text('--------------------------------', styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text(
+        '--------------------------------',
+        styles: PosStyles(align: PosAlign.center),
+      );
 
       double subtotal = 0.0;
       int itemIndex = 0;
@@ -97,18 +121,45 @@ class _PrintBillState extends State<PrintBill> {
         //printer outputvaries, need testing.
         // The linebreak of width 6 may vary.
         bytes += generator.row([
-          PosColumn(text: '$itemIndex. ${itemName.length > 18 ? '${itemName.substring(0, 15)}...' : itemName}', width: 6),
-          PosColumn(text: itemCount.toString(), width: 3, styles: PosStyles(align: PosAlign.center)),
-          PosColumn(text: 'Rs. $itemPrice', width: 3, styles: PosStyles(align: PosAlign.right)),
+          PosColumn(
+            text:
+                '$itemIndex. ${itemName.length > 18 ? '${itemName.substring(0, 15)}...' : itemName}',
+            width: 6,
+          ),
+          PosColumn(
+            text: itemCount.toString(),
+            width: 3,
+            styles: PosStyles(align: PosAlign.center),
+          ),
+          PosColumn(
+            text: 'Rs. $itemPrice',
+            width: 3,
+            styles: PosStyles(align: PosAlign.right),
+          ),
         ]);
         itemIndex++;
       }
 
-      bytes += generator.text('--------------------------------', styles: PosStyles(align: PosAlign.center));
+      bytes += generator.text(
+        '--------------------------------',
+        styles: PosStyles(align: PosAlign.center),
+      );
 
       bytes += generator.row([
-        PosColumn(text: 'Subtotal', width: 6, styles: PosStyles(bold: true, height: PosTextSize.size2)),
-        PosColumn(text: 'Rs. $subtotal', width: 6, styles: PosStyles(bold: true, height: PosTextSize.size2, align: PosAlign.right)),
+        PosColumn(
+          text: 'Subtotal',
+          width: 6,
+          styles: PosStyles(bold: true, height: PosTextSize.size2),
+        ),
+        PosColumn(
+          text: 'Rs. $subtotal',
+          width: 6,
+          styles: PosStyles(
+            bold: true,
+            height: PosTextSize.size2,
+            align: PosAlign.right,
+          ),
+        ),
       ]);
 
       bytes += generator.feed(2);
@@ -124,18 +175,23 @@ class _PrintBillState extends State<PrintBill> {
       bytes += generator.cut();
       // debugPrint(bytes.toString());
       // _sendToUsbPrinter(bytes);
-      if (context.mounted){
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Print data generated for debugging! (No actual print)'), duration: Duration(seconds: 2)),
+          const SnackBar(
+            content: Text(
+              'Print data generated for debugging! (No actual print)',
+            ),
+            duration: Duration(seconds: 2),
+          ),
         );
       }
-
     } catch (e) {
-      if (context.mounted){
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error generating print data: $e')),
         );
-    }}
+      }
+    }
   }
 
   @override
@@ -146,9 +202,7 @@ class _PrintBillState extends State<PrintBill> {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thermal Bill Preview'),
-      ),
+      appBar: AppBar(title: const Text('Thermal Bill Preview')),
       body: Center(
         child: Container(
           width: 300,
@@ -199,14 +253,47 @@ class _PrintBillState extends State<PrintBill> {
               const Divider(height: 20, thickness: 1, color: Colors.black),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 6.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 0.0,
+                  vertical: 6.0,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(width: 5),
-                    Expanded(flex: 3, child: Text("Item", style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black))),
-                    Expanded(flex: 2, child: Text("Count", style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black))),
-                    Expanded(flex: 2, child: Text("Price", style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black))),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        "Item",
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        "Count",
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        "Price",
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -215,7 +302,14 @@ class _PrintBillState extends State<PrintBill> {
                   ? const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 20.0),
-                        child: Text("No Items", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+                        child: Text(
+                          "No Items",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -225,17 +319,29 @@ class _PrintBillState extends State<PrintBill> {
                       itemBuilder: (context, index) {
                         int i = widget.bill.keys.elementAt(index);
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 6.0),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 0.0,
+                            vertical: 6.0,
+                          ),
                           child: Row(
                             children: [
-                              Text("${index + 1}. ", style: const TextStyle(fontSize: 18, color: Colors.black)),
+                              Text(
+                                "${index + 1}. ",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black,
+                                ),
+                              ),
                               Expanded(
                                 flex: 3,
                                 child: Text(
                                   widget.bill[i]?['name'],
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 2,
-                                  style: const TextStyle(fontSize: 18, color: Colors.black),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -243,7 +349,10 @@ class _PrintBillState extends State<PrintBill> {
                                 child: Text(
                                   widget.bill[i]?['count'].toString() ?? "",
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 18, color: Colors.black),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -251,7 +360,10 @@ class _PrintBillState extends State<PrintBill> {
                                 child: Text(
                                   "₹${((widget.bill[i]?['price'] ?? 0.0)).toStringAsFixed(2)}",
                                   textAlign: TextAlign.right,
-                                  style: const TextStyle(fontSize: 18, color: Colors.black),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
                             ],
@@ -263,17 +375,28 @@ class _PrintBillState extends State<PrintBill> {
               const Divider(height: 20, thickness: 1, color: Colors.black),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 0.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Subtotal',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                     Text(
                       '₹${totalBillAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ],
                 ),

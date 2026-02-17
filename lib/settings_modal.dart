@@ -11,12 +11,12 @@ class CropSettings {
   });
 
   CropSettings.initial()
-      : this(
-          cropShapeFn: aabbCropShapeFn,
-          enabledTransformations: Transformation.values,
-          showGestureHandlesOn: [CropShapeType.aabb],
-          forcedAspectRatio: null,
-        );
+    : this(
+        cropShapeFn: aabbCropShapeFn,
+        enabledTransformations: Transformation.values,
+        showGestureHandlesOn: [CropShapeType.aabb],
+        forcedAspectRatio: null,
+      );
 
   final CropShapeFn cropShapeFn;
   final List<Transformation> enabledTransformations;
@@ -59,9 +59,7 @@ Future<CropSettings> showCropSettingsModal({
   final settings = await showModalBottomSheet<CropSettings>(
     context: context,
     builder: (context) {
-      return SettingsModalWidget(
-        initialSettings: initialSettings,
-      );
+      return SettingsModalWidget(initialSettings: initialSettings);
     },
   );
 
@@ -104,10 +102,7 @@ class _SettingsModalWidgetState extends State<SettingsModalWidget> {
       child: SingleChildScrollView(
         child: ListBody(
           children: [
-            const ListTile(
-              enabled: false,
-              title: Text('Crop shape'),
-            ),
+            const ListTile(enabled: false, title: Text('Crop shape')),
             RadioListTile(
               title: const Text('Rectangle'),
               value: aabbCropShapeFn,
@@ -144,10 +139,7 @@ class _SettingsModalWidgetState extends State<SettingsModalWidget> {
                 });
               },
             ),
-            const ListTile(
-              enabled: false,
-              title: Text('Locale'),
-            ),
+            const ListTile(enabled: false, title: Text('Locale')),
             ...CroppyLocalizations.supportedLocales.map(
               (v) => RadioListTile(
                 title: Text(v.toString()),
@@ -188,10 +180,7 @@ class _SettingsModalWidgetState extends State<SettingsModalWidget> {
                 },
               ),
             ),
-            const ListTile(
-              enabled: false,
-              title: Text('Forced aspect ratio'),
-            ),
+            const ListTile(enabled: false, title: Text('Forced aspect ratio')),
             RadioListTile(
               title: const Text('None'),
               value: null,

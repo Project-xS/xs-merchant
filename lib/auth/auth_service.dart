@@ -15,8 +15,7 @@ class AuthSession {
   final int? canteenId;
   final String? canteenName;
 
-  bool get isExpired =>
-      DateTime.now().millisecondsSinceEpoch >= expiresAtMs;
+  bool get isExpired => DateTime.now().millisecondsSinceEpoch >= expiresAtMs;
 }
 
 class AuthService {
@@ -42,12 +41,14 @@ class AuthService {
     int? canteenIdHint = int.tryParse(canteenIdRaw ?? '');
     String? canteenNameHint =
         (canteenNameRaw != null && canteenNameRaw.isNotEmpty)
-            ? canteenNameRaw
-            : null;
+        ? canteenNameRaw
+        : null;
 
     // Backwards-compat: older builds stored these as "Username" / "CanteenId".
     if (canteenIdHint == null) {
-      canteenIdHint = int.tryParse(await secureStorage.read(key: 'CanteenId') ?? '');
+      canteenIdHint = int.tryParse(
+        await secureStorage.read(key: 'CanteenId') ?? '',
+      );
     }
     if (canteenNameHint == null) {
       final legacyName = await secureStorage.read(key: 'Username');
@@ -74,10 +75,16 @@ class AuthService {
     _session = loaded;
     // Best-effort migrate display fields to new keys for future runs.
     if (_session?.canteenId != null) {
-      await secureStorage.write(key: _canteenIdKey, value: '${_session!.canteenId}');
+      await secureStorage.write(
+        key: _canteenIdKey,
+        value: '${_session!.canteenId}',
+      );
     }
     if ((_session?.canteenName ?? '').isNotEmpty) {
-      await secureStorage.write(key: _canteenNameKey, value: _session!.canteenName);
+      await secureStorage.write(
+        key: _canteenNameKey,
+        value: _session!.canteenName,
+      );
     }
     if (kDebugMode) {
       debugPrint(
@@ -92,8 +99,9 @@ class AuthService {
     int? canteenId,
     String? canteenName,
   }) async {
-    final expiresAtMs =
-        DateTime.now().add(const Duration(hours: 12)).millisecondsSinceEpoch;
+    final expiresAtMs = DateTime.now()
+        .add(const Duration(hours: 12))
+        .millisecondsSinceEpoch;
 
     // Keep UI claims local; never rely on these for authorization.
     final session = _buildSession(

@@ -11,7 +11,7 @@ class Orders extends StatefulWidget {
   State<Orders> createState() => OrdersState();
 }
 
-class OrdersState extends State<Orders> with OrderFetchMixin<Orders>{
+class OrdersState extends State<Orders> with OrderFetchMixin<Orders> {
   Map<String, Map<String, dynamic>> orders = {};
 
   @override
@@ -38,13 +38,16 @@ class OrdersState extends State<Orders> with OrderFetchMixin<Orders>{
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 60.0),
         child: FloatingActionButton.extended(
-            onPressed: () {
-              triggerOrderFetch();
-            },
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            label: Text(AppLocalizations.of(context)!.refresh,
-                style: Theme.of(context).textTheme.labelLarge),
-            icon: const Icon(Icons.refresh)),
+          onPressed: () {
+            triggerOrderFetch();
+          },
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          label: Text(
+            AppLocalizations.of(context)!.refresh,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+          icon: const Icon(Icons.refresh),
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,10 +72,13 @@ class OrdersState extends State<Orders> with OrderFetchMixin<Orders>{
       ),
     );
   }
+
   Widget generateList(String orderTime) {
     return Center(
       child: SizedBox(
-        width: MediaQuery.of(context).size.width > 600 ? 600 : MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.of(context).size.width > 600
+            ? 600
+            : MediaQuery.of(context).size.width * 0.9,
         child: Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: Padding(

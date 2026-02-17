@@ -14,10 +14,8 @@ Future<CropImageResult?> showCustomCropper(
 }) async {
   // Before pushing the route, prepare the initial data. If it's null, populate
   // it with empty content. This is required for Hero animations.
-  final _initialData = initialData ??
-      await CroppableImageData.fromImageProvider(
-        imageProvider,
-      );
+  final _initialData =
+      initialData ?? await CroppableImageData.fromImageProvider(imageProvider);
 
   if (context.mounted) {
     return Navigator.of(context).push(
@@ -73,7 +71,9 @@ class CustomCropper extends StatelessWidget {
                       child: const Text('Done'),
                       onPressed: () async {
                         // Enable the Hero animations
-                        CroppableImagePageAnimator.of(context)?.setHeroesEnabled(true);
+                        CroppableImagePageAnimator.of(
+                          context,
+                        )?.setHeroesEnabled(true);
 
                         // Crop the image
                         final result = await controller.crop();
@@ -91,11 +91,12 @@ class CustomCropper extends StatelessWidget {
                   padding: const EdgeInsets.all(32.0),
                   child: AnimatedCroppableImageViewport(
                     controller: controller,
-                    cropHandlesBuilder: (context) => MaterialImageCropperHandles(
-                      controller: controller,
-                      gesturePadding: 16.0,
-                      showGestureHandlesOn: showGestureHandlesOn,
-                    ),
+                    cropHandlesBuilder: (context) =>
+                        MaterialImageCropperHandles(
+                          controller: controller,
+                          gesturePadding: 16.0,
+                          showGestureHandlesOn: showGestureHandlesOn,
+                        ),
                     overlayOpacityAnimation: overlayOpacityAnimation,
                     gesturePadding: 16.0,
                     heroTag: heroTag,

@@ -152,8 +152,7 @@ class _OrderHistoryState extends State<OrderHistory>
                               children: [
                                 Text(
                                   "Verify Order",
-                                  style:
-                                      theme.textTheme.titleLarge?.copyWith(
+                                  style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

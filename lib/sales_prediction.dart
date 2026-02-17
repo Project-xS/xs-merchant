@@ -17,11 +17,31 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
   double _maxY = 1000;
 
   final _itemData = [
-    {'id': 1, 'name': 'Chicken Fried Rice', 'is_bestseller': true, 'previous_sales': 4500},
-    {'id': 2, 'name': 'Chicken Noodles', 'is_bestseller': true, 'previous_sales': 3000},
-    {'id': 3, 'name': 'Veg Fried Rice', 'is_bestseller': true, 'previous_sales': 4000},
+    {
+      'id': 1,
+      'name': 'Chicken Fried Rice',
+      'is_bestseller': true,
+      'previous_sales': 4500,
+    },
+    {
+      'id': 2,
+      'name': 'Chicken Noodles',
+      'is_bestseller': true,
+      'previous_sales': 3000,
+    },
+    {
+      'id': 3,
+      'name': 'Veg Fried Rice',
+      'is_bestseller': true,
+      'previous_sales': 4000,
+    },
     {'id': 4, 'name': 'Biryani', 'is_bestseller': true, 'previous_sales': 3000},
-    {'id': 5, 'name': 'Parotta', 'is_bestseller': false, 'previous_sales': 2000},
+    {
+      'id': 5,
+      'name': 'Parotta',
+      'is_bestseller': false,
+      'previous_sales': 2000,
+    },
     {'id': 6, 'name': 'Dosa', 'is_bestseller': false, 'previous_sales': 800},
     {'id': 7, 'name': 'Idly', 'is_bestseller': false, 'previous_sales': 600},
     {'id': 8, 'name': 'Pongal', 'is_bestseller': false, 'previous_sales': 500},
@@ -56,7 +76,12 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
       trainingData.add([i, 0, 0, i]);
       trainingData.add([i, 1, 0, (i * bestsellerMultiplier).round()]);
       trainingData.add([i, 0, 1, (i * eventMultiplier).round()]);
-      trainingData.add([i, 1, 1, (i * bestsellerMultiplier * eventMultiplier).round()]);
+      trainingData.add([
+        i,
+        1,
+        1,
+        (i * bestsellerMultiplier * eventMultiplier).round(),
+      ]);
     }
 
     final samples = DataFrame(trainingData, headerExists: true);
@@ -72,19 +97,22 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
     final dayTypeValue = _isEventDay ? 1 : 0;
     final eventColor = const Color.fromARGB(255, 255, 167, 38);
 
-    final predictionItems = _itemData.map((item) => [
-      item['previous_sales'],
-      item['is_bestseller'] == true ? 1 : 0,
-      dayTypeValue,
-    ]).toList();
+    final predictionItems = _itemData
+        .map(
+          (item) => [
+            item['previous_sales'],
+            item['is_bestseller'] == true ? 1 : 0,
+            dayTypeValue,
+          ],
+        )
+        .toList();
 
     final predictionHeader = ['previous_sales', 'is_bestseller', 'day_type'];
     final predictionDf = DataFrame([predictionHeader, ...predictionItems]);
 
     final prediction = _classifier.predict(predictionDf);
 
-    final predictedSales = prediction['predicted_sales']
-        .data
+    final predictedSales = prediction['predicted_sales'].data
         .map((value) => (value as num).toDouble())
         .toList();
 
@@ -138,7 +166,7 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final itemName = itemNames[group.x.toInt() -1];
+              final itemName = itemNames[group.x.toInt() - 1];
               return BarTooltipItem(
                 '$itemName\n',
                 const TextStyle(
@@ -172,7 +200,10 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
                   meta: meta,
                   space: 4.0,
                   angle: isMobile ? -0.785 : 0,
-                  child: Text(text, style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10)),
+                  child: Text(
+                    text,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10),
+                  ),
                 );
               },
               reservedSize: isMobile ? 42 : 38,
@@ -185,12 +216,19 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
               interval: _maxY > 0 ? _maxY / 4 : 2500,
               getTitlesWidget: (value, meta) {
                 if (value == 0 || value > _maxY) return const Text('');
-                return Text('${(value / 1000).round()}k', style: theme.textTheme.bodyMedium);
+                return Text(
+                  '${(value / 1000).round()}k',
+                  style: theme.textTheme.bodyMedium,
+                );
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         borderData: FlBorderData(show: false),
         barGroups: _chartData,
@@ -198,10 +236,7 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
           show: true,
           drawVerticalLine: false,
           getDrawingHorizontalLine: (value) {
-            return const FlLine(
-              color: Colors.white24,
-              strokeWidth: 0.5,
-            );
+            return const FlLine(color: Colors.white24, strokeWidth: 0.5);
           },
         ),
       ),
@@ -241,7 +276,8 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
                       },
                       activeTrackColor: eventColor.withAlpha(100),
                       activeColor: eventColor,
-                      inactiveThumbColor: theme.colorScheme.onSurface.withOpacity(0.6),
+                      inactiveThumbColor: theme.colorScheme.onSurface
+                          .withOpacity(0.6),
                       inactiveTrackColor: theme.colorScheme.surface,
                     ),
                   ],
@@ -250,7 +286,9 @@ class _SalesPredictionPageState extends State<SalesPredictionPage> {
             ),
             const SizedBox(height: 24),
             Text(
-              _isEventDay ? 'Event Day Sales Forecast' : 'Normal Day Sales Forecast',
+              _isEventDay
+                  ? 'Event Day Sales Forecast'
+                  : 'Normal Day Sales Forecast',
               style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
               textAlign: TextAlign.center,
             ),
