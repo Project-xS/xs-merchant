@@ -22,4 +22,7 @@ class ApiConstants {
 
   // Search
   static String search(String query) => '/search/${Uri.encodeComponent(query)}';
+
+  // User
+  static const String pastOrders = '/users/get_past_orders';
 }

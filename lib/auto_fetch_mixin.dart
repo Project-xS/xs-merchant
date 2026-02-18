@@ -7,6 +7,7 @@ import 'package:merchant/api/api_client.dart';
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/models/menu_item.dart';
+import 'package:merchant/models/order_models.dart';
 
 mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   Timer? timer;
@@ -215,7 +216,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
   Timer? _timer;
 
   int get canteenIdForOrders;
-  void onOrdersUpdated(Map<String, Map<String, dynamic>> orders);
+  void onOrdersUpdated(Map<String, List<ActiveOrderItem>> orders);
   void onOrderFetchError(dynamic error);
 
   @override
@@ -247,15 +248,12 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         Map<String, dynamic> dataList = decodedJson["data"];
 
-        Map<String, Map<String, dynamic>> fetchedOrders = {};
+        Map<String, List<ActiveOrderItem>> fetchedOrders = {};
         for (String time in dataList.keys) {
-          List<String> name = [];
-          List<int> count = [];
-          for (var order in dataList[time]) {
-            name.add(order["item_name"]);
-            count.add(order["num_ordered"]);
-          }
-          fetchedOrders[time] = {'name': name, 'count': count};
+          final items = (dataList[time] as List<dynamic>)
+              .map((e) => ActiveOrderItem.fromJson(e as Map<String, dynamic>))
+              .toList();
+          fetchedOrders[time] = items;
         }
         onOrdersUpdated(fetchedOrders);
         // No success toast for order fetch; keep UI quiet on background refresh.

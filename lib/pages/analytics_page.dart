@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:merchant/l10n/app_localizations.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -13,7 +12,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   @override
   Widget build(BuildContext context) {
-    
     final theme = Theme.of(context);
 
     return SizedBox.expand(
@@ -23,95 +21,78 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Analytics Dashboard",
-                style: theme.textTheme.titleLarge, // font 24 px
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Analytics Dashboard",
+                    style: theme.textTheme.titleLarge, // font 24 px
+                  ),
+                  _buildTimeRangeDropdown(theme),
+                ],
               ),
-              _buildTimeRangeDropdown(theme),
+              const SizedBox(height: 24), // gap-6
+              // KPIs (four-card grid)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  int crossAxisCount;
+                  if (constraints.maxWidth < 640) {
+                    crossAxisCount = 1; // Small
+                  } else if (constraints.maxWidth < 1024) {
+                    crossAxisCount = 2; // Medium
+                  } else {
+                    crossAxisCount = 4; // Wide
+                  }
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 16, // p-4
+                      mainAxisSpacing: 16, // p-4
+                      childAspectRatio: 1.8, // Adjust as needed
+                    ),
+                    itemCount:
+                        4, // Total Revenue, Total Orders, Avg. Order Value, New Customers
+                    itemBuilder: (context, index) {
+                      return _buildKpiCard(context, index);
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 24), // gap-6
+              // Order status breakdown
+              Text(
+                "Order Status Breakdown",
+                style: theme.textTheme.titleMedium, // 16 px w600
+              ),
+              const SizedBox(height: 16), // p-4
+              _buildOrderStatusBreakdownCard(context),
+              const SizedBox(height: 24), // gap-6
+              // Revenue by order type
+              Text("Revenue by Order Type", style: theme.textTheme.titleMedium),
+              const SizedBox(height: 16),
+              _buildRevenueByOrderTypeCard(context),
+              const SizedBox(height: 24), // gap-6
+              // Top selling items list
+              Text("Top Selling Items", style: theme.textTheme.titleMedium),
+              const SizedBox(height: 16),
+              _buildTopSellingItemsList(context),
+              const SizedBox(height: 24), // gap-6
+              // Peak hours
+              Text("Peak Hours", style: theme.textTheme.titleMedium),
+              const SizedBox(height: 16),
+              _buildPeakHoursList(context),
+              const SizedBox(height: 24), // gap-6
+              // Category performance
+              Text("Category Performance", style: theme.textTheme.titleMedium),
+              const SizedBox(height: 16),
+              _buildCategoryPerformanceGrid(context),
             ],
           ),
-          const SizedBox(height: 24), // gap-6
-
-          // KPIs (four-card grid)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount;
-              if (constraints.maxWidth < 640) {
-                crossAxisCount = 1; // Small
-              } else if (constraints.maxWidth < 1024) {
-                crossAxisCount = 2; // Medium
-              } else {
-                crossAxisCount = 4; // Wide
-              }
-
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16, // p-4
-                  mainAxisSpacing: 16, // p-4
-                  childAspectRatio: 1.8, // Adjust as needed
-                ),
-                itemCount: 4, // Total Revenue, Total Orders, Avg. Order Value, New Customers
-                itemBuilder: (context, index) {
-                  return _buildKpiCard(context, index);
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Order status breakdown
-          Text(
-            "Order Status Breakdown",
-            style: theme.textTheme.titleMedium, // 16 px w600
-          ),
-          const SizedBox(height: 16), // p-4
-          _buildOrderStatusBreakdownCard(context),
-          const SizedBox(height: 24), // gap-6
-
-          // Revenue by order type
-          Text(
-            "Revenue by Order Type",
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 16),
-          _buildRevenueByOrderTypeCard(context),
-          const SizedBox(height: 24), // gap-6
-
-          // Top selling items list
-          Text(
-            "Top Selling Items",
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 16),
-          _buildTopSellingItemsList(context),
-          const SizedBox(height: 24), // gap-6
-
-          // Peak hours
-          Text(
-            "Peak Hours",
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 16),
-          _buildPeakHoursList(context),
-          const SizedBox(height: 24), // gap-6
-
-          // Category performance
-          Text(
-            "Category Performance",
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: 16),
-          _buildCategoryPerformanceGrid(context),
-        ],
-      ),
-    ),
+        ),
       ),
     );
   }
@@ -130,10 +111,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         ),
         value: _selectedTimeRange,
         items: timeRanges.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
+          return DropdownMenuItem<String>(value: value, child: Text(value));
         }).toList(),
         onChanged: (String? newValue) {
           setState(() {
@@ -191,7 +169,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +271,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       },
     ];
 
-    final totalOrders = statuses.fold(0, (sum, item) => sum + (item['count'] as int));
+    final totalOrders = statuses.fold(
+      0,
+      (sum, item) => sum + (item['count'] as int),
+    );
 
     return Card(
       elevation: 0,
@@ -299,12 +286,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: statuses.map((status) {
-            final double percentage = totalOrders > 0 ? (status['count'] / totalOrders) : 0;
+            final double percentage = totalOrders > 0
+                ? (status['count'] / totalOrders)
+                : 0;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
@@ -339,7 +334,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     child: LinearProgressIndicator(
                       value: percentage,
                       backgroundColor: status['bgColor'],
-                      valueColor: AlwaysStoppedAnimation<Color>(status['color']),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        status['color'],
+                      ),
                       minHeight: 6,
                     ),
                   ),
@@ -378,7 +375,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           children: orderTypes.map((type) {
@@ -403,7 +406,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   const Spacer(),
                   Text(
                     type['revenue'],
-                    style: theme.textTheme.titleMedium?.copyWith(fontSize: 22), // 18-22 px big
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: 22,
+                    ), // 18-22 px big
                   ),
                 ],
               ),
@@ -451,7 +456,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: ListView.builder(
           shrinkWrap: true,
@@ -473,7 +484,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     child: Center(
                       child: Text(
                         item['rank'].toString(),
-                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.white),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -484,7 +497,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       children: [
                         Text(
                           item['name'],
-                          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600), // 14-16 px
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ), // 14-16 px
                         ),
                         Text(
                           item['category'],
@@ -500,10 +515,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         "${item['unitsSold']} units",
                         style: theme.textTheme.bodySmall,
                       ),
-                      Text(
-                        item['revenue'],
-                        style: theme.textTheme.bodySmall,
-                      ),
+                      Text(item['revenue'], style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ],
@@ -519,18 +531,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final theme = Theme.of(context);
     // Placeholder data
     final List<Map<String, dynamic>> peakHours = [
-      {
-        'hour': '12:00 PM',
-        'isPeak': true,
-      },
-      {
-        'hour': '1:00 PM',
-        'isPeak': false,
-      },
-      {
-        'hour': '7:00 PM',
-        'isPeak': false,
-      },
+      {'hour': '12:00 PM', 'isPeak': true},
+      {'hour': '1:00 PM', 'isPeak': false},
+      {'hour': '7:00 PM', 'isPeak': false},
     ];
 
     return Card(
@@ -543,7 +546,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: ListView.builder(
           shrinkWrap: true,
@@ -562,17 +571,27 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       color: Colors.grey.shade200,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.access_time, size: 18, color: Colors.black), // Clock icon
+                    child: const Icon(
+                      Icons.access_time,
+                      size: 18,
+                      color: Colors.black,
+                    ), // Clock icon
                   ),
                   const SizedBox(width: 12),
                   Text(
                     hour['hour'],
-                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700), // 16 px bold
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ), // 16 px bold
                   ),
                   if (hour['isPeak'])
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0),
-                      child: Icon(Icons.star, size: 16, color: Colors.amber.shade700), // Star icon for peak
+                      child: Icon(
+                        Icons.star,
+                        size: 16,
+                        color: Colors.amber.shade700,
+                      ), // Star icon for peak
                     ),
                   const Spacer(),
                   Text(
@@ -592,26 +611,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final theme = Theme.of(context);
     // Placeholder data
     final List<Map<String, dynamic>> categories = [
-      {
-        'title': 'Beverages',
-        'orders': 150,
-        'revenue': '\$500',
-      },
-      {
-        'title': 'Snacks',
-        'orders': 200,
-        'revenue': '\$700',
-      },
-      {
-        'title': 'Main Course',
-        'orders': 100,
-        'revenue': '\$1200',
-      },
-      {
-        'title': 'Desserts',
-        'orders': 50,
-        'revenue': '\$300',
-      },
+      {'title': 'Beverages', 'orders': 150, 'revenue': '\$500'},
+      {'title': 'Snacks', 'orders': 200, 'revenue': '\$700'},
+      {'title': 'Main Course', 'orders': 100, 'revenue': '\$1200'},
+      {'title': 'Desserts', 'orders': 50, 'revenue': '\$300'},
     ];
 
     return LayoutBuilder(
@@ -647,24 +650,29 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(0, 0, 0, 0.06),
+                      offset: Offset(0, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       category['title'],
-                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${category['orders']} orders",
                       style: theme.textTheme.bodySmall,
                     ),
-                    Text(
-                      category['revenue'],
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    Text(category['revenue'], style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),

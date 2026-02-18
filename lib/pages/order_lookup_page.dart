@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:merchant/l10n/app_localizations.dart';
 
 class OrderLookupPage extends StatefulWidget {
   const OrderLookupPage({super.key});
@@ -10,13 +9,12 @@ class OrderLookupPage extends StatefulWidget {
 
 class _OrderLookupPageState extends State<OrderLookupPage> {
   bool _isRfidSearch = true; // true for RFID, false for User ID
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   bool _studentFound = false; // Placeholder for student lookup status
   bool _hasOrders = true; // Placeholder for orders availability
 
   @override
   Widget build(BuildContext context) {
-    
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -25,188 +23,224 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Header
-          Text(
-            "Order Lookup",
-            style: theme.textTheme.titleLarge, // font 24 px
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Search Area
-          Container(
-            padding: const EdgeInsets.all(12), // p-3
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12), // rounded-lg
-              boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+            // Header
+            Text(
+              "Order Lookup",
+              style: theme.textTheme.titleLarge, // font 24 px
             ),
-            child: Column(
-              children: [
-                // Segmented Control
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6), // gray-100
-                    borderRadius: BorderRadius.circular(8), // rounded-md
+            const SizedBox(height: 24), // gap-6
+            // Search Area
+            Container(
+              padding: const EdgeInsets.all(12), // p-3
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12), // rounded-lg
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromRGBO(0, 0, 0, 0.06),
+                    offset: Offset(0, 1),
+                    blurRadius: 3,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isRfidSearch = true;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _isRfidSearch ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              border: _isRfidSearch
-                                  ? Border.all(color: const Color(0xFFE5E7EB)) // gray-200
-                                  : null,
-                            ),
-                            child: Center(
-                              child: Text(
-                                "RFID",
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: _isRfidSearch ? const Color(0xFF2563EB) : const Color(0xFF6B7280), // blue-600 / gray-500
-                                  fontWeight: FontWeight.w500,
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Segmented Control
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6), // gray-100
+                      borderRadius: BorderRadius.circular(8), // rounded-md
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isRfidSearch = true;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _isRfidSearch
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                border: _isRfidSearch
+                                    ? Border.all(
+                                        color: const Color(0xFFE5E7EB),
+                                      ) // gray-200
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "RFID",
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: _isRfidSearch
+                                        ? const Color(0xFF2563EB)
+                                        : const Color(
+                                            0xFF6B7280,
+                                          ), // blue-600 / gray-500
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isRfidSearch = false;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: !_isRfidSearch ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              border: !_isRfidSearch
-                                  ? Border.all(color: const Color(0xFFE5E7EB))
-                                  : null,
-                            ),
-                            child: Center(
-                              child: Text(
-                                "User ID",
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: !_isRfidSearch ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
-                                  fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isRfidSearch = false;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: !_isRfidSearch
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                border: !_isRfidSearch
+                                    ? Border.all(color: const Color(0xFFE5E7EB))
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "User ID",
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: !_isRfidSearch
+                                        ? const Color(0xFF2563EB)
+                                        : const Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16), // Spacing
+                  // Inline Search Field and Button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44, // Height 44 px
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(
+                                _isRfidSearch
+                                    ? Icons.credit_card
+                                    : Icons.person,
+                                size: 20, // 20 px
+                              ),
+                              hintText: _isRfidSearch
+                                  ? "Enter RFID..."
+                                  : "Enter User ID...",
+                              hintStyle: theme.inputDecorationTheme.hintStyle,
+                              border: theme.inputDecorationTheme.border,
+                              enabledBorder:
+                                  theme.inputDecorationTheme.enabledBorder,
+                              focusedBorder:
+                                  theme.inputDecorationTheme.focusedBorder,
+                              contentPadding:
+                                  theme.inputDecorationTheme.contentPadding,
+                            ),
+                            onSubmitted: (_) => _performSearch(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12), // Spacing
+                      SizedBox(
+                        height: 44, // Height 44 px
+                        width: 100, // width approximate 100-120 px
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(
+                              0xFF2563EB,
+                            ), // blue-600
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8), // 8-12 px
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                          onPressed: _performSearch,
+                          child: const Text("Search"),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16), // Spacing
-
-                // Inline Search Field and Button
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 44, // Height 44 px
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(
-                              _isRfidSearch ? Icons.credit_card : Icons.person,
-                              size: 20, // 20 px
-                            ),
-                            hintText: _isRfidSearch ? "Enter RFID..." : "Enter User ID...",
-                            hintStyle: theme.inputDecorationTheme.hintStyle,
-                            border: theme.inputDecorationTheme.border,
-                            enabledBorder: theme.inputDecorationTheme.enabledBorder,
-                            focusedBorder: theme.inputDecorationTheme.focusedBorder,
-                            contentPadding: theme.inputDecorationTheme.contentPadding,
-                          ),
-                          onSubmitted: (_) => _performSearch(),
-                        ),
-                      ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Demo Sample Box
+            Container(
+              padding: const EdgeInsets.all(12), // p-3
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12), // rounded-lg
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromRGBO(0, 0, 0, 0.06),
+                    offset: Offset(0, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Sample IDs",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 12), // Spacing
-                    SizedBox(
-                      height: 44, // Height 44 px
-                      width: 100, // width approximate 100-120 px
-                      child: ElevatedButton(
-                        onPressed: _performSearch,
-                        child: const Text("Search"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB), // blue-600
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8), // 8-12 px
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "RFID: 1234567890",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'monospace',
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  Text(
+                    "User ID: user123",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Demo Sample Box
-          Container(
-            padding: const EdgeInsets.all(12), // p-3
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12), // rounded-lg
-              boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Sample IDs",
-                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "RFID: 1234567890",
-                  style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
-                ),
-                Text(
-                  "User ID: user123",
-                  style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Student Info Card (visible when _studentFound is true)
-          if (_studentFound)
-            _buildStudentInfoCard(context),
-          if (_studentFound) const SizedBox(height: 24), // gap-6
-
-          // Orders List
-          if (_studentFound)
-            _buildOrdersList(context)
-          else if (!_studentFound && _searchController.text.isNotEmpty)
-            _buildNoStudentFoundState(context),
-        ],
+            const SizedBox(height: 24), // gap-6
+            // Student Info Card (visible when _studentFound is true)
+            if (_studentFound) _buildStudentInfoCard(context),
+            if (_studentFound) const SizedBox(height: 24), // gap-6
+            // Orders List
+            if (_studentFound)
+              _buildOrdersList(context)
+            else if (!_studentFound && _searchController.text.isNotEmpty)
+              _buildNoStudentFoundState(context),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   void _performSearch() {
     // TODO: Implement actual search logic
     setState(() {
-      _studentFound = _searchController.text.isNotEmpty; // For demo, assume student found if search not empty
+      _studentFound = _searchController
+          .text
+          .isNotEmpty; // For demo, assume student found if search not empty
       _hasOrders = _studentFound; // For demo, assume orders if student found
     });
   }
@@ -228,7 +262,13 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)], // subtle shadow
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ], // subtle shadow
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -239,9 +279,19 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                 children: [
                   _buildStudentInfoItem(theme, "Student Name", studentName),
                   const SizedBox(height: 12),
-                  _buildStudentInfoItem(theme, "Student ID", studentId, isMonospace: true),
+                  _buildStudentInfoItem(
+                    theme,
+                    "Student ID",
+                    studentId,
+                    isMonospace: true,
+                  ),
                   const SizedBox(height: 12),
-                  _buildStudentInfoItem(theme, "Balance", balance, isBalance: true),
+                  _buildStudentInfoItem(
+                    theme,
+                    "Balance",
+                    balance,
+                    isBalance: true,
+                  ),
                 ],
               );
             } else {
@@ -249,9 +299,29 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Expanded(child: _buildStudentInfoItem(theme, "Student Name", studentName)),
-                  Expanded(child: _buildStudentInfoItem(theme, "Student ID", studentId, isMonospace: true)),
-                  Expanded(child: _buildStudentInfoItem(theme, "Balance", balance, isBalance: true)),
+                  Expanded(
+                    child: _buildStudentInfoItem(
+                      theme,
+                      "Student Name",
+                      studentName,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStudentInfoItem(
+                      theme,
+                      "Student ID",
+                      studentId,
+                      isMonospace: true,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildStudentInfoItem(
+                      theme,
+                      "Balance",
+                      balance,
+                      isBalance: true,
+                    ),
+                  ),
                 ],
               );
             }
@@ -261,7 +331,13 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
     );
   }
 
-  Widget _buildStudentInfoItem(ThemeData theme, String label, String value, {bool isMonospace = false, bool isBalance = false}) {
+  Widget _buildStudentInfoItem(
+    ThemeData theme,
+    String label,
+    String value, {
+    bool isMonospace = false,
+    bool isBalance = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,7 +352,9 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
             fontSize: 20, // 18-20 px
             fontWeight: FontWeight.w700,
             fontFamily: isMonospace ? 'monospace' : null,
-            color: isBalance ? const Color(0xFF16A34A) : const Color(0xFF111827), // green-600 for balance
+            color: isBalance
+                ? const Color(0xFF16A34A)
+                : const Color(0xFF111827), // green-600 for balance
           ),
         ),
       ],
@@ -395,7 +473,13 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+              boxShadow: [
+                BoxShadow(
+                  color: Color.fromRGBO(0, 0, 0, 0.06),
+                  offset: Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,7 +496,10 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: getStatusBackgroundColor(order['status']),
                         borderRadius: BorderRadius.circular(20), // full pill
@@ -427,7 +514,10 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: getOrderTypeBackgroundColor(order['type']),
                         borderRadius: BorderRadius.circular(20), // full pill
@@ -461,10 +551,15 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                       Padding(
                         padding: const EdgeInsets.only(left: 8.0),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(12), // rounded small pill
+                            borderRadius: BorderRadius.circular(
+                              12,
+                            ), // rounded small pill
                           ),
                           child: Text(
                             order['timeSlot'],
@@ -475,16 +570,19 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                   ],
                 ),
                 const SizedBox(height: 16), // Spacing
-
                 // Items block
                 Container(
                   padding: const EdgeInsets.all(12), // p-3
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC), // light gray rounded background
+                    color: const Color(
+                      0xFFF8FAFC,
+                    ), // light gray rounded background
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
-                    children: (order['items'] as List<dynamic>).map<Widget>((item) {
+                    children: (order['items'] as List<dynamic>).map<Widget>((
+                      item,
+                    ) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Row(
@@ -512,11 +610,16 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              _showSnackbar(context, "Order ${order['id']} approved");
+                              _showSnackbar(
+                                context,
+                                "Order ${order['id']} approved",
+                              );
                               // TODO: Update order status to Approved
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF16A34A), // green-600
+                              backgroundColor: const Color(
+                                0xFF16A34A,
+                              ), // green-600
                               foregroundColor: Colors.white,
                               minimumSize: const Size(0, 36), // height 36 px
                               shape: RoundedRectangleBorder(
@@ -530,11 +633,16 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              _showSnackbar(context, "Order ${order['id']} rejected");
+                              _showSnackbar(
+                                context,
+                                "Order ${order['id']} rejected",
+                              );
                               // TODO: Update order status to Rejected
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFDC2626), // red-600
+                              backgroundColor: const Color(
+                                0xFFDC2626,
+                              ), // red-600
                               foregroundColor: Colors.white,
                               minimumSize: const Size(0, 36), // height 36 px
                               shape: RoundedRectangleBorder(
@@ -599,10 +707,7 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
 
   void _showSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 }

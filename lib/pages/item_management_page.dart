@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:merchant/l10n/app_localizations.dart';
 
 class ItemManagementPage extends StatefulWidget {
   const ItemManagementPage({super.key});
@@ -9,12 +8,10 @@ class ItemManagementPage extends StatefulWidget {
 }
 
 class _ItemManagementPageState extends State<ItemManagementPage> {
-  String _searchQuery = "";
   String? _selectedCategory;
 
   @override
   Widget build(BuildContext context) {
-    
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -23,100 +20,110 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Item Management",
-                style: theme.textTheme.titleLarge, // font 24 px weight w700
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implement Add Item functionality (open modal)
-                  _showAddItemModal(context);
-                },
-                icon: const Icon(Icons.add, size: 24), // Plus icon
-                label: const Text("Add Item"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB), // blue-600
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8), // 8-12 px
-                  ),
-                  minimumSize: const Size(0, 44), // height 44 px
-                  padding: const EdgeInsets.symmetric(horizontal: 16), // Adjust padding
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Item Management",
+                  style: theme.textTheme.titleLarge, // font 24 px weight w700
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Filter bar
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12), // py-3, px-3
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12), // rounded-lg
-                            boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: Implement Add Item functionality (open modal)
+                    _showAddItemModal(context);
+                  },
+                  icon: const Icon(Icons.add, size: 24), // Plus icon
+                  label: const Text("Add Item"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB), // blue-600
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // 8-12 px
+                    ),
+                    minimumSize: const Size(0, 44), // height 44 px
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                    ), // Adjust padding
+                  ),
+                ),
+              ],
             ),
-            child: LayoutBuilder(
+            const SizedBox(height: 24), // gap-6
+            // Filter bar
+            Container(
+              padding: const EdgeInsets.symmetric(
+                vertical: 12,
+                horizontal: 12,
+              ), // py-3, px-3
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12), // rounded-lg
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromRGBO(0, 0, 0, 0.06),
+                    offset: Offset(0, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 640) {
+                    // Stacked on narrow screens
+                    return Column(
+                      children: [
+                        _buildSearchField(theme),
+                        const SizedBox(height: 12), // 12 px vertical gap
+                        _buildCategoryDropdown(theme),
+                      ],
+                    );
+                  } else {
+                    // Inline on wider screens
+                    return Row(
+                      children: [
+                        Expanded(child: _buildSearchField(theme)),
+                        const SizedBox(width: 16), // 12-16 px spacing
+                        _buildCategoryDropdown(theme),
+                      ],
+                    );
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Items grid
+            LayoutBuilder(
               builder: (context, constraints) {
+                int crossAxisCount;
                 if (constraints.maxWidth < 640) {
-                  // Stacked on narrow screens
-                  return Column(
-                    children: [
-                      _buildSearchField(theme),
-                      const SizedBox(height: 12), // 12 px vertical gap
-                      _buildCategoryDropdown(theme),
-                    ],
-                  );
+                  crossAxisCount = 1; // Narrow
+                } else if (constraints.maxWidth < 1024) {
+                  crossAxisCount = 2; // Medium
                 } else {
-                  // Inline on wider screens
-                  return Row(
-                    children: [
-                      Expanded(child: _buildSearchField(theme)),
-                      const SizedBox(width: 16), // 12-16 px spacing
-                      _buildCategoryDropdown(theme),
-                    ],
-                  );
+                  crossAxisCount = 3; // Wide
                 }
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16, // p-4
+                    mainAxisSpacing: 16, // p-4
+                    childAspectRatio: 0.7, // Adjust as needed for card content
+                  ),
+                  itemCount: 6, // Placeholder item count
+                  itemBuilder: (context, index) {
+                    return _buildItemCard(context, index);
+                  },
+                );
               },
             ),
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Items grid
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount;
-              if (constraints.maxWidth < 640) {
-                crossAxisCount = 1; // Narrow
-              } else if (constraints.maxWidth < 1024) {
-                crossAxisCount = 2; // Medium
-              } else {
-                crossAxisCount = 3; // Wide
-              }
-
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16, // p-4
-                  mainAxisSpacing: 16, // p-4
-                  childAspectRatio: 0.7, // Adjust as needed for card content
-                ),
-                itemCount: 6, // Placeholder item count
-                itemBuilder: (context, index) {
-                  return _buildItemCard(context, index);
-                },
-              );
-            },
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildSearchField(ThemeData theme) {
@@ -125,11 +132,14 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
       child: TextField(
         onChanged: (value) {
           setState(() {
-            _searchQuery = value;
+            // TODO: Implement search filter
           });
         },
         decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.search, size: 24), // Leading search icon 20-24 px
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 24,
+          ), // Leading search icon 20-24 px
           hintText: "Search items...",
           hintStyle: theme.inputDecorationTheme.hintStyle,
           border: theme.inputDecorationTheme.border,
@@ -142,7 +152,12 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
   }
 
   Widget _buildCategoryDropdown(ThemeData theme) {
-    final List<String> categories = ["All", "Veg", "Non-Veg", "Beverages"]; // Placeholder categories
+    final List<String> categories = [
+      "All",
+      "Veg",
+      "Non-Veg",
+      "Beverages",
+    ]; // Placeholder categories
 
     return Container(
       height: 44, // Height 44 px
@@ -155,7 +170,10 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedCategory ?? categories.first,
-          icon: const Icon(Icons.keyboard_arrow_down, size: 24), // Small chevron icon
+          icon: const Icon(
+            Icons.keyboard_arrow_down,
+            size: 24,
+          ), // Small chevron icon
           style: theme.textTheme.bodyLarge, // 14 px
           onChanged: (String? newValue) {
             setState(() {
@@ -163,10 +181,7 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
             });
           },
           items: categories.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
+            return DropdownMenuItem<String>(value: value, child: Text(value));
           }).toList(),
         ),
       ),
@@ -188,7 +203,13 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,9 +220,13 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                 Container(
                   height: 192, // 12 rem
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                     image: DecorationImage(
-                      image: AssetImage('assets/images/friedrice.png'), // Placeholder image
+                      image: AssetImage(
+                        'assets/images/friedrice.png',
+                      ), // Placeholder image
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -211,7 +236,9 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.5),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                       ),
                       child: Center(
                         child: Text(
@@ -230,12 +257,16 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFD1FAE5) : const Color(0xFFFEE2E2), // green-100 / red-100
+                      color: isActive
+                          ? const Color(0xFFD1FAE5)
+                          : const Color(0xFFFEE2E2), // green-100 / red-100
                       borderRadius: BorderRadius.circular(18), // circular
                     ),
                     child: Icon(
                       isActive ? Icons.visibility : Icons.visibility_off,
-                      color: isActive ? const Color(0xFF16A34A) : const Color(0xFFDC2626), // green-600 / red-600
+                      color: isActive
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFFDC2626), // green-600 / red-600
                       size: 20, // 18-20 px
                     ),
                   ),
@@ -257,12 +288,18 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                         style: theme.textTheme.titleMedium, // 18 px w600
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFECFDF5), // green-50
-                          borderRadius: BorderRadius.circular(4), // small rounded
+                          borderRadius: BorderRadius.circular(
+                            4,
+                          ), // small rounded
                         ),
-                        child: Text("\$12.99", // Placeholder price
+                        child: Text(
+                          "\$12.99", // Placeholder price
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: const Color(0xFF16A34A), // green-600
                             fontWeight: FontWeight.w700,
@@ -274,22 +311,27 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                   const SizedBox(height: 8), // top padding 8 px
                   Text(
                     "A short description of the item.", // Placeholder description
-                    style: theme.textTheme.bodyMedium, // 13-14 px, color #6B7280
+                    style:
+                        theme.textTheme.bodyMedium, // 13-14 px, color #6B7280
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12), // vertical spacing 8-12 px
-
                   // Info row(s)
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF3F4F6), // gray-100
-                          borderRadius: BorderRadius.circular(4), // small rounded
+                          borderRadius: BorderRadius.circular(
+                            4,
+                          ), // small rounded
                         ),
                         child: Text(
                           "Category", // Placeholder category
@@ -299,10 +341,15 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2FF), // blue-50
-                          borderRadius: BorderRadius.circular(4), // small rounded
+                          borderRadius: BorderRadius.circular(
+                            4,
+                          ), // small rounded
                         ),
                         child: Text(
                           "Instant Order", // Instant order indicator
@@ -314,7 +361,10 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.access_time, size: 16), // Small clock icon
+                          const Icon(
+                            Icons.access_time,
+                            size: 16,
+                          ), // Small clock icon
                           const SizedBox(width: 4),
                           Text(
                             "15 min", // Prep time
@@ -325,7 +375,6 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                     ],
                   ),
                   const SizedBox(height: 12), // vertical spacing 8-12 px
-
                   // Stock row
                   Row(
                     children: [
@@ -339,9 +388,15 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            side: BorderSide(color: theme.dividerColor), // Neutral background
+                            side: BorderSide(
+                              color: theme.dividerColor,
+                            ), // Neutral background
                           ),
-                          child: const Icon(Icons.remove, size: 20, color: Colors.black), // Minus button
+                          child: const Icon(
+                            Icons.remove,
+                            size: 20,
+                            color: Colors.black,
+                          ), // Minus button
                         ),
                       ),
                       Expanded(
@@ -349,7 +404,9 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                           child: Text(
                             isLowStock ? "5" : "50", // Stock number
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: isLowStock ? const Color(0xFFDC2626) : Colors.black, // red if low
+                              color: isLowStock
+                                  ? const Color(0xFFDC2626)
+                                  : Colors.black, // red if low
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -365,15 +422,20 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            side: BorderSide(color: theme.dividerColor), // Neutral background
+                            side: BorderSide(
+                              color: theme.dividerColor,
+                            ), // Neutral background
                           ),
-                          child: const Icon(Icons.add, size: 20, color: Colors.black), // Plus button
+                          child: const Icon(
+                            Icons.add,
+                            size: 20,
+                            color: Colors.black,
+                          ), // Plus button
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16), // p-4
-
                   // Action row
                   Row(
                     children: [
@@ -385,7 +447,9 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF6B7280), // gray
-                            side: const BorderSide(color: Color(0xFFE5E7EB)), // gray-200
+                            side: const BorderSide(
+                              color: Color(0xFFE5E7EB),
+                            ), // gray-200
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8), // 8 px
                             ),
@@ -401,7 +465,9 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                             // TODO: Implement Delete functionality
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFDC2626), // solid red
+                            backgroundColor: const Color(
+                              0xFFDC2626,
+                            ), // solid red
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8), // 8 px
@@ -467,17 +533,16 @@ class _ItemManagementPageState extends State<ItemManagementPage> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: "Category",
-                    ),
+                    decoration: const InputDecoration(labelText: "Category"),
                     value: "Veg", // Placeholder value
                     items: <String>["Veg", "Non-Veg", "Beverages"]
                         .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        })
+                        .toList(),
                     onChanged: (String? newValue) {
                       // TODO: Handle category change
                     },

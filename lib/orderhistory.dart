@@ -4,6 +4,7 @@ import 'package:merchant/api/api_client.dart';
 import 'package:merchant/api/api_constants.dart';
 
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/models/order_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:merchant/history/history_order_card.dart';
 import 'package:merchant/history/verification_dialog.dart';
@@ -21,7 +22,7 @@ class OrderHistory extends StatefulWidget {
 
 class _OrderHistoryState extends State<OrderHistory>
     with AutomaticKeepAliveClientMixin {
-  Map<int, Map<String, dynamic>> orderhistory = {};
+  Map<int, OrderItemContainer> orderhistory = {};
 
   List<int> searchResults = [];
 
@@ -36,7 +37,7 @@ class _OrderHistoryState extends State<OrderHistory>
   }
 
   Set<int> get deliverlater => orderhistory.entries
-      .where((entry) => entry.value['submitted'] == null)
+      .where((entry) => entry.value.submitted == null)
       .map((entry) => entry.key)
       .toSet();
 
@@ -48,7 +49,7 @@ class _OrderHistoryState extends State<OrderHistory>
         Map<String, dynamic> decoded = jsonDecode(orderHistoryString);
         orderhistory = decoded.map(
           (key, value) =>
-              MapEntry(int.parse(key), Map<String, dynamic>.from(value)),
+              MapEntry(int.parse(key), OrderItemContainer.fromJson(value)),
         );
       });
     }
@@ -56,12 +57,12 @@ class _OrderHistoryState extends State<OrderHistory>
 
   Future<void> _saveOrderHistory() async {
     final prefs = await SharedPreferences.getInstance();
-    final Map<int, Map<String, dynamic>> deliverlaterOrders = Map.fromEntries(
-      orderhistory.entries.where((entry) => entry.value['submitted'] == null),
+    final Map<int, OrderItemContainer> deliverlaterOrders = Map.fromEntries(
+      orderhistory.entries.where((entry) => entry.value.submitted == null),
     );
 
     final encoded = deliverlaterOrders.map(
-      (key, value) => MapEntry(key.toString(), value),
+      (key, value) => MapEntry(key.toString(), value.toJson()),
     );
     final orderHistoryString = json.encode(encoded);
 

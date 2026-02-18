@@ -4,11 +4,12 @@ import 'package:merchant/api/api_client.dart';
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/common/button_styles.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/models/order_models.dart';
 
 class VerificationDialog extends StatefulWidget {
   final bool isPortrait;
   final int canteenId;
-  final Function(int orderId, Map<String, dynamic> data) onOrderFetched;
+  final Function(int orderId, OrderItemContainer data) onOrderFetched;
   final Function(bool submit, int orderId) onMarkDelivered;
 
   const VerificationDialog({
@@ -29,7 +30,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
 
   int _orderId = 0;
   bool _rfid = false;
-  Map<String, dynamic>? _currentOrderData;
+  OrderItemContainer? _currentOrderData;
 
   @override
   void dispose() {
@@ -70,33 +71,22 @@ class _VerificationDialogState extends State<VerificationDialog> {
         final decodedJson = jsonDecode(response.body);
         if (decodedJson["data"] != null &&
             (decodedJson["data"] as List).isNotEmpty) {
-          for (var order in decodedJson["data"]) {
-            final int orderId = order["order_id"];
-            final int price = order["total_price"];
-            final List<String> names = [];
-            final List<int> counts = [];
-            final List<dynamic> statuses = [];
+          // We only take the first order if multiple are returned?
+          // The previous code iterated properly but only displayed the last one in `_currentOrderData`.
+          // `onOrderFetched` was called for all.
+          // Let's keep the same behavior: iterate all, callback all, but display one (the last one).
 
-            for (var item in order["items"]) {
-              names.add(item["name"]);
-              counts.add(item["quantity"]);
-              statuses.add(null);
-            }
+          for (var orderJson in decodedJson["data"]) {
+            // Parse using our new model
+            // The API response "data" is a list of OrderItemsContainer structure
+            final orderContainer = OrderItemContainer.fromJson(orderJson);
 
-            final orderData = {
-              'name': names,
-              'count': counts,
-              'price': price,
-              'status': statuses,
-              'submitted': null,
-            };
-
-            widget.onOrderFetched(orderId, orderData);
+            widget.onOrderFetched(orderContainer.orderId, orderContainer);
 
             if (mounted) {
               setState(() {
-                _orderId = orderId;
-                _currentOrderData = orderData;
+                _orderId = orderContainer.orderId;
+                _currentOrderData = orderContainer;
                 _isLoading = false;
               });
             }
@@ -235,16 +225,17 @@ class _VerificationDialogState extends State<VerificationDialog> {
   ) {
     if (_currentOrderData == null) return const SizedBox.shrink();
 
-    final names = _currentOrderData!['name'] as List;
-    final counts = _currentOrderData!['count'] as List;
-    // We create a local copy of status for editing in the dialog
-    final currentStatus = List<bool?>.from(
-      _currentOrderData!['status'] as List,
-    );
-    final bool? isSubmitted = (_currentOrderData!['submitted'] == null)
-        ? null
-        : false;
-    final int price = _currentOrderData!['price'];
+    final items = _currentOrderData!.items;
+
+    // We create a local copy of status for editing in the dialog.
+    // Since 'status' is not part of ItemContainer (it was part of the ad-hoc Map structure before),
+    // we need to manage it locally.
+    // The previous logic had a list of statuses corresponding to items.
+    // We will initialize it with nulls.
+    final currentStatus = List<bool?>.filled(items.length, null);
+
+    final bool? isSubmitted = _currentOrderData!.submitted;
+    final int price = _currentOrderData!.totalPrice;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 10),
@@ -278,7 +269,8 @@ class _VerificationDialogState extends State<VerificationDialog> {
                 ),
                 const SizedBox(height: 15.00),
                 Divider(thickness: 1, color: theme.dividerColor),
-                ...List.generate(names.length, (i) {
+                ...List.generate(items.length, (i) {
+                  final item = items[i];
                   return Column(
                     children: [
                       Row(
@@ -312,13 +304,13 @@ class _VerificationDialogState extends State<VerificationDialog> {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "${names[i]}",
+                              item.name,
                               style: theme.textTheme.bodyLarge,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            "x ${counts[i]}",
+                            "x ${item.quantity}",
                             style: theme.textTheme.bodyLarge,
                           ),
                           Checkbox(
@@ -362,8 +354,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                                 context,
                                 theme,
                                 localizations,
-                                names,
-                                counts,
+                                items,
                                 currentStatus,
                               );
                             },
@@ -389,8 +380,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
     BuildContext context,
     ThemeData theme,
     AppLocalizations localizations,
-    List names,
-    List counts,
+    List<ItemContainer> items,
     List<bool?> currentStatus,
   ) {
     showDialog(
@@ -402,7 +392,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                for (int i = 0; i < names.length; i++)
+                for (int i = 0; i < items.length; i++)
                   Column(
                     children: [
                       Row(
@@ -411,7 +401,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                           Expanded(
                             flex: 2,
                             child: Text(
-                              "${names[i]}",
+                              items[i].name,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: currentStatus[i] == true
                                     ? theme.colorScheme.secondary
@@ -426,7 +416,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                           Expanded(
                             flex: 1,
                             child: Text(
-                              "x ${counts[i]}",
+                              "x ${items[i].quantity}",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 fontSize: 16,
                               ),
@@ -487,14 +477,36 @@ class _VerificationDialogState extends State<VerificationDialog> {
                       bool isAllTrue = currentStatus.every((e) => e == true);
                       bool isAllFalse = currentStatus.every((e) => e == false);
 
-                      Map<String, dynamic> updatedData = Map.from(
-                        _currentOrderData!,
-                      );
-                      updatedData['status'] = List<bool?>.from(currentStatus);
+                      OrderItemContainer updatedData = _currentOrderData!;
+
+                      // NOTE: We don't have a 'status' field in OrderItemContainer's items list to persist individual item status.
+                      // The API response schema for fetching order usually just has items.
+                      // It seems the intent of this dialog is to verify items and then 'submit' the whole order or part of it?
+                      // The previous code put 'status' into the Map.
+                      // And previous code 'markdelivered' only took `bool submit` and `orderId`.
+                      // It didn't seem to send per-item status back to server, only order-level action.
+                      // If `isAllTrue` -> delivered. If not -> maybe just local state?
+
+                      // Wait, previous code:
+                      /*
+                        if (!isAllTrue && !isAllFalse) {
+                          updatedData['submitted'] = null;
+                         widget.onOrderFetched(_orderId, updatedData);
+                         // ... snackbar "Made order(s) to be delivered later"
+                        } else {
+                          updatedData['submitted'] = true;
+                          widget.onOrderFetched(_orderId, updatedData);
+                          widget.onMarkDelivered(isAllTrue, _orderId);
+                        }
+                      */
+
+                      // So if we have partial selection, we just update local state (implicit "Deliver Later").
+                      // We can achieve this by adding `submitted` field to OrderItemContainer (which I did).
 
                       if (!isAllTrue && !isAllFalse) {
-                        updatedData['submitted'] = null;
                         // Partial -> Deliver Later
+                        // We are updating the container to set submitted = null (which it already is by default perhaps?)
+                        updatedData = updatedData.copyWith(submitted: null);
                         widget.onOrderFetched(_orderId, updatedData);
 
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -511,7 +523,7 @@ class _VerificationDialogState extends State<VerificationDialog> {
                         );
                       } else {
                         // All true or All false
-                        updatedData['submitted'] = true;
+                        updatedData = updatedData.copyWith(submitted: true);
                         widget.onOrderFetched(_orderId, updatedData);
                         widget.onMarkDelivered(isAllTrue, _orderId);
                       }

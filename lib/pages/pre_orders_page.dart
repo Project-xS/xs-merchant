@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:merchant/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:merchant/providers/auth_provider.dart';
-import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
+import 'package:merchant/models/order_models.dart';
 
 class PreOrdersPage extends StatefulWidget {
   const PreOrdersPage({super.key});
@@ -12,8 +11,8 @@ class PreOrdersPage extends StatefulWidget {
   State<PreOrdersPage> createState() => _PreOrdersPageState();
 }
 
-
-class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreOrdersPage> {
+class _PreOrdersPageState extends State<PreOrdersPage>
+    with OrderFetchMixin<PreOrdersPage> {
   String? _selectedTimeSlot = "All";
   String? _selectedStatus = "All";
   List<Map<String, dynamic>> _allPreOrders = [];
@@ -21,10 +20,11 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
   bool _isLoading = true;
 
   @override
-  int get canteenIdForOrders => Provider.of<AuthProvider>(context, listen: false).canteenId ?? 0;
+  int get canteenIdForOrders =>
+      Provider.of<AuthProvider>(context, listen: false).canteenId ?? 0;
 
   @override
-  void onOrdersUpdated(Map<String, Map<String, dynamic>> orders) {
+  void onOrdersUpdated(Map<String, List<ActiveOrderItem>> orders) {
     setState(() {
       _allPreOrders = _transformOrders(orders);
       _applyFilters();
@@ -41,41 +41,37 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
     _showSnackbar(context, "Error fetching pre-orders: $error");
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Initial fetch is triggered by OrderFetchMixin's initState
-  }
-
-  List<Map<String, dynamic>> _transformOrders(Map<String, Map<String, dynamic>> fetchedOrders) {
+  List<Map<String, dynamic>> _transformOrders(
+    Map<String, List<ActiveOrderItem>> fetchedOrders,
+  ) {
     List<Map<String, dynamic>> transformedList = [];
     int orderIdCounter = 1;
 
-    fetchedOrders.forEach((time, orderData) {
+    fetchedOrders.forEach((time, orderItems) {
       List<dynamic> items = [];
       double totalAmount = 0.0;
 
-      List<String> itemNames = (orderData['name'] as List).map((e) => e.toString()).toList();
-      List<int> itemCounts = (orderData['count'] as List).map((e) => e as int).toList();
-
-      for (int i = 0; i < itemNames.length; i++) {
+      for (var item in orderItems) {
         // Placeholder for subtotal, as it's not directly available from OrderFetchMixin
         // In a real scenario, you'd fetch item prices or calculate based on known prices.
-        double subtotal = itemCounts[i] * 5.0; // Assuming a placeholder price of 5.0 per item
+        double subtotal =
+            item.numOrdered *
+            5.0; // Assuming a placeholder price of 5.0 per item
         totalAmount += subtotal;
 
         items.add({
-          'name': itemNames[i],
-          'quantity': itemCounts[i],
-          'subtotal': '\${subtotal.toStringAsFixed(2)}',
+          'name': item.itemName,
+          'quantity': item.numOrdered,
+          'subtotal': '\$${subtotal.toStringAsFixed(2)}',
         });
       }
 
       transformedList.add({
         'displayId': 'PRE${orderIdCounter.toString().padLeft(3, '0')}',
-        'status': 'Pending', // Default status, can be updated based on actual API response if available
+        'status':
+            'Pending', // Default status, can be updated based on actual API response if available
         'type': 'Pre-order',
-        'amount': '\${totalAmount.toStringAsFixed(2)}',
+        'amount': '\$${totalAmount.toStringAsFixed(2)}',
         'time': time,
         'timeSlot': _getTimeSlotFromTime(time), // Derive time slot from time
         'items': items,
@@ -103,7 +99,8 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
     _filteredPreOrders = _allPreOrders.where((order) {
       bool matchesTimeSlot = true;
       if (_selectedTimeSlot != null && _selectedTimeSlot != 'All') {
-        matchesTimeSlot = order['timeSlot']?.contains(_selectedTimeSlot!) ?? false;
+        matchesTimeSlot =
+            order['timeSlot']?.contains(_selectedTimeSlot!) ?? false;
       }
 
       bool matchesStatus = true;
@@ -116,7 +113,12 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
 
   @override
   Widget build(BuildContext context) {
-    final List<String> uniqueTimeSlots = _allPreOrders.map((order) => _getTimeSlotFromTime(order['time'] as String)).toSet().toList()..sort();
+    final List<String> uniqueTimeSlots =
+        _allPreOrders
+            .map((order) => _getTimeSlotFromTime(order['time'] as String))
+            .toSet()
+            .toList()
+          ..sort();
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -125,71 +127,80 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Header
-          Text(
-            "Pre-Orders",
-            style: theme.textTheme.titleLarge, // font 24 px
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount;
-              if (constraints.maxWidth < 640) {
-                crossAxisCount = 1; // Narrow
-              } else {
-                crossAxisCount = 2; // Wide
-              }
-
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16, // p-4
-                  mainAxisSpacing: 16, // p-4
-                  childAspectRatio: 2.0, // Adjust as needed
-                ),
-                itemCount: uniqueTimeSlots.length,
-                itemBuilder: (context, index) {
-                  return _buildTimeSlotCard(context, index, uniqueTimeSlots);
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Global filter bar
-          Container(
-            padding: const EdgeInsets.all(12), // p-3
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12), // rounded-lg
-              boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+            // Header
+            Text(
+              "Pre-Orders",
+              style: theme.textTheme.titleLarge, // font 24 px
             ),
-            child: Row(
-              children: [
-                Expanded(child: _buildTimeSlotDropdown(theme)),
-                const SizedBox(width: 12), // Spacing
-                Expanded(child: _buildStatusDropdown(theme)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24), // gap-6
+            const SizedBox(height: 24), // gap-6
 
-          // Pre-orders list area
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator())
-          else if (_filteredPreOrders.isNotEmpty)
-            _buildPreOrdersList(context)
-          else
-            _buildNoPreOrdersState(context),
-        ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                int crossAxisCount;
+                if (constraints.maxWidth < 640) {
+                  crossAxisCount = 1; // Narrow
+                } else {
+                  crossAxisCount = 2; // Wide
+                }
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16, // p-4
+                    mainAxisSpacing: 16, // p-4
+                    childAspectRatio: 2.0, // Adjust as needed
+                  ),
+                  itemCount: uniqueTimeSlots.length,
+                  itemBuilder: (context, index) {
+                    return _buildTimeSlotCard(context, index, uniqueTimeSlots);
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Global filter bar
+            Container(
+              padding: const EdgeInsets.all(12), // p-3
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12), // rounded-lg
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromRGBO(0, 0, 0, 0.06),
+                    offset: Offset(0, 1),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: _buildTimeSlotDropdown(theme)),
+                  const SizedBox(width: 12), // Spacing
+                  Expanded(child: _buildStatusDropdown(theme)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Pre-orders list area
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (_filteredPreOrders.isNotEmpty)
+              _buildPreOrdersList(context)
+            else
+              _buildNoPreOrdersState(context),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
-  Widget _buildTimeSlotCard(BuildContext context, int index, List<String> uniqueTimeSlots) {
+  Widget _buildTimeSlotCard(
+    BuildContext context,
+    int index,
+    List<String> uniqueTimeSlots,
+  ) {
     final theme = Theme.of(context);
 
     if (index >= uniqueTimeSlots.length) {
@@ -197,17 +208,28 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
     }
 
     final String timeSlotName = uniqueTimeSlots[index];
-    final String timeRange = timeSlotName.substring(timeSlotName.indexOf('(') + 1, timeSlotName.indexOf(')'));
+    final String timeRange = timeSlotName.substring(
+      timeSlotName.indexOf('(') + 1,
+      timeSlotName.indexOf(')'),
+    );
 
     // Calculate placeholder stats based on filtered orders for this time slot
-    final List<Map<String, dynamic>> ordersInSlot = _allPreOrders.where((order) => _getTimeSlotFromTime(order['time'] as String) == timeSlotName).toList();
+    final List<Map<String, dynamic>> ordersInSlot = _allPreOrders
+        .where(
+          (order) =>
+              _getTimeSlotFromTime(order['time'] as String) == timeSlotName,
+        )
+        .toList();
     final int totalOrders = ordersInSlot.length;
-    final int pendingOrders = ordersInSlot.where((order) => order['status'] == 'Pending').length;
+    final int pendingOrders = ordersInSlot
+        .where((order) => order['status'] == 'Pending')
+        .length;
     double revenue = 0.0;
     // Since subtotal is a placeholder, revenue will also be a placeholder calculation
     for (var order in ordersInSlot) {
       for (var item in order['items']) {
-        revenue += (item['quantity'] as int) * 5.0; // Using the same placeholder price
+        revenue +=
+            (item['quantity'] as int) * 5.0; // Using the same placeholder price
       }
     }
 
@@ -221,7 +243,13 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)], // subtle shadow
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ], // subtle shadow
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +262,9 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      timeSlotName.split(' (').first, // Display only the name part
+                      timeSlotName
+                          .split(' (')
+                          .first, // Display only the name part
                       style: theme.textTheme.titleMedium, // 16 px
                     ),
                     Text(
@@ -247,42 +277,69 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: (pendingOrders > 0) ? const Color(0xFFFEF3C7) : Colors.grey.shade200, // active color tint based on pending orders
+                    color: (pendingOrders > 0)
+                        ? const Color(0xFFFEF3C7)
+                        : Colors
+                              .grey
+                              .shade200, // active color tint based on pending orders
                     borderRadius: BorderRadius.circular(18), // circular
                   ),
                   child: Icon(
                     Icons.access_time,
-                    color: (pendingOrders > 0) ? const Color(0xFFD97706) : Colors.grey.shade600,
+                    color: (pendingOrders > 0)
+                        ? const Color(0xFFD97706)
+                        : Colors.grey.shade600,
                     size: 20,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16), // Spacing
-
             // Small 3-stat inline row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem(theme, Icons.list_alt, totalOrders.toString(), "Total Orders"),
-                _buildStatItem(theme, Icons.pending_actions, pendingOrders.toString(), "Pending"),
-                _buildStatItem(theme, Icons.attach_money, '\${revenue.toStringAsFixed(2)}', "Revenue"),
+                _buildStatItem(
+                  theme,
+                  Icons.list_alt,
+                  totalOrders.toString(),
+                  "Total Orders",
+                ),
+                _buildStatItem(
+                  theme,
+                  Icons.pending_actions,
+                  pendingOrders.toString(),
+                  "Pending",
+                ),
+                _buildStatItem(
+                  theme,
+                  Icons.attach_money,
+                  '\$${revenue.toStringAsFixed(2)}',
+                  "Revenue",
+                ),
               ],
             ),
             const SizedBox(height: 16), // Spacing
-
             // Optional top items list (simplified)
             // Since top items are not directly available, we can show a generic message or omit.
             Text(
               "Items in this slot",
-              style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             if (ordersInSlot.isNotEmpty)
-              ...ordersInSlot.take(2).map((order) => Text(
-                "${(order['items'] as List).map((item) => item['name']).join(', ')}",
-                style: theme.textTheme.bodyLarge, // 14 px
-              )).toList()
+              ...ordersInSlot
+                  .take(2)
+                  .map(
+                    (order) => Text(
+                      (order['items'] as List)
+                          .map((item) => item['name'])
+                          .join(', '),
+                      style: theme.textTheme.bodyLarge, // 14 px
+                    ),
+                  )
             else
               Text(
                 "No items",
@@ -294,14 +351,22 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
     );
   }
 
-  Widget _buildStatItem(ThemeData theme, IconData icon, String value, String label) {
+  Widget _buildStatItem(
+    ThemeData theme,
+    IconData icon,
+    String value,
+    String label,
+  ) {
     return Column(
       children: [
         Icon(icon, size: 24, color: theme.textTheme.bodyMedium?.color),
         const SizedBox(height: 4),
         Text(
           value,
-          style: theme.textTheme.titleMedium?.copyWith(fontSize: 20, fontWeight: FontWeight.w700), // 18-20 px bold
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ), // 18-20 px bold
         ),
         Text(
           label,
@@ -312,7 +377,11 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
   }
 
   Widget _buildTimeSlotDropdown(ThemeData theme) {
-    final List<String> uniqueTimes = ["All", ..._allPreOrders.map((order) => order['time'] as String).toSet().toList()..sort()];
+    final List<String> uniqueTimes = [
+      "All",
+      ..._allPreOrders.map((order) => order['time'] as String).toSet().toList()
+        ..sort(),
+    ];
 
     return SizedBox(
       height: 44, // Height 44 px
@@ -326,10 +395,7 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
         ),
         value: _selectedTimeSlot ?? uniqueTimes.first,
         items: uniqueTimes.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
+          return DropdownMenuItem<String>(value: value, child: Text(value));
         }).toList(),
         onChanged: (String? newValue) {
           setState(() {
@@ -342,7 +408,13 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
   }
 
   Widget _buildStatusDropdown(ThemeData theme) {
-    final List<String> statuses = ["All", "Pending", "Approved", "Rejected", "Completed"]; // Placeholder statuses
+    final List<String> statuses = [
+      "All",
+      "Pending",
+      "Approved",
+      "Rejected",
+      "Completed",
+    ]; // Placeholder statuses
 
     return SizedBox(
       height: 44, // Height 44 px
@@ -356,10 +428,7 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
         ),
         value: _selectedStatus ?? statuses.first,
         items: statuses.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
+          return DropdownMenuItem<String>(value: value, child: Text(value));
         }).toList(),
         onChanged: (String? newValue) {
           setState(() {
@@ -391,7 +460,13 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+              boxShadow: [
+                BoxShadow(
+                  color: Color.fromRGBO(0, 0, 0, 0.06),
+                  offset: Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,7 +483,10 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: getStatusBackgroundColor(order['status']),
                         borderRadius: BorderRadius.circular(20), // full pill
@@ -423,7 +501,10 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: getOrderTypeBackgroundColor(order['type']),
                         borderRadius: BorderRadius.circular(20), // full pill
@@ -451,16 +532,19 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                   ],
                 ),
                 const SizedBox(height: 16), // Spacing
-
                 // Items block
                 Container(
                   padding: const EdgeInsets.all(12), // p-3
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC), // light gray rounded background
+                    color: const Color(
+                      0xFFF8FAFC,
+                    ), // light gray rounded background
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
-                    children: (order['items'] as List<dynamic>).map<Widget>((item) {
+                    children: (order['items'] as List<dynamic>).map<Widget>((
+                      item,
+                    ) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Row(
@@ -485,11 +569,16 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              _showSnackbar(context, "Pre-order ${order['displayId']} approved");
+                              _showSnackbar(
+                                context,
+                                "Pre-order ${order['displayId']} approved",
+                              );
                               // TODO: Update order status to Approved
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF16A34A), // green-600
+                              backgroundColor: const Color(
+                                0xFF16A34A,
+                              ), // green-600
                               foregroundColor: Colors.white,
                               minimumSize: const Size(0, 36), // height 36 px
                               shape: RoundedRectangleBorder(
@@ -503,11 +592,16 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              _showSnackbar(context, "Pre-order ${order['displayId']} rejected");
+                              _showSnackbar(
+                                context,
+                                "Pre-order ${order['displayId']} rejected",
+                              );
                               // TODO: Update order status to Rejected
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFDC2626), // red-600
+                              backgroundColor: const Color(
+                                0xFFDC2626,
+                              ), // red-600
                               foregroundColor: Colors.white,
                               minimumSize: const Size(0, 36), // height 36 px
                               shape: RoundedRectangleBorder(
@@ -529,56 +623,56 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
   }
 
   Color getStatusColor(String status) {
-      switch (status) {
-        case 'Pending':
-          return const Color(0xFFD97706); // yellow-600
-        case 'Approved':
-          return const Color(0xFF16A34A); // green-600
-        case 'Completed':
-          return const Color(0xFF2563EB); // blue-600
-        case 'Rejected':
-          return const Color(0xFFDC2626); // red-600
-        default:
-          return Colors.grey;
-      }
+    switch (status) {
+      case 'Pending':
+        return const Color(0xFFD97706); // yellow-600
+      case 'Approved':
+        return const Color(0xFF16A34A); // green-600
+      case 'Completed':
+        return const Color(0xFF2563EB); // blue-600
+      case 'Rejected':
+        return const Color(0xFFDC2626); // red-600
+      default:
+        return Colors.grey;
     }
+  }
 
-    Color getStatusBackgroundColor(String status) {
-      switch (status) {
-        case 'Pending':
-          return const Color(0xFFFEF3C7); // yellow-100
-        case 'Approved':
-          return const Color(0xFFD1FAE5); // green-100
-        case 'Completed':
-          return const Color(0xFFEFF6FF); // blue-50
-        case 'Rejected':
-          return const Color(0xFFFEE2E2); // red-100
-        default:
-          return Colors.grey.shade200;
-      }
+  Color getStatusBackgroundColor(String status) {
+    switch (status) {
+      case 'Pending':
+        return const Color(0xFFFEF3C7); // yellow-100
+      case 'Approved':
+        return const Color(0xFFD1FAE5); // green-100
+      case 'Completed':
+        return const Color(0xFFEFF6FF); // blue-50
+      case 'Rejected':
+        return const Color(0xFFFEE2E2); // red-100
+      default:
+        return Colors.grey.shade200;
     }
+  }
 
-    Color getOrderTypeColor(String type) {
-      switch (type) {
-        case 'Instant':
-          return const Color(0xFF4338CA); // blue-700 (example)
-        case 'Pre-order':
-          return Colors.orange.shade700; // orange (example)
-        default:
-          return Colors.grey;
-      }
+  Color getOrderTypeColor(String type) {
+    switch (type) {
+      case 'Instant':
+        return const Color(0xFF4338CA); // blue-700 (example)
+      case 'Pre-order':
+        return Colors.orange.shade700; // orange (example)
+      default:
+        return Colors.grey;
     }
+  }
 
-    Color getOrderTypeBackgroundColor(String type) {
-      switch (type) {
-        case 'Instant':
-          return const Color(0xFFEEF2FF); // blue-50 (example)
-        case 'Pre-order':
-          return Colors.orange.shade50; // orange (example)
-        default:
-          return Colors.grey.shade200;
-      }
+  Color getOrderTypeBackgroundColor(String type) {
+    switch (type) {
+      case 'Instant':
+        return const Color(0xFFEEF2FF); // blue-50 (example)
+      case 'Pre-order':
+        return Colors.orange.shade50; // orange (example)
+      default:
+        return Colors.grey.shade200;
     }
+  }
 
   Widget _buildNoPreOrdersState(BuildContext context) {
     final theme = Theme.of(context);
@@ -603,10 +697,7 @@ class _PreOrdersPageState extends State<PreOrdersPage> with OrderFetchMixin<PreO
 
   void _showSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 }

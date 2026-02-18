@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/models/order_models.dart';
 
 class Orders extends StatefulWidget {
   final bool portrait;
@@ -12,13 +13,13 @@ class Orders extends StatefulWidget {
 }
 
 class OrdersState extends State<Orders> with OrderFetchMixin<Orders> {
-  Map<String, Map<String, dynamic>> orders = {};
+  Map<String, List<ActiveOrderItem>> orders = {};
 
   @override
   int get canteenIdForOrders => widget.canteenId;
 
   @override
-  void onOrdersUpdated(Map<String, Map<String, dynamic>> orders) {
+  void onOrdersUpdated(Map<String, List<ActiveOrderItem>> orders) {
     if (mounted) {
       setState(() {
         this.orders = orders;
@@ -91,18 +92,19 @@ class OrdersState extends State<Orders> with OrderFetchMixin<Orders> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
-                ...List.generate(orders[orderTime]!['name'].length, (i) {
+                ...List.generate(orders[orderTime]!.length, (i) {
+                  final item = orders[orderTime]![i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          orders[orderTime]!['name'][i],
+                          item.itemName,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         Text(
-                          "x${orders[orderTime]!['count'][i]}",
+                          "x${item.numOrdered}",
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ],

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:merchant/l10n/app_localizations.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -15,95 +13,91 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Top Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Dashboard",
-                style: theme.textTheme.titleLarge, // font 24 px, weight w700
-              ),
-              // Optional small subtitle or action area
-            ],
-          ),
-          const SizedBox(height: 8), // Spacing between title and subtitle if present
-          Text(
-            "Welcome to your Canteen Dashboard!", // Placeholder subtitle
-            style: theme.textTheme.bodyMedium, // font 14 px, color #6B7280
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Stats Area
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount;
-              if (constraints.maxWidth < 640) {
-                crossAxisCount = 1; // Narrow
-              } else if (constraints.maxWidth < 1024) {
-                crossAxisCount = 2; // Medium
-              } else {
-                crossAxisCount = 4; // Wide
-              }
-
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16, // p-4
-                  mainAxisSpacing: 16, // p-4
-                  childAspectRatio: 1.8, // Adjust as needed for card content
+            // Top Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Dashboard",
+                  style: theme.textTheme.titleLarge, // font 24 px, weight w700
                 ),
-                itemCount: 4, // Example: Total Orders, Total Revenue, etc.
-                itemBuilder: (context, index) {
-                  return _buildStatCard(context, index);
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 24), // gap-6
+                // Optional small subtitle or action area
+              ],
+            ),
+            const SizedBox(
+              height: 8,
+            ), // Spacing between title and subtitle if present
+            Text(
+              "Welcome to your Canteen Dashboard!", // Placeholder subtitle
+              style: theme.textTheme.bodyMedium, // font 14 px, color #6B7280
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Stats Area
+            LayoutBuilder(
+              builder: (context, constraints) {
+                int crossAxisCount;
+                if (constraints.maxWidth < 640) {
+                  crossAxisCount = 1; // Narrow
+                } else if (constraints.maxWidth < 1024) {
+                  crossAxisCount = 2; // Medium
+                } else {
+                  crossAxisCount = 4; // Wide
+                }
 
-          // Two-column content below stats
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 640) {
-                // Stacked on narrow screens
-                return Column(
-                  children: [
-                    _buildTopSellingItemsCard(context),
-                    const SizedBox(height: 16), // p-4
-                    _buildLowStockAlertsCard(context),
-                  ],
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16, // p-4
+                    mainAxisSpacing: 16, // p-4
+                    childAspectRatio: 1.8, // Adjust as needed for card content
+                  ),
+                  itemCount: 4, // Example: Total Orders, Total Revenue, etc.
+                  itemBuilder: (context, index) {
+                    return _buildStatCard(context, index);
+                  },
                 );
-              } else {
-                // Two columns on wider screens
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildTopSellingItemsCard(context),
-                    ),
-                    const SizedBox(width: 16), // p-4
-                    Expanded(
-                      child: _buildLowStockAlertsCard(context),
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 24), // gap-6
-
-          // Recent Orders Table
-          Text(
-            "Recent Orders",
-            style: theme.textTheme.titleMedium, // font 16 px, weight w600
-          ),
-          const SizedBox(height: 16), // p-4
-          _buildRecentOrdersTable(context),
-        ],
+              },
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Two-column content below stats
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 640) {
+                  // Stacked on narrow screens
+                  return Column(
+                    children: [
+                      _buildTopSellingItemsCard(context),
+                      const SizedBox(height: 16), // p-4
+                      _buildLowStockAlertsCard(context),
+                    ],
+                  );
+                } else {
+                  // Two columns on wider screens
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildTopSellingItemsCard(context)),
+                      const SizedBox(width: 16), // p-4
+                      Expanded(child: _buildLowStockAlertsCard(context)),
+                    ],
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 24), // gap-6
+            // Recent Orders Table
+            Text(
+              "Recent Orders",
+              style: theme.textTheme.titleMedium, // font 16 px, weight w600
+            ),
+            const SizedBox(height: 16), // p-4
+            _buildRecentOrdersTable(context),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildStatCard(BuildContext context, int index) {
@@ -152,7 +146,13 @@ class DashboardPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +255,13 @@ class DashboardPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +305,8 @@ class DashboardPage extends StatelessWidget {
                             ),
                             Text(
                               item['category'],
-                              style: theme.textTheme.bodySmall, // 12 px, gray-500
+                              style:
+                                  theme.textTheme.bodySmall, // 12 px, gray-500
                             ),
                           ],
                         ),
@@ -348,7 +355,13 @@ class DashboardPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), offset: Offset(0, 1), blurRadius: 3)],
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.06),
+              offset: Offset(0, 1),
+              blurRadius: 3,
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,10 +383,7 @@ class DashboardPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          item['name'],
-                          style: theme.textTheme.bodyLarge,
-                        ),
+                        Text(item['name'], style: theme.textTheme.bodyLarge),
                         Text(
                           "${item['stock']} left",
                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -487,66 +497,97 @@ class DashboardPage extends StatelessWidget {
         headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
         columns: [
           DataColumn(
-              label: Text('Order ID',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827)))),
+            label: Text(
+              'Order ID',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
           DataColumn(
-              label: Text('Student',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827)))),
+            label: Text(
+              'Student',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
           DataColumn(
-              label: Text('Items',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827)))),
+            label: Text(
+              'Items',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
           DataColumn(
-              label: Text('Amount',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827)))),
+            label: Text(
+              'Amount',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
           DataColumn(
-              label: Text('Status',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827)))),
+            label: Text(
+              'Status',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
           DataColumn(
-              label: Text('Time',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF111827)))),
+            label: Text(
+              'Time',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF111827),
+              ),
+            ),
+          ),
         ],
         rows: orders.map((order) {
           return DataRow(
             cells: [
-              DataCell(Text(
-                order['id'],
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontFamily: 'monospace', // Monospace font
-                  fontSize: 13,
+              DataCell(
+                Text(
+                  order['id'],
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontFamily: 'monospace', // Monospace font
+                    fontSize: 13,
+                  ),
                 ),
-              )),
-              DataCell(Text(
-                order['student'],
-                style: theme.textTheme.bodyLarge,
-              )),
-              DataCell(Text(
-                order['items'],
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyLarge,
-              )),
-              DataCell(Text(
-                order['amount'],
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+              ),
+              DataCell(
+                Text(order['student'], style: theme.textTheme.bodyLarge),
+              ),
+              DataCell(
+                Text(
+                  order['items'],
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyLarge,
                 ),
-              )),
+              ),
+              DataCell(
+                Text(
+                  order['amount'],
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
               DataCell(
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: getStatusBackgroundColor(order['status']),
                     borderRadius: BorderRadius.circular(20), // full pill
@@ -560,10 +601,12 @@ class DashboardPage extends StatelessWidget {
                   ),
                 ),
               ),
-              DataCell(Text(
-                order['time'],
-                style: theme.textTheme.bodySmall, // 13-14 px, color #6B7280
-              )),
+              DataCell(
+                Text(
+                  order['time'],
+                  style: theme.textTheme.bodySmall, // 13-14 px, color #6B7280
+                ),
+              ),
             ],
           );
         }).toList(),

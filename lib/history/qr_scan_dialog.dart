@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/l10n/app_localizations.dart';
+import 'package:merchant/models/order_models.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QrScanDialog extends StatefulWidget {
@@ -24,7 +25,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
   final MobileScannerController _scannerController = MobileScannerController();
 
   bool _isProcessing = false;
-  Map<String, dynamic>? _orderData;
+  OrderItemContainer? _orderData;
   String? _error;
   String _scanBuffer = '';
   Timer? _scanDebounce;
@@ -103,7 +104,10 @@ class _QrScanDialogState extends State<QrScanDialog> {
           decoded != null &&
           decoded['status'] == 'ok') {
         setState(() {
-          _orderData = decoded?['data'] as Map<String, dynamic>?;
+          final data = decoded?['data'];
+          if (data != null) {
+            _orderData = OrderItemContainer.fromJson(data);
+          }
           _error = null;
         });
         _recordResult(trimmed);
@@ -321,31 +325,29 @@ class _QrScanDialogState extends State<QrScanDialog> {
           onPressed: (_orderData == null || _isProcessing)
               ? null
               : () {
-                  final orderId = _orderData?['order_id'];
-                  if (orderId is int) {
-                    widget.onDeliver(orderId);
+                  final orderId = _orderData!.orderId;
+                  widget.onDeliver(orderId);
 
-                    // Show inline success feedback
-                    setState(() {
-                      _successMessage = "Order #$orderId marked as delivered";
-                      _orderData = null;
-                      _error = null;
-                      _scanBuffer = '';
-                    });
+                  // Show inline success feedback
+                  setState(() {
+                    _successMessage = "Order #$orderId marked as delivered";
+                    _orderData = null;
+                    _error = null;
+                    _scanBuffer = '';
+                  });
 
-                    // Clear success message after delay
-                    Timer(const Duration(seconds: 2), () {
-                      if (mounted) {
-                        setState(() {
-                          _successMessage = null;
-                        });
-                      }
-                    });
-
-                    // Refocus if needed
-                    if (!_useCamera && _scanFocus.canRequestFocus) {
-                      _scanFocus.requestFocus();
+                  // Clear success message after delay
+                  Timer(const Duration(seconds: 2), () {
+                    if (mounted) {
+                      setState(() {
+                        _successMessage = null;
+                      });
                     }
+                  });
+
+                  // Refocus if needed
+                  if (!_useCamera && _scanFocus.canRequestFocus) {
+                    _scanFocus.requestFocus();
                   }
                 },
           icon: const Icon(Icons.check),
@@ -388,10 +390,10 @@ class _QrScanDialogState extends State<QrScanDialog> {
   }
 
   Widget _buildOrderDetails(ThemeData theme) {
-    final orderId = _orderData?['order_id'];
-    final totalPrice = _orderData?['total_price'];
-    final deliverAt = _orderData?['deliver_at'];
-    final items = (_orderData?['items'] as List?) ?? const [];
+    final orderId = _orderData!.orderId;
+    final totalPrice = _orderData!.totalPrice;
+    final deliverAt = _orderData!.deliverAt;
+    final items = _orderData!.items;
 
     return Padding(
       padding: const EdgeInsets.only(top: 12.0),
@@ -407,7 +409,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              if (deliverAt != null && deliverAt.toString().isNotEmpty)
+              if (deliverAt.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
@@ -426,10 +428,10 @@ class _QrScanDialogState extends State<QrScanDialog> {
                   itemCount: items.length,
                   separatorBuilder: (_, __) => const Divider(height: 12),
                   itemBuilder: (context, index) {
-                    final item = items[index] as Map<String, dynamic>;
-                    final name = item['name']?.toString() ?? 'Item';
-                    final qty = item['quantity'];
-                    final price = item['price'] ?? 0;
+                    final item = items[index];
+                    final name = item.name;
+                    final qty = item.quantity;
+                    final price = item.price ?? 0;
                     return Row(
                       children: [
                         Expanded(
@@ -447,7 +449,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
                         SizedBox(
                           width: 70,
                           child: Text(
-                            "₹${(int.tryParse(qty.toString()) ?? 1) * (int.tryParse(price.toString()) ?? 0)}",
+                            "₹${qty * price}",
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -464,7 +466,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
                 children: [
                   Text("Total", style: theme.textTheme.titleSmall),
                   Text(
-                    "₹${totalPrice ?? 0}",
+                    "₹${totalPrice}",
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
