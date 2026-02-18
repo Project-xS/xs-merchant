@@ -32,6 +32,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late AnimationController _snowfallController;
+  final List<Snowflake> _snowflakes = List.generate(85, (index) => Snowflake());
 
   @override
   void initState() {
@@ -51,8 +52,19 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
 
     _snowfallController = AnimationController(
       vsync: this,
-      duration: const Duration(minutes: 10),
+      duration: const Duration(minutes: 1),
     )..repeat();
+
+    _checkSavedCredentials();
+  }
+
+  Future<void> _checkSavedCredentials() async {
+    final creds = await AuthService.getSavedCredentials();
+    if (creds['username'] != null && creds['password'] != null) {
+      controller1.text = creds['username']!;
+      controller2.text = creds['password']!;
+      loginUser(creds['username']!, creds['password']!);
+    }
   }
 
   @override
@@ -100,6 +112,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
           canteenId: responseCanteenId,
           canteenName: responseCanteenName,
         );
+        await AuthService.saveCredentials(username, password);
 
         final int effectiveCanteenId =
             AuthService.canteenId ?? responseCanteenId ?? 0;
@@ -158,17 +171,27 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
               ),
             ),
           ),
-          CustomPaint(painter: MountainPainter(), size: Size.infinite),
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _snowfallController,
               builder: (context, child) {
                 return CustomPaint(
-                  painter: SnowfallPainter(_snowfallController.value),
+                  painter: NorthernLightsPainter(_snowfallController.value),
                 );
               },
             ),
           ),
+          // CustomPaint(painter: MountainPainter(), size: Size.infinite),
+          // Positioned.fill(
+          //   child: AnimatedBuilder(
+          //     animation: _snowfallController,
+          //     builder: (context, child) {
+          //       return CustomPaint(
+          //         painter: SnowfallPainter(_snowfallController.value, _snowflakes),
+          //       );
+          //     },
+          //   ),
+          // ),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -178,27 +201,18 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                   position: _slideAnimation,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        width: _isAndroid ? null : 400,
-                        padding: const EdgeInsets.all(24.0),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(51, 255, 255, 255),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color.fromARGB(101, 255, 255, 255),
+                    child: Container(
+                      width: _isAndroid ? null : 400,
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/logo.png',
+                            height: 150,
+                            width: 150,
+                            fit: BoxFit.fill,
                           ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Image.asset(
-                              'assets/images/logo.png',
-                              height: 150,
-                              width: 150,
-                              fit: BoxFit.fill,
-                            ),
                             const SizedBox(height: 16),
                             Text(
                               "Welcome Back",
@@ -267,7 +281,6 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                      ),
                     ),
                   ),
                 ),
@@ -351,10 +364,15 @@ class MountainPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final mountainPaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+        colors: [Color(0xFF334155), Color(0xFF1E293B)],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      ).createShader(Rect.fromLTWH(0, size.height * 0.5, size.width, size.height * 0.5));
+
+    final mountainHighlightPaint = Paint()
+      ..color = const Color.fromARGB(50, 255, 255, 255)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
     final moonCenter = Offset(size.width * 0.15, size.height * 0.15);
     const double moonRadius = 60;
@@ -432,6 +450,7 @@ class MountainPainter extends CustomPainter {
     mountainPath.lineTo(0, size.height);
     mountainPath.close();
     canvas.drawPath(mountainPath, mountainPaint);
+    canvas.drawPath(mountainPath, mountainHighlightPaint);
   }
 
   @override
@@ -440,27 +459,20 @@ class MountainPainter extends CustomPainter {
 
 class SnowfallPainter extends CustomPainter {
   final double animationValue;
-  final _snowflakes = <Snowflake>[];
+  final List<Snowflake> snowflakes;
 
-  SnowfallPainter(this.animationValue) {
-    if (_snowflakes.isEmpty) {
-      for (int i = 0; i < 80; i++) {
-        _snowflakes.add(Snowflake());
-      }
-    }
-  }
+  SnowfallPainter(this.animationValue, this.snowflakes);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color.fromARGB(204, 255, 255, 255);
+    final paint = Paint()..color = const Color.fromARGB(150, 255, 255, 255);
 
-    for (var snowflake in _snowflakes) {
-      snowflake.update(animationValue, size);
+    for (var snowflake in snowflakes) {
+      final x = snowflake.getX(animationValue);
+      final y = snowflake.getY(animationValue);
+      
       canvas.drawCircle(
-        Offset(
-          snowflake.position.dx * size.width,
-          snowflake.position.dy * size.height,
-        ),
+        Offset(x * size.width, y * size.height),
         snowflake.size,
         paint,
       );
@@ -468,33 +480,78 @@ class SnowfallPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant SnowfallPainter oldDelegate) =>
+      oldDelegate.animationValue != animationValue;
 }
 
 class Snowflake {
-  late Offset position;
+  late double initialX;
+  late double initialY;
   late double size;
-  late double speed;
+  late double speedMultiplier;
   late double phase;
-  Snowflake() {
-    _reset();
-  }
 
-  void _reset() {
-    position = Offset(Random().nextDouble(), Random().nextDouble());
+  Snowflake() {
+    initialX = Random().nextDouble();
+    initialY = Random().nextDouble();
     size = Random().nextDouble() * 2 + 1;
-    speed = Random().nextDouble() * 0.0005 + 0.0002;
+    speedMultiplier = Random().nextDouble() * 0.5 + 0.5;
     phase = Random().nextDouble() * pi * 2;
   }
 
-  void update(double animationValue, Size bounds) {
-    double x = position.dx + sin(phase + animationValue * 2 * pi) * 0.002;
-    double y = (position.dy + speed) % 1.0;
+  double getY(double animationValue) {
+    // The snowflake will fall across the screen 4 times during the 1-minute animation cycle
+    return (initialY + animationValue * 3 * speedMultiplier) % 1.0;
+  }
 
-    if (y < position.dy) {
-      position = Offset(Random().nextDouble(), 0);
-    } else {
-      position = Offset(x, y);
+  double getX(double animationValue) {
+    // Slow sway movement
+    return (initialX + sin(phase + animationValue * 10 * pi) * 0.02) % 1.0;
+  }
+}
+
+class NorthernLightsPainter extends CustomPainter {
+  final double animationValue;
+  NorthernLightsPainter(this.animationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect skyRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.7);
+    
+    for (int i = 0; i < 3; i++) {
+      final double phase = (animationValue + (i * 0.33)) % 1.0;
+      final double opacity = sin(phase * pi) * 0.15;
+      
+      final paint = Paint()
+        ..shader = LinearGradient(
+          colors: [
+            Colors.greenAccent.withOpacity(0.0),
+            Colors.greenAccent.withOpacity(opacity),
+            Colors.blueAccent.withOpacity(opacity * 0.5),
+            Colors.blueAccent.withOpacity(0.0),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: const [0.0, 0.4, 0.7, 1.0],
+        ).createShader(skyRect);
+
+      final path = Path();
+      final double yOffset = size.height * (0.2 + (i * 0.08));
+      
+      path.moveTo(0, yOffset);
+      for (double x = 0; x <= size.width; x += 15) {
+        final double wave = sin((x / size.width * 2 * pi) + (animationValue * 7 * pi) + (i * pi / 2)) * 40;
+        path.lineTo(x, yOffset + wave);
+      }
+      path.lineTo(size.width, size.height * 0.7);
+      path.lineTo(0, size.height * 0.7);
+      path.close();
+      
+      canvas.drawPath(path, paint);
     }
   }
+
+  @override
+  bool shouldRepaint(covariant NorthernLightsPainter oldDelegate) =>
+      oldDelegate.animationValue != animationValue;
 }

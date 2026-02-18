@@ -72,7 +72,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-# dependency_overrides:
+dependency_overrides:
+  vector_math: 2.2.0
 #   image: ^4.5.4
 
   # The "flutter_lints" package below contains a set of recommended lints to

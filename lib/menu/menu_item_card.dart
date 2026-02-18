@@ -99,39 +99,50 @@ class MenuItemCard extends StatelessWidget {
 
             // Action Menu (Top Right)
             Positioned(
-              top: 4,
-              right: 4,
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    onEdit();
-                  } else if (value == 'delete') {
-                    onDelete();
-                  }
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'edit',
-                    child: ListTile(
-                      leading: Icon(Icons.edit),
-                      title: Text('Edit'),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.delete,
-                        color: Colors.redAccent,
-                      ),
-                      title: Text(
-                        localizations.delete,
-                        style: const TextStyle(color: Colors.redAccent),
+              width: 32,
+              height: 32,
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: PopupMenuButton<String>(
+                  borderRadius: BorderRadius.circular(8),
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      onEdit();
+                    } else if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: Icon(Icons.edit),
+                        title: Text('Edit'),
                       ),
                     ),
-                  ),
-                ],
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.delete,
+                          color: Colors.redAccent,
+                        ),
+                        title: Text(
+                          localizations.delete,
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 

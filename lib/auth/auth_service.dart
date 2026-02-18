@@ -23,6 +23,8 @@ class AuthService {
   static const _expiresAtMsKey = 'AdminJwtExpiresAtMs';
   static const _canteenIdKey = 'AdminCanteenId';
   static const _canteenNameKey = 'AdminCanteenName';
+  static const _savedUsernameKey = 'SavedUsername';
+  static const _savedPasswordKey = 'SavedPassword';
 
   static AuthSession? _session;
 
@@ -31,6 +33,17 @@ class AuthService {
   static int? get canteenId => _session?.canteenId;
   static String? get canteenName => _session?.canteenName;
   static bool get isLoggedIn => _session != null && !_session!.isExpired;
+
+  static Future<Map<String, String?>> getSavedCredentials() async {
+    final username = await secureStorage.read(key: _savedUsernameKey);
+    final password = await secureStorage.read(key: _savedPasswordKey);
+    return {'username': username, 'password': password};
+  }
+
+  static Future<void> saveCredentials(String username, String password) async {
+    await secureStorage.write(key: _savedUsernameKey, value: username);
+    await secureStorage.write(key: _savedPasswordKey, value: password);
+  }
 
   static Future<AuthSession?> loadFromStorage() async {
     final token = await secureStorage.read(key: _tokenKey);
@@ -139,6 +152,8 @@ class AuthService {
     await secureStorage.delete(key: _expiresAtMsKey);
     await secureStorage.delete(key: _canteenIdKey);
     await secureStorage.delete(key: _canteenNameKey);
+    await secureStorage.delete(key: _savedUsernameKey);
+    await secureStorage.delete(key: _savedPasswordKey);
   }
 
   static AuthSession _buildSession({
