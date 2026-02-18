@@ -293,14 +293,18 @@ class _OrderHistoryState extends State<OrderHistory>
     );
   }
 
-  void markdelivered(bool submit, int orderId) async {
+  void markdelivered(
+    bool submit,
+    int orderId, {
+    bool showSuccessSnackBar = true,
+  }) async {
     try {
       final action = submit ? 'delivered' : 'cancelled';
       final response = await ApiClient.put(
         ApiConstants.orderAction(orderId, action),
       );
       if (response.statusCode == 200) {
-        if (mounted) {
+        if (mounted && showSuccessSnackBar) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -363,7 +367,7 @@ class _OrderHistoryState extends State<OrderHistory>
       builder: (BuildContext context) {
         return QrScanDialog(
           onDeliver: (orderId) {
-            markdelivered(true, orderId);
+            markdelivered(true, orderId, showSuccessSnackBar: false);
             setState(() {
               searchResults.clear();
             });

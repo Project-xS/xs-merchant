@@ -766,14 +766,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           });
         }
         // Removed internal image upload logic dependent on pngn
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Item Created Succesfully"),
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-            ),
-          );
-        }
+
         return createdItemId;
       } else {
         if (mounted) {

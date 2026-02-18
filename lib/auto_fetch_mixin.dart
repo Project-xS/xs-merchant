@@ -103,15 +103,6 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
           );
           isLoading = false;
         });
-
-        if (mounted && Scaffold.maybeOf(context) != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Item Fetched Successfully"),
-              backgroundColor: Colors.cyanAccent,
-            ),
-          );
-        }
       } else {
         if (mounted && Scaffold.maybeOf(context) != null) {
           final msg = ApiClient.tryExtractErrorMessage(response);

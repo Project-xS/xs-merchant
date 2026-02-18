@@ -30,6 +30,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
   Timer? _scanDebounce;
   String? _lastToken;
   DateTime? _lastResultAt;
+  String? _successMessage;
   static const Duration _rescanCooldown = Duration(seconds: 3);
 
   bool get _useCamera {
@@ -62,7 +63,9 @@ class _QrScanDialogState extends State<QrScanDialog> {
 
     setState(() {
       _isProcessing = true;
+      _isProcessing = true;
       _error = null;
+      _successMessage = null;
       _orderData = null;
     });
 
@@ -144,6 +147,11 @@ class _QrScanDialogState extends State<QrScanDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final localizations = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Use a large portion of the screen for the scanner, but keep it reasonable
+    // for smaller devices or landscape modes.
+    final scanHeight = (screenHeight * 0.45).clamp(250.0, 450.0);
 
     return AlertDialog(
       title: Text(localizations.item_delivery),
@@ -155,64 +163,74 @@ class _QrScanDialogState extends State<QrScanDialog> {
             children: [
               if (_useCamera)
                 Container(
-                  height: 220,
+                  height: scanHeight,
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: theme.dividerColor),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: MobileScanner(
-                      controller: _scannerController,
-                      onDetect: (capture) {
-                        if (_isProcessing || _orderData != null) return;
-                        final barcodes = capture.barcodes;
-                        final raw = barcodes.isNotEmpty
-                            ? barcodes.first.rawValue
-                            : null;
-                        if (raw != null && raw.isNotEmpty) {
-                          if (_shouldIgnoreToken(raw)) return;
-                          _submitToken(raw);
-                        }
-                      },
+                    child: Stack(
+                      children: [
+                        MobileScanner(
+                          controller: _scannerController,
+                          onDetect: (capture) {
+                            if (_isProcessing) return;
+                            final barcodes = capture.barcodes;
+                            final raw = barcodes.isNotEmpty
+                                ? barcodes.first.rawValue
+                                : null;
+                            if (raw != null && raw.isNotEmpty) {
+                              if (_shouldIgnoreToken(raw)) return;
+                              _submitToken(raw);
+                            }
+                          },
+                        ),
+                        // Add a subtle overlay or viewfinder frame here if desired
+                        // For now we just keep the video feed
+                      ],
                     ),
                   ),
                 ),
               const SizedBox(height: 12),
-              if (!_useCamera)
-                Focus(
-                  autofocus: true,
-                  focusNode: _scanFocus,
-                  onKeyEvent: _handleKeyEvent,
-                  child: GestureDetector(
-                    onTap: () => _scanFocus.requestFocus(),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.dividerColor),
-                        color: theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Scanner input active",
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _scanBuffer.isEmpty
-                                ? "Waiting for scan..."
-                                : "Captured ${_scanBuffer.length} chars",
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
+              if (!_useCamera || kDebugMode)
+                // Fallback input visible in debug mode too for easier testing
+                // or if camera is not available.
+                if (!_useCamera)
+                  Focus(
+                    autofocus: true,
+                    focusNode: _scanFocus,
+                    onKeyEvent: _handleKeyEvent,
+                    child: GestureDetector(
+                      onTap: () => _scanFocus.requestFocus(),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.dividerColor),
+                          color: theme.colorScheme.surfaceContainerHighest,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Scanner input active",
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _scanBuffer.isEmpty
+                                  ? "Waiting for scan..."
+                                  : "Captured ${_scanBuffer.length} chars",
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
               Row(
                 children: [
                   TextButton(
@@ -222,9 +240,11 @@ class _QrScanDialogState extends State<QrScanDialog> {
                         _orderData = null;
                         _error = null;
                       });
-                      _scanFocus.requestFocus();
+                      if (!_useCamera && _scanFocus.canRequestFocus) {
+                        _scanFocus.requestFocus();
+                      }
                     },
-                    child: const Text("Clear"),
+                    child: const Text("Clear Result"),
                   ),
                   const Spacer(),
                   if (_isProcessing)
@@ -235,6 +255,38 @@ class _QrScanDialogState extends State<QrScanDialog> {
                     ),
                 ],
               ),
+              if (_successMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      border: Border.all(color: Colors.green),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _successMessage!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
@@ -272,7 +324,28 @@ class _QrScanDialogState extends State<QrScanDialog> {
                   final orderId = _orderData?['order_id'];
                   if (orderId is int) {
                     widget.onDeliver(orderId);
-                    Navigator.pop(context);
+
+                    // Show inline success feedback
+                    setState(() {
+                      _successMessage = "Order #$orderId marked as delivered";
+                      _orderData = null;
+                      _error = null;
+                      _scanBuffer = '';
+                    });
+
+                    // Clear success message after delay
+                    Timer(const Duration(seconds: 2), () {
+                      if (mounted) {
+                        setState(() {
+                          _successMessage = null;
+                        });
+                      }
+                    });
+
+                    // Refocus if needed
+                    if (!_useCamera && _scanFocus.canRequestFocus) {
+                      _scanFocus.requestFocus();
+                    }
                   }
                 },
           icon: const Icon(Icons.check),
@@ -343,9 +416,13 @@ class _QrScanDialogState extends State<QrScanDialog> {
                   ),
                 ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 160,
-                child: ListView.separated(
+              const SizedBox(height: 8),
+              if (items.isEmpty)
+                const Text("No items")
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: items.length,
                   separatorBuilder: (_, __) => const Divider(height: 12),
                   itemBuilder: (context, index) {
@@ -358,19 +435,29 @@ class _QrScanDialogState extends State<QrScanDialog> {
                         Expanded(
                           child: Text(name, style: theme.textTheme.bodyMedium),
                         ),
-                        Text("x$qty", style: theme.textTheme.bodyMedium),
-                        const SizedBox(width: 12),
-                        Text(
-                          "₹$price",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        SizedBox(
+                          width: 40,
+                          child: Text(
+                            "x$qty",
+                            style: theme.textTheme.bodyMedium,
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 70,
+                          child: Text(
+                            "₹${(int.tryParse(qty.toString()) ?? 1) * (int.tryParse(price.toString()) ?? 0)}",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
                     );
                   },
                 ),
-              ),
               const Divider(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -393,10 +480,16 @@ class _QrScanDialogState extends State<QrScanDialog> {
   }
 
   bool _shouldIgnoreToken(String token) {
-    if (_orderData != null) return true;
-    if (_lastToken == token && _lastResultAt != null) {
-      final elapsed = DateTime.now().difference(_lastResultAt!);
-      if (elapsed < _rescanCooldown) return true;
+    // If the token matches the last successfully scanned one
+    if (_lastToken == token) {
+      // If we are currently displaying an order, don't refresh it with the same token
+      if (_orderData != null) return true;
+
+      // If we aren't displaying an order (e.g. cleared), check cooldown
+      if (_lastResultAt != null) {
+        final elapsed = DateTime.now().difference(_lastResultAt!);
+        if (elapsed < _rescanCooldown) return true;
+      }
     }
     return false;
   }
