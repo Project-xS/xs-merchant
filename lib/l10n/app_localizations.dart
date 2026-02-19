@@ -409,6 +409,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Generate Bill'**
   String get billing;
+
+  /// No description provided for @stock_alert_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Low Stock Alert'**
+  String get stock_alert_title;
+
+  /// No description provided for @stock_alert_body.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is running low on stock ({stock} remaining)'**
+  String stock_alert_body(String name, int stock);
 }
 
 class _AppLocalizationsDelegate

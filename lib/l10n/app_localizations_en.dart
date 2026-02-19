@@ -173,4 +173,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get billing => 'Generate Bill';
+
+  @override
+  String get stock_alert_title => 'Low Stock Alert';
+
+  @override
+  String stock_alert_body(String name, int stock) {
+    return '$name is running low on stock ($stock remaining)';
+  }
 }

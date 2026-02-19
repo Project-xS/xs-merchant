@@ -79,5 +79,17 @@
     "deliver_later" : "Deliver Later",
     "timing" : "Timing: ",
     "instant" : "Instant",
-    "billing": "Generate Bill"
+    "billing": "Generate Bill",
+    "stock_alert_title": "Low Stock Alert",
+    "stock_alert_body": "{name} is running low on stock ({stock} remaining)",
+    "@stock_alert_body": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "stock": {
+                "type": "int"
+            }
+        }
+    }
 }

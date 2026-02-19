@@ -173,4 +173,12 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get billing => 'பில் உருவாக்கம்';
+
+  @override
+  String get stock_alert_title => 'குறைந்த இருப்பு எச்சரிக்கை';
+
+  @override
+  String stock_alert_body(String name, int stock) {
+    return '$name கையிருப்பு குறைவாக உள்ளது ($stock மீதமுள்ளது)';
+  }
 }

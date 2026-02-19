@@ -14,12 +14,19 @@ import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/common/global_menu_cache.dart';
 import 'package:merchant/login.dart';
 import 'package:merchant/menupage.dart';
+import 'package:merchant/models/menu_item.dart';
 import 'package:merchant/orderhistory.dart';
 import 'package:merchant/orders.dart';
 import 'package:merchant/sales_prediction.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_size/window_size.dart';
+
+import 'package:merchant/api/api_constants.dart';
+import 'package:merchant/menu/edit_item_dialog.dart';
+import 'package:merchant/providers/notification_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:merchant/common/notification_service.dart';
 
 late SharedPreferences cache;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -44,12 +51,22 @@ String name = "";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init(onTap: (details) {
+    _HomePageState.scaffoldKey.currentState?.openEndDrawer();
+  });
   await dotenv.load(fileName: ".env", isOptional: true);
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowMinSize(const Size(1025, 1025));
   }
   cache = await SharedPreferences.getInstance();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -375,9 +392,103 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  static final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   bool portrait = Platform.isAndroid;
   int currentIndex = 0;
+
+  void _showEditDialogFromNotification(BuildContext context, MenuItem item) {
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return EditItemDialog(
+          itemId: item.id,
+          initialName: item.name,
+          initialPrice: item.price,
+          initialStock: item.stock,
+          initialIsVeg: item.isVeg,
+          initialAvailable: item.available,
+          canteenId: widget.canteenId,
+          isPortrait: portrait,
+          onUpdate: (name, price, stock, isVeg, isAvailable, imageBytes) async {
+            if (imageBytes != null) {
+              String? url = await ImageUploadState().imageupload(
+                item.id,
+                imageBytes,
+              );
+              if (url != null && url.isNotEmpty) {
+                setState(() {
+                  final currentItem = GlobalMenuCache.items[item.id];
+                  if (currentItem != null) {
+                    GlobalMenuCache.items[item.id] = currentItem.copyWith(pic: url);
+                    changeimage(item.id, url);
+                  }
+                });
+              }
+            }
+            // Update item logic similar to Menupage
+            try {
+              final response = await ApiClient.put(
+                ApiConstants.menuUpdate,
+                headers: {
+                  'accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({
+                  "item_id": item.id,
+                  "update": {
+                    "is_available": isAvailable,
+                    "is_veg": isVeg,
+                    "name": name,
+                    "price": price,
+                    "stock": stock,
+                  },
+                }),
+              );
+
+              if (response.statusCode >= 200 && response.statusCode < 300) {
+                // Remove notification from provider immediately on success
+                final navContext = navigatorKey.currentContext;
+                if (navContext != null && navContext.mounted) {
+                  Provider.of<NotificationProvider>(navContext, listen: false)
+                      .removeNotification(item.id);
+                }
+                
+                setState(() {
+                  GlobalMenuCache.items[item.id] = item.copyWith(
+                    name: name,
+                    price: price,
+                    stock: stock,
+                    isVeg: isVeg,
+                    available: isAvailable,
+                  );
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Item updated successfully"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Error updating item: ${response.statusCode}"),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            } catch (e) {
+              debugPrint("Error updating item: $e");
+            }
+          },
+        );
+      },
+    );
+  }
 
   @override
   void didChangeDependencies() {
@@ -407,7 +518,7 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      key: _scaffoldKey,
+      key: _HomePageState.scaffoldKey,
       extendBody: true,
       appBar: AppBar(
         title: Text(localizations.app_name, style: theme.textTheme.titleLarge),
@@ -420,7 +531,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu, size: 28),
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            onPressed: () => _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
             tooltip: 'More',
           ),
         ],
@@ -535,7 +646,75 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     ),
-                    const Spacer(),
+                    const Divider(color: Colors.white24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Notifications",
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: const Color.fromARGB(204, 255, 255, 255),
+                            ),
+                          ),
+                          Consumer<NotificationProvider>(
+                            builder: (context, provider, child) {
+                              if (provider.notifications.isEmpty) return const SizedBox.shrink();
+                              return IconButton(
+                                icon: const Icon(Icons.clear_all, color: Colors.redAccent),
+                                onPressed: () => provider.clearAll(),
+                                tooltip: 'Clear All',
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Consumer<NotificationProvider>(
+                        builder: (context, provider, child) {
+                          if (provider.notifications.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                "No new notifications",
+                                style: TextStyle(color: Colors.white54),
+                              ),
+                            );
+                          }
+                          return ListView.builder(
+                            padding: EdgeInsets.zero,
+                            itemCount: provider.notifications.length,
+                            itemBuilder: (context, index) {
+                              final notification = provider.notifications[index];
+                              return ListTile(
+                                dense: true,
+                                title: Text(
+                                  notification.title,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+                                ),
+                                subtitle: Text(notification.message),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.white54),
+                                  onPressed: () => provider.removeNotification(notification.id),
+                                ),
+                                onTap: () {
+                                  // Open Edit Item Dialog
+                                  final item = GlobalMenuCache.items[notification.id];
+                                  if (item != null) {
+                                    // Use the first page (Menupage) to trigger edit if possible, 
+                                    // but we need to find a way to access MenupageState or just show dialog here.
+                                    // Since we are in HomePage, we can try to show the dialog directly if we have the method.
+                                    // For now, let's look at how Menupage does it.
+                                    _showEditDialogFromNotification(context, item);
+                                  }
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
                     const Divider(color: Colors.white24),
                     ListTile(
                       leading: Icon(

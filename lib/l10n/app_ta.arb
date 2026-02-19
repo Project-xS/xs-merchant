@@ -79,5 +79,17 @@
     "deliver_later" : "பின்னர் வழங்கவும்",
     "timing" : "நேரம்: ",
     "instant" : "உடனடி",
-    "billing": "பில் உருவாக்கம்"
+    "billing": "பில் உருவாக்கம்",
+    "stock_alert_title": "குறைந்த இருப்பு எச்சரிக்கை",
+    "stock_alert_body": "{name} கையிருப்பு குறைவாக உள்ளது ({stock} மீதமுள்ளது)",
+    "@stock_alert_body": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            },
+            "stock": {
+                "type": "int"
+            }
+        }
+    }
 }
