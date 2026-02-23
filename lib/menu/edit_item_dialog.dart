@@ -42,9 +42,9 @@ class EditItemDialog extends StatefulWidget {
 
 class _EditItemDialogState extends State<EditItemDialog> {
   final _formKey = GlobalKey<FormState>();
-  late String _name;
-  late int _price;
-  late int _stock;
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _stockController;
   late bool _isVeg;
   late bool _available;
   Uint8List? _imageBytes;
@@ -53,11 +53,19 @@ class _EditItemDialogState extends State<EditItemDialog> {
   @override
   void initState() {
     super.initState();
-    _name = widget.initialName;
-    _price = widget.initialPrice;
-    _stock = widget.initialStock;
+    _nameController = TextEditingController(text: widget.initialName);
+    _priceController = TextEditingController(text: widget.initialPrice.toString());
+    _stockController = TextEditingController(text: widget.initialStock.toString());
     _isVeg = widget.initialIsVeg;
     _available = widget.initialAvailable;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _stockController.dispose();
+    super.dispose();
   }
 
   @override
@@ -72,57 +80,72 @@ class _EditItemDialogState extends State<EditItemDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                initialValue: _name,
-                decoration: InputDecoration(labelText: localizations.new_name),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Name is required';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _name = value!.trim(),
+              RepaintBoundary(
+                child: TextFormField(
+                  controller: _nameController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: localizations.new_name,
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Name is required';
+                    }
+                    return null;
+                  },
+                ),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                initialValue: _price.toString(),
-                decoration: InputDecoration(labelText: localizations.new_price),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty)
-                    return 'Price is required';
-                  return null;
-                },
-                onSaved: (value) => _price = int.parse(value!),
+              RepaintBoundary(
+                child: TextFormField(
+                  controller: _priceController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: localizations.new_price,
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Price is required';
+                    return null;
+                  },
+                ),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                initialValue: _stock.toString(),
-                decoration: InputDecoration(
-                  labelText: localizations.stock,
-                  hintText: "-1 for unlimited",
+              RepaintBoundary(
+                child: TextFormField(
+                  controller: _stockController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: localizations.stock,
+                    hintText: "-1 for unlimited",
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Stock is required';
+                    }
+                    final parsed = int.tryParse(value);
+                    if (parsed == null) {
+                      return 'Stock must be a number';
+                    }
+                    if (parsed < -1) {
+                      return 'Stock must be -1 or >= 0';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  signed: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^-?\d*')),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Stock is required';
-                  }
-                  final parsed = int.tryParse(value);
-                  if (parsed == null) {
-                    return 'Stock must be a number';
-                  }
-                  if (parsed < -1) {
-                    return 'Stock must be -1 or >= 0';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _stock = int.parse(value!),
               ),
               const SizedBox(height: 16),
               Row(
@@ -181,13 +204,12 @@ class _EditItemDialogState extends State<EditItemDialog> {
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
       setState(() => _isLoading = true);
       try {
         await widget.onUpdate(
-          _name,
-          _price,
-          _stock,
+          _nameController.text.trim(),
+          int.parse(_priceController.text),
+          int.parse(_stockController.text),
           _isVeg,
           _available,
           _imageBytes,

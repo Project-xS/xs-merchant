@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/models/order_models.dart';
@@ -19,10 +20,31 @@ class OrdersState extends State<Orders> with OrderFetchMixin<Orders> {
   int get canteenIdForOrders => widget.canteenId;
 
   @override
-  void onOrdersUpdated(Map<String, List<ActiveOrderItem>> orders) {
+  void onOrdersUpdated(Map<String, List<ActiveOrderItem>> fetchedOrders) {
     if (mounted) {
+      // Sort orders by time: chronological first, "Instant" last
+      final sortedKeys = fetchedOrders.keys.toList()
+        ..sort((a, b) {
+          if (a == b) return 0;
+          if (a == "Instant") return 1;
+          if (b == "Instant") return -1;
+          try {
+            final format = DateFormat("hh:mm a");
+            final timeA = format.parse(a);
+            final timeB = format.parse(b);
+            return timeA.compareTo(timeB);
+          } catch (e) {
+            return a.compareTo(b);
+          }
+        });
+
+      // Create a new map with sorted keys to preserve order
+      final sortedOrders = {
+        for (var key in sortedKeys) key: fetchedOrders[key]!,
+      };
+
       setState(() {
-        this.orders = orders;
+        orders = sortedOrders;
       });
     }
   }

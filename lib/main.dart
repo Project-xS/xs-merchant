@@ -498,9 +498,18 @@ class _HomePageState extends State<HomePage> {
 
   void _updatePortrait() {
     if (Platform.isAndroid) {
-      portrait = MediaQuery.of(context).orientation == Orientation.portrait;
+      final newPortrait = MediaQuery.orientationOf(context) == Orientation.portrait;
+      if (portrait != newPortrait) {
+        setState(() {
+          portrait = newPortrait;
+        });
+      }
     } else {
-      portrait = false;
+      if (portrait != false) {
+        setState(() {
+          portrait = false;
+        });
+      }
     }
   }
 
@@ -519,20 +528,21 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       key: _HomePageState.scaffoldKey,
+      resizeToAvoidBottomInset: false,
       extendBody: true,
       appBar: AppBar(
-        title: Text(localizations.app_name, style: theme.textTheme.titleLarge),
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Image.asset('assets/images/logo.png'),
         ),
+        title: Text(localizations.app_name, style: theme.textTheme.titleLarge),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.menu, size: 28),
             onPressed: () => _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
             tooltip: 'More',
+            icon: const Icon(Icons.menu, size: 28),
           ),
         ],
       ),
@@ -543,203 +553,223 @@ class _HomePageState extends State<HomePage> {
             topLeft: Radius.circular(20),
             bottomLeft: Radius.circular(20),
           ),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(178, 22, 27, 34),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
+          child: RepaintBoundary(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(178, 22, 27, 34),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                  ),
+                  border: Border.all(
+                    color: const Color.fromARGB(51, 255, 255, 255),
+                  ),
                 ),
-                border: Border.all(
-                  color: const Color.fromARGB(51, 255, 255, 255),
-                ),
-              ),
-              child: SafeArea(
-                minimum: const EdgeInsets.only(top: 40, bottom: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        localizations.language,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: const Color.fromARGB(204, 255, 255, 255),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SwitchListTile(
-                      title: Text(
-                        widget.isTamil ? "English" : "தமிழ்",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      value: widget.isTamil,
-                      onChanged: widget.changeLanguage,
-                      activeColor: theme.colorScheme.primary,
-                    ),
-                    const Divider(color: Colors.white24),
-                    ListTile(
-                      leading: const Icon(Icons.receipt_long, size: 28),
-                      title: Text(
-                        localizations.billing,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => portrait
-                                ? MobileBilling(
-                                    name,
-                                    widget.isTamil,
-                                    widget.canteenId,
-                                  )
-                                : Billing(
-                                    name,
-                                    portrait,
-                                    widget.isTamil,
-                                    widget.canteenId,
-                                  ),
+                child: SafeArea(
+                  minimum: const EdgeInsets.only(top: 40, bottom: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          localizations.language,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: const Color.fromARGB(204, 255, 255, 255),
                           ),
-                        );
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.image_outlined, size: 28),
-                      title: Text(
-                        "Set new Canteen Image",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      onTap: () async {
-                        await pickAndUploadCanteenImage(
-                          context,
-                          widget.canteenId,
-                        );
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.online_prediction, size: 28),
-                      title: Text(
-                        "Prediction",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SalesPredictionPage(),
+                      const SizedBox(height: 10),
+                      SwitchListTile(
+                        title: Text(
+                          widget.isTamil ? "English" : "தமிழ்",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      },
-                    ),
-                    const Divider(color: Colors.white24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Notifications",
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: const Color.fromARGB(204, 255, 255, 255),
+                        ),
+                        value: widget.isTamil,
+                        onChanged: widget.changeLanguage,
+                        activeColor: theme.colorScheme.primary,
+                      ),
+                      const Divider(color: Colors.white24),
+                      ListTile(
+                        leading: const Icon(Icons.receipt_long, size: 28),
+                        title: Text(
+                          localizations.billing,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => portrait
+                                  ? MobileBilling(
+                                      name,
+                                      widget.isTamil,
+                                      widget.canteenId,
+                                    )
+                                  : Billing(
+                                      name,
+                                      portrait,
+                                      widget.isTamil,
+                                      widget.canteenId,
+                                    ),
                             ),
-                          ),
-                          Consumer<NotificationProvider>(
-                            builder: (context, provider, child) {
-                              if (provider.notifications.isEmpty) return const SizedBox.shrink();
-                              return IconButton(
-                                icon: const Icon(Icons.clear_all, color: Colors.redAccent),
-                                onPressed: () => provider.clearAll(),
-                                tooltip: 'Clear All',
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Consumer<NotificationProvider>(
-                        builder: (context, provider, child) {
-                          if (provider.notifications.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                "No new notifications",
-                                style: TextStyle(color: Colors.white54),
-                              ),
-                            );
-                          }
-                          return ListView.builder(
-                            padding: EdgeInsets.zero,
-                            itemCount: provider.notifications.length,
-                            itemBuilder: (context, index) {
-                              final notification = provider.notifications[index];
-                              return ListTile(
-                                dense: true,
-                                title: Text(
-                                  notification.title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent),
-                                ),
-                                subtitle: Text(notification.message),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline, size: 20, color: Colors.white54),
-                                  onPressed: () => provider.removeNotification(notification.id),
-                                ),
-                                onTap: () {
-                                  // Open Edit Item Dialog
-                                  final item = GlobalMenuCache.items[notification.id];
-                                  if (item != null) {
-                                    // Use the first page (Menupage) to trigger edit if possible, 
-                                    // but we need to find a way to access MenupageState or just show dialog here.
-                                    // Since we are in HomePage, we can try to show the dialog directly if we have the method.
-                                    // For now, let's look at how Menupage does it.
-                                    _showEditDialogFromNotification(context, item);
-                                  }
-                                },
-                              );
-                            },
                           );
                         },
                       ),
-                    ),
-                    const Divider(color: Colors.white24),
-                    ListTile(
-                      leading: Icon(
-                        Icons.logout,
-                        size: 28,
-                        color: theme.colorScheme.error,
+                      ListTile(
+                        leading: const Icon(Icons.image_outlined, size: 28),
+                        title: Text(
+                          "Set new Canteen Image",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () async {
+                          await pickAndUploadCanteenImage(
+                            context,
+                            widget.canteenId,
+                          );
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        },
                       ),
-                      title: Text(
-                        "Log Out",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.error,
+                      ListTile(
+                        leading: const Icon(Icons.online_prediction, size: 28),
+                        title: Text(
+                          "Prediction",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SalesPredictionPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(color: Colors.white24),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Notifications",
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: const Color.fromARGB(204, 255, 255, 255),
+                              ),
+                            ),
+                            Consumer<NotificationProvider>(
+                              builder: (context, provider, child) {
+                                if (provider.notifications.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return IconButton(
+                                  icon: const Icon(
+                                    Icons.clear_all,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: () => provider.clearAll(),
+                                  tooltip: 'Clear All',
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      onTap: () {
-                        AuthService.logout();
-                        widget.updateLoginState(
-                          false,
-                          widget.canteenId,
-                          name.toLowerCase(),
-                        );
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
+                      Expanded(
+                        child: Consumer<NotificationProvider>(
+                          builder: (context, provider, child) {
+                            if (provider.notifications.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  "No new notifications",
+                                  style: TextStyle(color: Colors.white54),
+                                ),
+                              );
+                            }
+                            return ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: provider.notifications.length,
+                              itemBuilder: (context, index) {
+                                final notification =
+                                    provider.notifications[index];
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(
+                                    notification.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orangeAccent,
+                                    ),
+                                  ),
+                                  subtitle: Text(notification.message),
+                                  trailing: IconButton(
+                                    icon: const Icon(
+                                      Icons.remove_circle_outline,
+                                      size: 20,
+                                      color: Colors.white54,
+                                    ),
+                                    onPressed: () => provider.removeNotification(
+                                      notification.id,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    // Open Edit Item Dialog
+                                    final item =
+                                        GlobalMenuCache.items[notification.id];
+                                    if (item != null) {
+                                      _showEditDialogFromNotification(
+                                        context,
+                                        item,
+                                      );
+                                    }
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      const Divider(color: Colors.white24),
+                      ListTile(
+                        leading: Icon(
+                          Icons.logout,
+                          size: 28,
+                          color: theme.colorScheme.error,
+                        ),
+                        title: Text(
+                          "Log Out",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                        onTap: () {
+                          AuthService.logout();
+                          widget.updateLoginState(
+                            false,
+                            widget.canteenId,
+                            name.toLowerCase(),
+                          );
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -776,32 +806,34 @@ class _HomePageState extends State<HomePage> {
           topLeft: Radius.circular(20.0),
           topRight: Radius.circular(20.0),
         ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-          child: BottomNavigationBar(
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.restaurant_menu_outlined),
-                activeIcon: const Icon(Icons.restaurant_menu),
-                label: localizations.menu,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.history_outlined),
-                activeIcon: const Icon(Icons.history),
-                label: localizations.verify,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.pending_actions_outlined),
-                activeIcon: const Icon(Icons.pending_actions),
-                label: localizations.order,
-              ),
-            ],
-            onTap: (int ind) {
-              setState(() {
-                currentIndex = ind;
-              });
-            },
-            currentIndex: currentIndex,
+        child: RepaintBoundary(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+            child: BottomNavigationBar(
+              onTap: (int ind) {
+                setState(() {
+                  currentIndex = ind;
+                });
+              },
+              currentIndex: currentIndex,
+              items: [
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.restaurant_menu_outlined),
+                  activeIcon: const Icon(Icons.restaurant_menu),
+                  label: localizations.menu,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.history_outlined),
+                  activeIcon: const Icon(Icons.history),
+                  label: localizations.verify,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.pending_actions_outlined),
+                  activeIcon: const Icon(Icons.pending_actions),
+                  label: localizations.order,
+                ),
+              ],
+            ),
           ),
         ),
       ),

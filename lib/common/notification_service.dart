@@ -8,9 +8,12 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  // Track notified items in memory so they reset on app restart
+  static final Set<int> _notifiedItems = {};
+
   static Future<void> init({void Function(NotificationResponse)? onTap}) async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_launcher');
+        AndroidInitializationSettings('notification_icon');
 
     const DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
@@ -71,7 +74,7 @@ class NotificationService {
         priority: Priority.high,
         playSound: true,
         sound: RawResourceAndroidNotificationSound('low_stock'),
-        icon: 'ic_launcher',
+        icon: 'notification_icon',
         showWhen: true,
       );
 
@@ -111,9 +114,7 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
 
     for (var item in items) {
-      final String systemNotifiedKey = 'system_notified_${item.id}';
       final String lastStockKey = 'last_stock_${item.id}';
-
       final int? lastStock = prefs.getInt(lastStockKey);
       
       // Only notify for items that are currently On Menu and have stock < 30
@@ -121,7 +122,6 @@ class NotificationService {
 
       if (isLowStock) {
         // If stock increased (e.g. from 5 to 10), we don't trigger a NEW system notification
-        // but we still want it to stay in the in-app list.
         bool stockIncreased = lastStock != null && item.stock > lastStock;
         
         final title = titleBuilder?.call(item) ?? 'Low Stock Alert';
@@ -131,24 +131,21 @@ class NotificationService {
         // ALWAYS call onNotify if low stock, so the in-app drawer stays updated
         onNotify?.call(item, title, body);
 
-        // System notification (banner/sound) only happens ONCE
-        final bool alreadyNotifiedSystem = prefs.getBool(systemNotifiedKey) ?? false;
-        
-        if (!alreadyNotifiedSystem && !stockIncreased) {
+        // System notification only happens ONCE per app session
+        if (!_notifiedItems.contains(item.id) && !stockIncreased) {
           await showStockNotification(
             id: item.id,
             title: title,
             body: body,
           );
-          await prefs.setBool(systemNotifiedKey, true);
+          _notifiedItems.add(item.id);
         }
         
         await prefs.setInt(lastStockKey, item.stock);
       } else {
-        // Item is now healthy (>= 30, or -1, or Off Menu)
+        // Item is now healthy
         if (item.stock >= 30 || item.stock == -1 || !item.available) {
-          // Clear the "already notified" flag so if it drops again later, we notify again
-          await prefs.remove(systemNotifiedKey);
+          _notifiedItems.remove(item.id);
           onStockHealthy?.call(item);
         }
         await prefs.setInt(lastStockKey, item.stock);

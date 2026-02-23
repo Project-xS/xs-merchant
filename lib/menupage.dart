@@ -363,356 +363,390 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     }
     Set<int> searchitems = {};
     TextEditingController controller = TextEditingController();
+    ScrollController gridScrollController = ScrollController();
     Map<int, Map<String, dynamic>> changes = {};
     showDialog(
       barrierDismissible: (widget.portrait && !isWindows) ? false : true,
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          title: Text(
-            AppLocalizations.of(context)!.multiple_item_edit,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          content: StatefulBuilder(
+        return PopScope(
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop && !isWindows) {
+              SystemChrome.setPreferredOrientations([
+                DeviceOrientation.portraitUp,
+              ]);
+            }
+            gridScrollController.dispose();
+          },
+          child: StatefulBuilder(
             builder: (context, setState) {
               final content = SizedBox(
                 width: double.maxFinite,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: SearchBar(
-                        controller: controller,
-                        hintText: AppLocalizations.of(context)!.search_name,
-                        onChanged: (value) async {
-                          if (value.isEmpty) {
-                            if (mounted) {
-                              setState(() {
-                                searchitems.clear();
-                              });
-                            }
-                            return;
-                          }
-                          await Future.delayed(
-                            const Duration(milliseconds: 200),
-                          );
-                          try {
-                            final response = await ApiClient.get(
-                              "/search/${Uri.encodeComponent(value)}",
-                            );
-                            Map<String, dynamic> decodedJson = jsonDecode(
-                              response.body,
-                            );
-                            List<dynamic> idList = decodedJson["data"];
-                            if (mounted) {
-                              setState(() {
-                                searchitems.clear();
-                                for (var i in idList) {
-                                  int? itemId = i["item_id"] is int
-                                      ? i["item_id"]
-                                      : int.tryParse(i["item_id"].toString());
-
-                                  if (itemId != null) {
-                                    searchitems.add(itemId);
-                                  }
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.multiple_item_edit,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 40,
+                          child: SearchBar(
+                            controller: controller,
+                            hintText: AppLocalizations.of(context)!.search_name,
+                            padding: const WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(horizontal: 8.0),
+                            ),
+                            onChanged: (value) async {
+                              if (value.isEmpty) {
+                                if (mounted) {
+                                  setState(() {
+                                    searchitems.clear();
+                                  });
                                 }
-                              });
-                            }
-                          } on Exception catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Error performing search : $e"),
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.error,
-                                ),
+                                return;
+                              }
+                              await Future.delayed(
+                                const Duration(milliseconds: 200),
                               );
-                            }
-                          }
-                        },
-                        trailing: [
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              if (mounted) {
-                                setState(() {
-                                  controller.clear();
-                                  searchitems.clear();
-                                });
+                              try {
+                                final response = await ApiClient.get(
+                                  "/search/${Uri.encodeComponent(value)}",
+                                );
+                                Map<String, dynamic> decodedJson = jsonDecode(
+                                  response.body,
+                                );
+                                List<dynamic> idList = decodedJson["data"];
+                                if (mounted) {
+                                  setState(() {
+                                    searchitems.clear();
+                                    for (var i in idList) {
+                                      int? itemId = i["item_id"] is int
+                                          ? i["item_id"]
+                                          : int.tryParse(i["item_id"].toString());
+
+                                      if (itemId != null) {
+                                        searchitems.add(itemId);
+                                      }
+                                    }
+                                  });
+                                }
+                              } on Exception catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Error performing search : $e"),
+                                      backgroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
+                                  );
+                                }
                               }
                             },
+                            trailing: [
+                              IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                padding: EdgeInsets.zero,
+                                onPressed: () {
+                                  if (mounted) {
+                                    setState(() {
+                                      controller.clear();
+                                      searchitems.clear();
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    Flexible(
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: (widget.portrait) ? 5 : 4.8,
                         ),
-                        itemCount: searchitems.isNotEmpty
-                            ? searchitems.length
-                            : GlobalMenuCache.items.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          int itemId = searchitems.isNotEmpty
-                              ? searchitems.elementAt(index)
-                              : GlobalMenuCache.items.keys.elementAt(index);
-                          return Container(
-                            decoration: BoxDecoration(
-                              border: (!widget.portrait && index % 2 != 0)
-                                  ? Border(
-                                      left: BorderSide(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.54),
-                                        width: 1.0,
+                                              const SizedBox(height: 8),
+                                              Flexible(
+                                                child: GridView.builder(
+                                                  controller: gridScrollController,
+                                                  shrinkWrap: true,
+                                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(                            crossAxisCount: 2,
+                            childAspectRatio: (widget.portrait) ? 5.5 : 4.8,
+                            mainAxisSpacing: 4,
+                            crossAxisSpacing: 8,
+                          ),
+                          itemCount: searchitems.isNotEmpty
+                              ? searchitems.length
+                              : GlobalMenuCache.items.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            int itemId = searchitems.isNotEmpty
+                                ? searchitems.elementAt(index)
+                                : GlobalMenuCache.items.keys.elementAt(index);
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: (!widget.portrait && index % 2 != 0)
+                                    ? Border(
+                                        left: BorderSide(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.54),
+                                          width: 1.0,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: Row(
+                                children: [
+                                  Text("${index + 1}.", style: const TextStyle(fontSize: 12)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextFormField(
+                                      key: ValueKey("name_$itemId"),
+                                      initialValue:
+                                          GlobalMenuCache.items[itemId]?.name,
+                                      scrollPadding: const EdgeInsets.only(bottom: 120),
+                                      decoration: const InputDecoration(
+                                        labelText: "Name",
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                       ),
-                                    )
-                                  : null,
-                            ),
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: Row(
-                              children: [
-                                Text("${index + 1}."),
-                                const SizedBox(width: 5),
-                                Expanded(
-                                  flex: 3,
-                                  child: TextFormField(
-                                    key: ValueKey("name_$itemId"),
-                                    initialValue:
-                                        GlobalMenuCache.items[itemId]?.name,
-                                    decoration: const InputDecoration(
-                                      labelText: "Name",
+                                      style: const TextStyle(fontSize: 13),
+                                      onChanged: (value) {
+                                        changes[itemId] = {
+                                          ...changes[itemId] ?? {},
+                                          'name': value,
+                                        };
+                                      },
                                     ),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge,
-                                    onChanged: (value) {
-                                      changes[itemId] = {
-                                        ...changes[itemId] ?? {},
-                                        'name': value,
-                                      };
-                                    },
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 1,
-                                  child: TextFormField(
-                                    key: ValueKey("price_$itemId"),
-                                    initialValue: GlobalMenuCache
-                                        .items[itemId]
-                                        ?.price
-                                        .toString(),
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText: "Price",
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    flex: 1,
+                                    child: TextFormField(
+                                      key: ValueKey("price_$itemId"),
+                                      initialValue: GlobalMenuCache
+                                          .items[itemId]
+                                          ?.price
+                                          .toString(),
+                                      scrollPadding: const EdgeInsets.only(bottom: 120),
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText: "Price",
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      style: const TextStyle(fontSize: 13),
+                                      onChanged: (value) {
+                                        changes[itemId] = {
+                                          ...changes[itemId] ?? {},
+                                          'price': int.tryParse(value) ?? 0,
+                                        };
+                                      },
                                     ),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge,
-                                    onChanged: (value) {
-                                      changes[itemId] = {
-                                        ...changes[itemId] ?? {},
-                                        'price': int.tryParse(value) ?? 0,
-                                      };
-                                    },
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 1,
-                                  child: TextFormField(
-                                    key: ValueKey("stock_$itemId"),
-                                    initialValue: GlobalMenuCache
-                                        .items[itemId]
-                                        ?.stock
-                                        .toString(),
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText: "Stock",
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    flex: 1,
+                                    child: TextFormField(
+                                      key: ValueKey("stock_$itemId"),
+                                      initialValue: GlobalMenuCache
+                                          .items[itemId]
+                                          ?.stock
+                                          .toString(),
+                                      scrollPadding: const EdgeInsets.only(bottom: 120),
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText: "Stock",
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      ),
+                                      style: const TextStyle(fontSize: 13),
+                                      onChanged: (value) {
+                                        changes[itemId] = {
+                                          ...changes[itemId] ?? {},
+                                          'stocks': int.tryParse(value) ?? 0,
+                                        };
+                                      },
                                     ),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyLarge,
-                                    onChanged: (value) {
-                                      changes[itemId] = {
-                                        ...changes[itemId] ?? {},
-                                        'stocks': int.tryParse(value) ?? 0,
-                                      };
-                                    },
                                   ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text(
-                                        "Veg",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                      Checkbox(
-                                        visualDensity: VisualDensity.compact,
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        value:
-                                            changes[itemId]?['is_veg'] ??
-                                            GlobalMenuCache
-                                                .items[itemId]
-                                                ?.isVeg,
-                                        onChanged: (value) {
-                                          if (mounted) {
-                                            setState(() {
-                                              changes[itemId] = {
-                                                ...changes[itemId] ?? {},
-                                                'is_veg': value,
-                                              };
-                                            });
-                                          }
-                                        },
-                                      ),
-                                    ],
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          "Veg",
+                                          style: TextStyle(fontSize: 10),
+                                        ),
+                                        Checkbox(
+                                          visualDensity: VisualDensity.compact,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          value:
+                                              changes[itemId]?['is_veg'] ??
+                                              GlobalMenuCache
+                                                  .items[itemId]
+                                                  ?.isVeg,
+                                          onChanged: (value) {
+                                            if (mounted) {
+                                              setState(() {
+                                                changes[itemId] = {
+                                                  ...changes[itemId] ?? {},
+                                                  'is_veg': value,
+                                                };
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text(
-                                        "Menu",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                      Checkbox(
-                                        visualDensity: VisualDensity.compact,
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        value:
-                                            changes[itemId]?['available'] ??
-                                            GlobalMenuCache
-                                                .items[itemId]
-                                                ?.available,
-                                        onChanged: (value) {
-                                          if (mounted) {
-                                            setState(() {
-                                              changes[itemId] = {
-                                                ...changes[itemId] ?? {},
-                                                'available': value,
-                                              };
-                                            });
-                                          }
-                                        },
-                                      ),
-                                    ],
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          "Menu",
+                                          style: TextStyle(fontSize: 10),
+                                        ),
+                                        Checkbox(
+                                          visualDensity: VisualDensity.compact,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          value:
+                                              changes[itemId]?['available'] ??
+                                              GlobalMenuCache
+                                                  .items[itemId]
+                                                  ?.available,
+                                          onChanged: (value) {
+                                            if (mounted) {
+                                              setState(() {
+                                                changes[itemId] = {
+                                                  ...changes[itemId] ?? {},
+                                                  'available': value,
+                                                };
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ElevatedButton(
+                              style: getActionButtonStyle(context, false).copyWith(
+                                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+                              ),
+                              onPressed: () {
+                                if (!isWindows) {
+                                  SystemChrome.setPreferredOrientations([
+                                    DeviceOrientation.portraitUp,
+                                  ]);
+                                }
+                                Navigator.pop(context);
+                              },
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.close, size: 18),
+                                  const SizedBox(width: 4),
+                                  Text(AppLocalizations.of(context)!.cancel, style: const TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              style: getActionButtonStyle(context, true).copyWith(
+                                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+                              ),
+                              onPressed: () async {
+                                for (int i in changes.keys) {
+                                  final itemChanges = changes[i];
+                                  if (itemChanges == null) continue;
+
+                                  final originalItem = GlobalMenuCache.items[i];
+                                  if (originalItem == null) continue;
+
+                                  final updatedItem = {
+                                    'name': itemChanges['name'] ?? originalItem.name,
+                                    'price': itemChanges['price'] ?? originalItem.price,
+                                    'is_veg': itemChanges['is_veg'] ?? originalItem.isVeg,
+                                    'available':
+                                        itemChanges['available'] ?? originalItem.available,
+                                    'stocks': itemChanges['stocks'] ?? originalItem.stock,
+                                    'pic': originalItem.pic,
+                                  };
+                                  if (mounted) {
+                                    setState(() {
+                                      GlobalMenuCache.items[i] = MenuItem(
+                                        id: i,
+                                        name: updatedItem['name'],
+                                        price: updatedItem['price'],
+                                        isVeg: updatedItem['is_veg'],
+                                        available: updatedItem['available'],
+                                        stock: updatedItem['stocks'],
+                                        pic: updatedItem['pic'],
+                                      );
+                                    });
+                                  }
+                                  await updateitem(i, updatedItem);
+                                }
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Item Changes are Successful"),
+                                      backgroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
+                                    ),
+                                  );
+                                  if (!isWindows) {
+                                    SystemChrome.setPreferredOrientations([
+                                      DeviceOrientation.portraitUp,
+                                    ]);
+                                  }
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.check, size: 18),
+                                  const SizedBox(width: 4),
+                                  Text(AppLocalizations.of(context)!.submit, style: const TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
               if (isWindows) {
-                return SizedBox(width: 800, child: content);
+                return Dialog(
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  child: SizedBox(width: 800, child: content),
+                );
               }
-              return content;
+              return Dialog(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                child: content,
+              );
             },
           ),
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  style: getActionButtonStyle(context, false),
-                  onPressed: () {
-                    if (!isWindows) {
-                      SystemChrome.setPreferredOrientations([
-                        DeviceOrientation.portraitUp,
-                      ]);
-                    }
-                    Navigator.pop(context);
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(Icons.close),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.cancel),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  style: getActionButtonStyle(context, true),
-                  onPressed: () async {
-                    for (int i in changes.keys) {
-                      final itemChanges = changes[i];
-                      if (itemChanges == null) continue;
-
-                      final originalItem = GlobalMenuCache.items[i];
-                      if (originalItem == null) continue;
-
-                      final updatedItem = {
-                        'name': itemChanges['name'] ?? originalItem.name,
-                        'price': itemChanges['price'] ?? originalItem.price,
-                        'is_veg': itemChanges['is_veg'] ?? originalItem.isVeg,
-                        'available':
-                            itemChanges['available'] ?? originalItem.available,
-                        'stocks': itemChanges['stocks'] ?? originalItem.stock,
-                        'pic': originalItem.pic,
-                      };
-                      if (mounted) {
-                        setState(() {
-                          GlobalMenuCache.items[i] = MenuItem(
-                            id: i,
-                            name: updatedItem['name'],
-                            price: updatedItem['price'],
-                            isVeg: updatedItem['is_veg'],
-                            available: updatedItem['available'],
-                            stock: updatedItem['stocks'],
-                            pic: updatedItem['pic'],
-                          );
-                        });
-                      }
-                      await updateitem(i, updatedItem);
-                    }
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Item Changes are Successful"),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.secondary,
-                        ),
-                      );
-                      if (!isWindows) {
-                        SystemChrome.setPreferredOrientations([
-                          DeviceOrientation.portraitUp,
-                        ]);
-                      }
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check),
-                      const SizedBox(width: 8),
-                      Text(AppLocalizations.of(context)!.submit),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
         );
       },
     );
@@ -1114,7 +1148,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: widget.portrait
             ? 2
-            : (MediaQuery.of(context).size.width / 250).floor().clamp(2, 8),
+            : (MediaQuery.sizeOf(context).width / 250).floor().clamp(2, 8),
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 0.8,

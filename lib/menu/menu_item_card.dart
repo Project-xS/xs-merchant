@@ -32,17 +32,18 @@ class MenuItemCard extends StatelessWidget {
     final stockValue = item.stock;
     final stockDisplay = stockValue == -1 ? '∞' : stockValue.toString();
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 4,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Image Background
-            Positioned.fill(child: _buildImage(itemId)),
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 4,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Image Background
+              Positioned.fill(child: _buildImage(itemId)),
 
             // Gradient Overlay for text readability
             Positioned.fill(
@@ -200,7 +201,7 @@ class MenuItemCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildImage(int itemId) {

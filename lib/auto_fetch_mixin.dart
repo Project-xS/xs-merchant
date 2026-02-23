@@ -4,10 +4,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:merchant/api/api_client.dart';
-import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/common/global_menu_cache.dart';
+import 'package:merchant/api/api_constants.dart';
+import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/models/menu_item.dart';
 import 'package:merchant/models/order_models.dart';
+import 'package:merchant/providers/notification_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:merchant/common/notification_service.dart';
 
 mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   Timer? timer;
@@ -70,32 +74,74 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
       if (response.statusCode == 200) {
         Map<String, dynamic> decodedJson = jsonDecode(response.body);
         debugPrint("Fetched: ${decodedJson.toString()}");
-        List<dynamic> dataList = decodedJson["data"];
+        List<dynamic>? dataList = decodedJson["data"];
         if (!mounted) return;
+        
+        if (dataList == null) {
+          debugPrint("Error: 'data' field is null in response");
+          if (mounted) setState(() { isLoading = false; });
+          return;
+        }
 
-        // We shouldn't clear here if we want to avoid flickering,
-        // but the original logic cleared it.
-        // Let's keep existing logic but wrapped in safety.
-        setState(() {
-          GlobalMenuCache.availableid.clear();
-          GlobalMenuCache.navailableid.clear();
-          GlobalMenuCache.items.clear();
-        });
+        Map<int, MenuItem> tempFetchedItems = {};
+        LinkedHashSet<int> tempFetchedAid = LinkedHashSet();
+        LinkedHashSet<int> tempFetchedNaid = LinkedHashSet();
 
         for (var item1 in dataList) {
-          if (item1["is_available"] == true &&
-              (item1["stock"] == -1 || item1["stock"] >= 1)) {
-            fetchedAid.add(item1["item_id"]);
-          } else {
-            fetchedNaid.add(item1["item_id"]);
+          try {
+            final menuItem = MenuItem.fromJson(item1);
+            if (menuItem.available == true &&
+                (menuItem.stock == -1 || menuItem.stock >= 1)) {
+              tempFetchedAid.add(menuItem.id);
+            } else {
+              tempFetchedNaid.add(menuItem.id);
+            }
+            tempFetchedItems[menuItem.id] = menuItem;
+          } catch (itemError) {
+            debugPrint("Error parsing individual item: $itemError, item data: $item1");
           }
-          fetchedItems[item1["item_id"]] = MenuItem.fromJson(item1);
         }
         if (!mounted) return;
+
+        // Perform stock check and notification
+        try {
+          final l10n = AppLocalizations.of(context);
+          final notificationProvider =
+              Provider.of<NotificationProvider>(context, listen: false);
+
+          await NotificationService.checkAndNotifyStock(
+            tempFetchedItems.values.toList(),
+            titleBuilder: l10n != null ? (item) => l10n.stock_alert_title : null,
+            bodyBuilder: l10n != null
+                ? (item) => l10n.stock_alert_body(item.name, item.stock)
+                : null,
+            onNotify: (item, title, body) {
+              notificationProvider.addNotification(
+                InAppNotification(
+                  id: item.id,
+                  title: title,
+                  message: body,
+                  timestamp: DateTime.now(),
+                ),
+              );
+            },
+            onStockHealthy: (item) {
+              notificationProvider.removeNotification(item.id);
+            },
+          );
+        } catch (notifError) {
+          debugPrint("Notification service error: $notifError");
+        }
+
         setState(() {
+          fetchedItems = tempFetchedItems;
+          fetchedAid = tempFetchedAid;
+          fetchedNaid = tempFetchedNaid;
+          
           GlobalMenuCache.items = fetchedItems;
           GlobalMenuCache.availableid = fetchedAid;
           GlobalMenuCache.navailableid = fetchedNaid;
+          
           applySorting(
             GlobalMenuCache.items,
             sort,
@@ -121,9 +167,6 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             '[menu] non-200: ${response.statusCode} body=${response.body}',
           );
         }
-        if (kDebugMode) {
-          debugPrint("Failed to load data: ${response.statusCode}");
-        }
 
         if (mounted) {
           setState(() {
@@ -136,7 +179,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
       if (mounted && Scaffold.maybeOf(context) != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Check Internet Connection"),
+            content: Text("Error: $e"),
             backgroundColor: Colors.redAccent,
           ),
         );
