@@ -1,5 +1,5 @@
-name: merchant
-description: "A new Flutter project."
+name: "merchant"
+description: "Merchant side app to Namma Canteen (xS)"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -46,8 +46,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_switch: ^0.3.2
   http: ^1.3.0
-  flutter_dotenv: ^5.2.1
-  mobile_scanner: ^5.2.3
+  flutter_dotenv: ^6.0.0
+  mobile_scanner: ^7.2.0
   shared_preferences: ^2.5.2
   flutter_esc_pos_utils: ^0.1.8
   esc_pos_printer: ^4.1.0
@@ -69,7 +69,7 @@ dependencies:
   # image: ^4.5.4
 
 dev_dependencies:
-  intl_translation: ^0.20.1
+  intl_translation: ^0.21.0
   flutter_test:
     sdk: flutter
 

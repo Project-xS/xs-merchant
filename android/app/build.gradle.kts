@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.merchant"
+    namespace = "com.nammacanteen.merchant"
     compileSdk = 36
     ndkVersion = "27.0.12077973"
 

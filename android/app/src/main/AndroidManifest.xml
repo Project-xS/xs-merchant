@@ -10,7 +10,7 @@
 
     
     <application
-        android:label="merchant"
+        android:label="Namma Canteen - Merchant"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
