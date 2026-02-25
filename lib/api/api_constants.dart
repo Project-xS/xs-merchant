@@ -1,6 +1,9 @@
 class ApiConstants {
   // Auth
   static const String login = '/canteen/login';
+  static const String canteenList = '/canteen';
+  static const String canteenOpen = '/canteen/open';
+  static const String canteenClose = '/canteen/close';
 
   // Menu
   static const String menuCreate = '/menu/create';

@@ -181,4 +181,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String stock_alert_body(String name, int stock) {
     return '$name is running low on stock ($stock remaining)';
   }
+
+  @override
+  String get shop_open => 'Open';
+
+  @override
+  String get shop_closed => 'Closed';
+
+  @override
+  String get open_shop => 'Open Shop';
+
+  @override
+  String get close_shop => 'Close Shop';
+
+  @override
+  String get always_open => 'Always Open';
+
+  @override
+  String get shop_status_unknown => 'Status Unknown';
+
+  @override
+  String get shop_closed_banner =>
+      'Shop is closed. New holds will not be created.';
+
+  @override
+  String get confirm_open_shop => 'Are you sure you want to open the shop?';
+
+  @override
+  String get confirm_close_shop => 'Are you sure you want to close the shop?';
+
+  @override
+  String get confirm_action => 'Confirm';
 }

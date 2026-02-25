@@ -91,5 +91,15 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "shop_open": "Open",
+    "shop_closed": "Closed",
+    "open_shop": "Open Shop",
+    "close_shop": "Close Shop",
+    "always_open": "Always Open",
+    "shop_status_unknown": "Status Unknown",
+    "shop_closed_banner": "Shop is closed. New holds will not be created.",
+    "confirm_open_shop": "Are you sure you want to open the shop?",
+    "confirm_close_shop": "Are you sure you want to close the shop?",
+    "confirm_action": "Confirm"
 }

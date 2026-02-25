@@ -24,6 +24,7 @@ import 'package:window_size/window_size.dart';
 
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/menu/edit_item_dialog.dart';
+import 'package:merchant/providers/canteen_status_provider.dart';
 import 'package:merchant/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:merchant/common/notification_service.dart';
@@ -63,6 +64,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => CanteenStatusProvider()),
       ],
       child: const MyApp(),
     ),
@@ -170,11 +172,8 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   Future<void> firstTimeloggedin() async {
     final session = await AuthService.loadFromStorage();
     if (session != null && !session.isExpired) {
-      setState(() {
-        isLoggedin = true;
-        canteenId = session.canteenId ?? 0;
-        name = (session.canteenName ?? " ").trim().toUpperCase();
-      });
+      final displayName = (session.canteenName ?? " ").trim().toUpperCase();
+      updateLoginState(true, session.canteenId ?? 0, displayName);
     }
   }
 
@@ -185,11 +184,28 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   }
 
   void updateLoginState(bool loggedIn, int id, String canteenname) {
+    if (!mounted) return;
     setState(() {
       isLoggedin = loggedIn;
       canteenId = id;
       name = canteenname;
     });
+    final statusProvider =
+        Provider.of<CanteenStatusProvider>(context, listen: false);
+    if (loggedIn) {
+      statusProvider.refresh();
+    } else {
+      statusProvider.stopPolling();
+    }
+  }
+
+  @override
+  Future<void> fetchAndCacheAndNotify() async {
+    await super.fetchAndCacheAndNotify();
+    if (!mounted || !AuthService.isLoggedIn) return;
+    final statusProvider =
+        Provider.of<CanteenStatusProvider>(context, listen: false);
+    statusProvider.refresh(silent: true);
   }
 
   @override
@@ -513,6 +529,206 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Widget _buildStatusChip(
+    ThemeData theme,
+    AppLocalizations localizations,
+    CanteenStatusProvider status,
+  ) {
+    final bool hasStatus = status.hasStatus;
+    final bool isAlwaysOpen = status.isAlwaysOpen;
+    final bool isOpen = status.isOpen;
+
+    String label;
+    Color baseColor;
+
+    if (!hasStatus) {
+      label = localizations.shop_status_unknown;
+      baseColor = theme.colorScheme.onSurfaceVariant;
+    } else if (isAlwaysOpen) {
+      label = localizations.always_open;
+      baseColor = theme.colorScheme.primary;
+    } else if (isOpen) {
+      label = localizations.shop_open;
+      baseColor = Colors.green;
+    } else {
+      label = localizations.shop_closed;
+      baseColor = theme.colorScheme.error;
+    }
+
+    final chip = Chip(
+      label: Text(
+        label,
+        style: theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
+            TextStyle(color: baseColor),
+      ),
+      backgroundColor: baseColor.withOpacity(0.15),
+      side: BorderSide(color: baseColor.withOpacity(0.4)),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+    );
+
+    final error = status.error;
+    if (error != null && error.isNotEmpty) {
+      return Tooltip(message: error, child: chip);
+    }
+    return chip;
+  }
+
+  Widget? _buildStatusActionButton(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations localizations,
+    CanteenStatusProvider status,
+  ) {
+    if (!status.hasStatus || status.isAlwaysOpen) return null;
+
+    final bool isOpen = status.isOpen;
+    final String label = isOpen ? localizations.close_shop : localizations.open_shop;
+    final IconData icon = isOpen ? Icons.lock : Icons.lock_open;
+
+    return FilledButton.icon(
+      onPressed: status.isLoading
+          ? null
+          : () async {
+              final confirmed = await _confirmShopToggle(
+                context,
+                localizations,
+                isOpen,
+              );
+              if (!confirmed || !context.mounted) return;
+
+              final error = isOpen
+                  ? await status.closeCanteen()
+                  : await status.openCanteen();
+              if (!context.mounted) return;
+              if (error != null && error.isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        minimumSize: const Size(0, 44),
+        textStyle: theme.textTheme.labelLarge?.copyWith(fontSize: 16),
+      ),
+    );
+  }
+
+  Future<bool> _confirmShopToggle(
+    BuildContext context,
+    AppLocalizations localizations,
+    bool isOpen,
+  ) async {
+    final title = isOpen
+        ? localizations.close_shop
+        : localizations.open_shop;
+    final message = isOpen
+        ? localizations.confirm_close_shop
+        : localizations.confirm_open_shop;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final media = MediaQuery.of(context);
+        final isCompact = media.size.width < 600;
+        final dialogWidth = isCompact ? media.size.width : 520.0;
+        final horizontalInsetRaw = (media.size.width - dialogWidth) / 2;
+        final horizontalInset = isCompact
+            ? 24.0
+            : (horizontalInsetRaw < 24.0 ? 24.0 : horizontalInsetRaw);
+
+        return AlertDialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: horizontalInset,
+            vertical: 24.0,
+          ),
+          title: Text(title),
+          content: SizedBox(
+            width: dialogWidth,
+            child: Text(message),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(localizations.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(localizations.confirm_action),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Widget _buildClosedBanner(
+    ThemeData theme,
+    AppLocalizations localizations,
+    CanteenStatusProvider status,
+  ) {
+    if (!status.hasStatus || status.isAlwaysOpen || status.isOpen) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Material(
+        color: theme.colorScheme.error.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: theme.colorScheme.error.withOpacity(0.6),
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.all(14.0),
+          child: Row(
+            children: [
+              Icon(
+                Icons.storefront,
+                color: theme.colorScheme.error,
+                size: 30,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      localizations.shop_closed,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      localizations.shop_closed_banner,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> getPages(bool portrait) {
     return [
       Menupage(portrait, widget.isTamil, widget.canteenId),
@@ -539,6 +755,15 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          Consumer<CanteenStatusProvider>(
+            builder: (context, status, _) {
+              final chip = _buildStatusChip(theme, localizations, status);
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: chip,
+              );
+            },
+          ),
           IconButton(
             onPressed: () => _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
             tooltip: 'More',
@@ -576,23 +801,94 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
                           localizations.language,
-                          style: theme.textTheme.titleLarge?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
                             color: const Color.fromARGB(204, 255, 255, 255),
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      SwitchListTile(
-                        title: Text(
-                          widget.isTamil ? "English" : "தமிழ்",
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(90, 13, 17, 23),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color.fromARGB(40, 255, 255, 255),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                widget.isTamil ? "English" : "தமிழ்",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Switch(
+                                value: widget.isTamil,
+                                onChanged: widget.changeLanguage,
+                                activeColor: theme.colorScheme.primary,
+                              ),
+                            ],
                           ),
                         ),
-                        value: widget.isTamil,
-                        onChanged: widget.changeLanguage,
-                        activeColor: theme.colorScheme.primary,
                       ),
+                      const SizedBox(height: 14),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          "Shop Controls",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: const Color.fromARGB(204, 255, 255, 255),
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Consumer<CanteenStatusProvider>(
+                          builder: (context, status, _) {
+                            final actionButton = _buildStatusActionButton(
+                              context,
+                              theme,
+                              localizations,
+                              status,
+                            );
+                            if (actionButton != null) {
+                              return SizedBox(
+                                width: double.infinity,
+                                child: actionButton,
+                              );
+                            }
+                            if (!status.hasStatus) {
+                              return Text(
+                                localizations.shop_status_unknown,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              );
+                            }
+                            if (status.isAlwaysOpen) {
+                              return Text(
+                                localizations.always_open,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       const Divider(color: Colors.white24),
                       ListTile(
                         leading: const Icon(Icons.receipt_long, size: 28),
@@ -789,6 +1085,11 @@ class _HomePageState extends State<HomePage> {
                 style: theme.textTheme.displayLarge,
               ),
             ),
+          ),
+          Consumer<CanteenStatusProvider>(
+            builder: (context, status, _) {
+              return _buildClosedBanner(theme, localizations, status);
+            },
           ),
           Expanded(
             child: AnimatedSwitcher(

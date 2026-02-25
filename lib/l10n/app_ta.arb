@@ -91,5 +91,15 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "shop_open": "திறந்தது",
+    "shop_closed": "மூடியது",
+    "open_shop": "கடையை திறக்கவும்",
+    "close_shop": "கடையை மூடவும்",
+    "always_open": "எப்போதும் திறந்தது",
+    "shop_status_unknown": "நிலை தெரியவில்லை",
+    "shop_closed_banner": "கடை மூடப்பட்டுள்ளது. புதிய ஹோல்ட்கள் உருவாக்கப்படாது.",
+    "confirm_open_shop": "கடையை திறக்க விரும்புகிறீர்களா?",
+    "confirm_close_shop": "கடையை மூட விரும்புகிறீர்களா?",
+    "confirm_action": "உறுதி"
 }

@@ -421,6 +421,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} is running low on stock ({stock} remaining)'**
   String stock_alert_body(String name, int stock);
+
+  /// No description provided for @shop_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get shop_open;
+
+  /// No description provided for @shop_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get shop_closed;
+
+  /// No description provided for @open_shop.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Shop'**
+  String get open_shop;
+
+  /// No description provided for @close_shop.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Shop'**
+  String get close_shop;
+
+  /// No description provided for @always_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Always Open'**
+  String get always_open;
+
+  /// No description provided for @shop_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Status Unknown'**
+  String get shop_status_unknown;
+
+  /// No description provided for @shop_closed_banner.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop is closed. New holds will not be created.'**
+  String get shop_closed_banner;
+
+  /// No description provided for @confirm_open_shop.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to open the shop?'**
+  String get confirm_open_shop;
+
+  /// No description provided for @confirm_close_shop.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to close the shop?'**
+  String get confirm_close_shop;
+
+  /// No description provided for @confirm_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm_action;
 }
 
 class _AppLocalizationsDelegate

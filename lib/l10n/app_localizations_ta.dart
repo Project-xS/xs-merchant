@@ -181,4 +181,35 @@ class AppLocalizationsTa extends AppLocalizations {
   String stock_alert_body(String name, int stock) {
     return '$name கையிருப்பு குறைவாக உள்ளது ($stock மீதமுள்ளது)';
   }
+
+  @override
+  String get shop_open => 'திறந்தது';
+
+  @override
+  String get shop_closed => 'மூடியது';
+
+  @override
+  String get open_shop => 'கடையை திறக்கவும்';
+
+  @override
+  String get close_shop => 'கடையை மூடவும்';
+
+  @override
+  String get always_open => 'எப்போதும் திறந்தது';
+
+  @override
+  String get shop_status_unknown => 'நிலை தெரியவில்லை';
+
+  @override
+  String get shop_closed_banner =>
+      'கடை மூடப்பட்டுள்ளது. புதிய ஹோல்ட்கள் உருவாக்கப்படாது.';
+
+  @override
+  String get confirm_open_shop => 'கடையை திறக்க விரும்புகிறீர்களா?';
+
+  @override
+  String get confirm_close_shop => 'கடையை மூட விரும்புகிறீர்களா?';
+
+  @override
+  String get confirm_action => 'உறுதி';
 }
