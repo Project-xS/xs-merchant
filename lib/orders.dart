@@ -59,7 +59,7 @@ class OrdersState extends State<Orders> with OrderFetchMixin<Orders> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 60.0),
+        padding: const EdgeInsets.only(bottom: kBottomNavigationBarHeight + 20),
         child: FloatingActionButton.extended(
           onPressed: () {
             triggerOrderFetch();

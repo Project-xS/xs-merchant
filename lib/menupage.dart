@@ -949,7 +949,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 60.0),
+        padding: const EdgeInsets.only(bottom: kBottomNavigationBarHeight + 20),
         child: SpeedDial(
           icon: Icons.add,
           activeIcon: Icons.close,

@@ -205,7 +205,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
             name: name,
             isTamil: isTamil,
             canteenId: canteenId,
-            isPortrait: Platform.isAndroid,
+            isPortrait: Platform.isAndroid || Platform.isIOS,
           ),
         },
         child: MaterialApp(
@@ -393,7 +393,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   static final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-  bool portrait = Platform.isAndroid;
+  bool portrait = Platform.isAndroid || Platform.isIOS;
   int currentIndex = 0;
 
   void _showEditDialogFromNotification(BuildContext context, MenuItem item) {
@@ -497,7 +497,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _updatePortrait() {
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid || Platform.isIOS) {
       final newPortrait = MediaQuery.orientationOf(context) == Orientation.portrait;
       if (portrait != newPortrait) {
         setState(() {

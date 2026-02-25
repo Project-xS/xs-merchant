@@ -16,7 +16,7 @@ class Login extends StatefulWidget {
   State<Login> createState() => LoginState();
 }
 
-final bool _isAndroid = Platform.isAndroid;
+final bool _isAndroid = Platform.isAndroid || Platform.isIOS;
 
 class LoginState extends State<Login> with TickerProviderStateMixin {
   bool isLoggedin = false;
