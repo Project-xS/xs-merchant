@@ -195,7 +195,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get close_shop => 'Close Shop';
 
   @override
-  String get always_open => 'Always Open';
+  String get always_open => 'Open';
 
   @override
   String get shop_status_unknown => 'Status Unknown';

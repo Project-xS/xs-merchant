@@ -25,6 +25,8 @@ class _OrderHistoryState extends State<OrderHistory>
   Map<int, OrderItemContainer> orderhistory = {};
 
   List<int> searchResults = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _showBackToTop = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -34,6 +36,27 @@ class _OrderHistoryState extends State<OrderHistory>
     super.initState();
     _loadOrderHistory();
     _clearOrderHistoryIfNewDay();
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 400 && !_showBackToTop) {
+        setState(() => _showBackToTop = true);
+      } else if (_scrollController.offset <= 400 && _showBackToTop) {
+        setState(() => _showBackToTop = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   Set<int> get deliverlater => orderhistory.entries
@@ -119,10 +142,22 @@ class _OrderHistoryState extends State<OrderHistory>
         child: SizedBox(width: contentWidth, child: child),
       );
     }
-
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: _showBackToTop
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 60.0), // Lift it above navbar
+              child: FloatingActionButton(
+                onPressed: _scrollToTop,
+                mini: true,
+                backgroundColor: theme.colorScheme.primary,
+                child: const Icon(Icons.arrow_upward, color: Colors.white),
+              ),
+            )
+          : null,
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
@@ -263,6 +298,9 @@ class _OrderHistoryState extends State<OrderHistory>
             ),
           ),
           buildSearchList(searchResults),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 100),
+          ),
         ],
       ),
     );
@@ -281,12 +319,16 @@ class _OrderHistoryState extends State<OrderHistory>
           );
         }
         final orderId = keys[index];
+        final orderData = orderhistory[orderId]!;
+        final isDeliverLater = orderData.submitted == null;
+
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: HistoryOrderCard(
               orderId: orderId,
-              orderData: orderhistory[orderId]!,
+              orderData: orderData,
+              onTap: isDeliverLater ? () => _showDeliverLaterConfirmation(orderId) : null,
             ),
           ),
         );
@@ -352,10 +394,17 @@ class _OrderHistoryState extends State<OrderHistory>
           },
           onMarkDelivered: (submit, orderId) {
             markdelivered(submit, orderId);
-            // Clear search results to refresh view if needed
-            setState(() {
-              searchResults.clear();
-            });
+            if (submit) {
+              setState(() {
+                orderhistory.remove(orderId);
+                _saveOrderHistory();
+                searchResults.clear();
+              });
+            } else {
+              setState(() {
+                searchResults.clear();
+              });
+            }
           },
         );
       },
@@ -370,11 +419,49 @@ class _OrderHistoryState extends State<OrderHistory>
           onDeliver: (orderId) {
             markdelivered(true, orderId, showSuccessSnackBar: false);
             setState(() {
+              orderhistory.remove(orderId);
+              _saveOrderHistory();
               searchResults.clear();
+            });
+          },
+          onOrderScanned: (orderData) {
+            setState(() {
+              orderhistory[orderData.orderId] = orderData;
+              _saveOrderHistory();
             });
           },
         );
       },
     );
+  }
+
+  Future<void> _showDeliverLaterConfirmation(int orderId) async {
+    final localizations = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Deliver Order"),
+        content: Text("Are you sure you want to mark order #$orderId as delivered?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(localizations.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Deliver"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      markdelivered(true, orderId);
+      setState(() {
+        orderhistory.remove(orderId);
+        _saveOrderHistory();
+        searchResults.clear();
+      });
+    }
   }
 }

@@ -13,8 +13,13 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QrScanDialog extends StatefulWidget {
   final void Function(int orderId) onDeliver;
+  final void Function(OrderItemContainer orderData) onOrderScanned;
 
-  const QrScanDialog({super.key, required this.onDeliver});
+  const QrScanDialog({
+    super.key,
+    required this.onDeliver,
+    required this.onOrderScanned,
+  });
 
   @override
   State<QrScanDialog> createState() => _QrScanDialogState();
@@ -107,6 +112,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
           final data = decoded?['data'];
           if (data != null) {
             _orderData = OrderItemContainer.fromJson(data);
+            widget.onOrderScanned(_orderData!);
           }
           _error = null;
         });
@@ -155,7 +161,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
 
     // Use a large portion of the screen for the scanner, but keep it reasonable
     // for smaller devices or landscape modes.
-    final scanHeight = (screenHeight * 0.45).clamp(250.0, 450.0);
+    final scanHeight = (screenHeight * 0.45).clamp(250.0, 280.0);
 
     return AlertDialog(
       title: Text(localizations.item_delivery),
@@ -466,7 +472,7 @@ class _QrScanDialogState extends State<QrScanDialog> {
                 children: [
                   Text("Total", style: theme.textTheme.titleSmall),
                   Text(
-                    "₹${totalPrice}",
+                    "₹$totalPrice",
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,

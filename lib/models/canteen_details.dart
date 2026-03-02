@@ -31,9 +31,9 @@ class CanteenDetails {
       canteenName: canteenNameRaw?.toString() ?? '',
       location: locationRaw?.toString() ?? '',
       openingTime:
-          json['opening_time'] == null ? null : json['opening_time'].toString(),
+          json['opening_time']?.toString(),
       closingTime:
-          json['closing_time'] == null ? null : json['closing_time'].toString(),
+          json['closing_time']?.toString(),
       isOpen: json['is_open'] == true,
       picEtag: json['pic_etag']?.toString(),
     );

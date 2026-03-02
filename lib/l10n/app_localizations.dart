@@ -449,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @always_open.
   ///
   /// In en, this message translates to:
-  /// **'Always Open'**
+  /// **'Open'**
   String get always_open;
 
   /// No description provided for @shop_status_unknown.

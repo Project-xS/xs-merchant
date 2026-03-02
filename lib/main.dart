@@ -544,27 +544,67 @@ class _HomePageState extends State<HomePage> {
     if (!hasStatus) {
       label = localizations.shop_status_unknown;
       baseColor = theme.colorScheme.onSurfaceVariant;
+    } else if (!isOpen) {
+      label = localizations.shop_closed;
+      baseColor = theme.colorScheme.error;
     } else if (isAlwaysOpen) {
       label = localizations.always_open;
       baseColor = theme.colorScheme.primary;
-    } else if (isOpen) {
+    } else {
       label = localizations.shop_open;
       baseColor = Colors.green;
-    } else {
-      label = localizations.shop_closed;
-      baseColor = theme.colorScheme.error;
     }
 
-    final chip = Chip(
-      label: Text(
-        label,
-        style: theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
-            TextStyle(color: baseColor),
+    final chip = ActionChip(
+      onPressed: !hasStatus || status.isLoading
+          ? null
+          : () async {
+              final confirmed = await _confirmShopToggle(
+                context,
+                localizations,
+                isOpen,
+              );
+              if (!confirmed || !context.mounted) return;
+
+              final error = isOpen
+                  ? await status.closeCanteen()
+                  : await status.openCanteen();
+              if (!context.mounted) return;
+              if (error != null && error.isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (status.isLoading)
+            Padding(
+              padding: const EdgeInsets.only(right: 6.0),
+              child: SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: baseColor,
+                ),
+              ),
+            ),
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
+                TextStyle(color: baseColor),
+          ),
+        ],
       ),
       backgroundColor: baseColor.withOpacity(0.15),
       side: BorderSide(color: baseColor.withOpacity(0.4)),
       visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
 
     final error = status.error;
@@ -580,11 +620,12 @@ class _HomePageState extends State<HomePage> {
     AppLocalizations localizations,
     CanteenStatusProvider status,
   ) {
-    if (!status.hasStatus || status.isAlwaysOpen) return null;
+    if (!status.hasStatus) return null;
 
     final bool isOpen = status.isOpen;
     final String label = isOpen ? localizations.close_shop : localizations.open_shop;
     final IconData icon = isOpen ? Icons.lock : Icons.lock_open;
+    final Color btnColor = isOpen ? theme.colorScheme.error : theme.colorScheme.primary;
 
     return FilledButton.icon(
       onPressed: status.isLoading
@@ -613,6 +654,8 @@ class _HomePageState extends State<HomePage> {
       icon: Icon(icon, size: 18),
       label: Text(label),
       style: FilledButton.styleFrom(
+        backgroundColor: btnColor,
+        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         minimumSize: const Size(0, 44),
         textStyle: theme.textTheme.labelLarge?.copyWith(fontSize: 16),
@@ -674,7 +717,7 @@ class _HomePageState extends State<HomePage> {
     AppLocalizations localizations,
     CanteenStatusProvider status,
   ) {
-    if (!status.hasStatus || status.isAlwaysOpen || status.isOpen) {
+    if (!status.hasStatus || status.isOpen) {
       return const SizedBox.shrink();
     }
 
@@ -856,18 +899,6 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Consumer<CanteenStatusProvider>(
                           builder: (context, status, _) {
-                            final actionButton = _buildStatusActionButton(
-                              context,
-                              theme,
-                              localizations,
-                              status,
-                            );
-                            if (actionButton != null) {
-                              return SizedBox(
-                                width: double.infinity,
-                                child: actionButton,
-                              );
-                            }
                             if (!status.hasStatus) {
                               return Text(
                                 localizations.shop_status_unknown,
@@ -876,15 +907,70 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               );
                             }
-                            if (status.isAlwaysOpen) {
-                              return Text(
-                                localizations.always_open,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white70,
-                                ),
-                              );
+
+                            final bool hasStatus = status.hasStatus;
+                            final bool isOpen = status.isOpen;
+                            final bool isAlwaysOpen = status.isAlwaysOpen;
+
+                            String statusText;
+                            IconData statusIcon;
+                            Color statusColor = Colors.white54;
+
+                            if (!hasStatus) {
+                              statusText = localizations.shop_status_unknown;
+                              statusIcon = Icons.help_outline;
+                            } else if (!isOpen) {
+                              statusText = localizations.shop_closed;
+                              statusIcon = Icons.lock_outline;
+                              statusColor = theme.colorScheme.error.withOpacity(0.8);
+                            } else if (isAlwaysOpen) {
+                              statusText = localizations.always_open;
+                              statusIcon = Icons.all_inclusive;
+                              statusColor = theme.colorScheme.primary.withOpacity(0.8);
+                            } else {
+                              statusText = localizations.shop_open;
+                              statusIcon = Icons.check_circle_outline;
+                              statusColor = Colors.green.withOpacity(0.8);
                             }
-                            return const SizedBox.shrink();
+
+                            final actionButton = _buildStatusActionButton(
+                              context,
+                              theme,
+                              localizations,
+                              status,
+                            );
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        statusIcon,
+                                        size: 16,
+                                        color: statusColor,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        statusText,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: statusColor,
+                                          fontStyle: FontStyle.italic,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (actionButton != null)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: actionButton,
+                                  ),
+                              ],
+                            );
                           },
                         ),
                       ),

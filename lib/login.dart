@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:merchant/api/api_client.dart';
@@ -32,7 +31,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late AnimationController _snowfallController;
-  final List<Snowflake> _snowflakes = List.generate(85, (index) => Snowflake());
+  // final List<Snowflake> _snowflakes = List.generate(85, (index) => Snowflake());
 
   @override
   void initState() {

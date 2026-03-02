@@ -185,7 +185,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                     setState(() {
                       final item = GlobalMenuCache.items[id!];
                       if (item != null) {
-                        GlobalMenuCache.items[id!] = item.copyWith(pic: url);
+                        GlobalMenuCache.items[id] = item.copyWith(pic: url);
                         changeimage(id, url);
                       }
                     });
