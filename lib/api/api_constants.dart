@@ -11,11 +11,14 @@ class ApiConstants {
   static String menuDelete(int id) => '/menu/delete/$id';
   static String menuUploadPic(dynamic id) => '/menu/upload_pic/$id';
   static String menuSetPic(dynamic id) => '/menu/set_pic/$id';
+  static String menuInventoryEvents(int canteenId) =>
+      '/menu/events/inventory/$canteenId';
   static const String canteenUploadPic = '/canteen/upload_pic';
   static const String canteenSetPic = '/canteen/set_pic';
 
   // Orders
   static const String orders = '/orders';
+  static const String canteenOrderEvents = '/canteen/events/orders';
   static String ordersByUser(String query) => '/orders/by_user?$query';
   static String orderAction(int id, String action) => '/orders/$id/$action';
   static const String ordersScan = '/orders/scan';

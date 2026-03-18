@@ -52,9 +52,11 @@ String name = "";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(onTap: (details) {
-    _HomePageState.scaffoldKey.currentState?.openEndDrawer();
-  });
+  await NotificationService.init(
+    onTap: (details) {
+      _HomePageState.scaffoldKey.currentState?.openEndDrawer();
+    },
+  );
   await dotenv.load(fileName: ".env", isOptional: true);
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowMinSize(const Size(1025, 1025));
@@ -190,8 +192,10 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
       canteenId = id;
       name = canteenname;
     });
-    final statusProvider =
-        Provider.of<CanteenStatusProvider>(context, listen: false);
+    final statusProvider = Provider.of<CanteenStatusProvider>(
+      context,
+      listen: false,
+    );
     if (loggedIn) {
       statusProvider.refresh();
     } else {
@@ -201,10 +205,11 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
 
   @override
   Future<void> fetchAndCacheAndNotify() async {
-    await super.fetchAndCacheAndNotify();
     if (!mounted || !AuthService.isLoggedIn) return;
-    final statusProvider =
-        Provider.of<CanteenStatusProvider>(context, listen: false);
+    final statusProvider = Provider.of<CanteenStatusProvider>(
+      context,
+      listen: false,
+    );
     statusProvider.refresh(silent: true);
   }
 
@@ -408,7 +413,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  static final GlobalKey<ScaffoldState> scaffoldKey =
+      GlobalKey<ScaffoldState>();
   bool portrait = Platform.isAndroid || Platform.isIOS;
   int currentIndex = 0;
 
@@ -436,7 +442,9 @@ class _HomePageState extends State<HomePage> {
                 setState(() {
                   final currentItem = GlobalMenuCache.items[item.id];
                   if (currentItem != null) {
-                    GlobalMenuCache.items[item.id] = currentItem.copyWith(pic: url);
+                    GlobalMenuCache.items[item.id] = currentItem.copyWith(
+                      pic: url,
+                    );
                     changeimage(item.id, url);
                   }
                 });
@@ -466,10 +474,12 @@ class _HomePageState extends State<HomePage> {
                 // Remove notification from provider immediately on success
                 final navContext = navigatorKey.currentContext;
                 if (navContext != null && navContext.mounted) {
-                  Provider.of<NotificationProvider>(navContext, listen: false)
-                      .removeNotification(item.id);
+                  Provider.of<NotificationProvider>(
+                    navContext,
+                    listen: false,
+                  ).removeNotification(item.id);
                 }
-                
+
                 setState(() {
                   GlobalMenuCache.items[item.id] = item.copyWith(
                     name: name,
@@ -491,7 +501,9 @@ class _HomePageState extends State<HomePage> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("Error updating item: ${response.statusCode}"),
+                      content: Text(
+                        "Error updating item: ${response.statusCode}",
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -514,7 +526,8 @@ class _HomePageState extends State<HomePage> {
 
   void _updatePortrait() {
     if (Platform.isAndroid || Platform.isIOS) {
-      final newPortrait = MediaQuery.orientationOf(context) == Orientation.portrait;
+      final newPortrait =
+          MediaQuery.orientationOf(context) == Orientation.portrait;
       if (portrait != newPortrait) {
         setState(() {
           portrait = newPortrait;
@@ -596,7 +609,8 @@ class _HomePageState extends State<HomePage> {
             ),
           Text(
             label,
-            style: theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
+            style:
+                theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
                 TextStyle(color: baseColor),
           ),
         ],
@@ -623,9 +637,13 @@ class _HomePageState extends State<HomePage> {
     if (!status.hasStatus) return null;
 
     final bool isOpen = status.isOpen;
-    final String label = isOpen ? localizations.close_shop : localizations.open_shop;
+    final String label = isOpen
+        ? localizations.close_shop
+        : localizations.open_shop;
     final IconData icon = isOpen ? Icons.lock : Icons.lock_open;
-    final Color btnColor = isOpen ? theme.colorScheme.error : theme.colorScheme.primary;
+    final Color btnColor = isOpen
+        ? theme.colorScheme.error
+        : theme.colorScheme.primary;
 
     return FilledButton.icon(
       onPressed: status.isLoading
@@ -668,9 +686,7 @@ class _HomePageState extends State<HomePage> {
     AppLocalizations localizations,
     bool isOpen,
   ) async {
-    final title = isOpen
-        ? localizations.close_shop
-        : localizations.open_shop;
+    final title = isOpen ? localizations.close_shop : localizations.open_shop;
     final message = isOpen
         ? localizations.confirm_close_shop
         : localizations.confirm_open_shop;
@@ -692,10 +708,7 @@ class _HomePageState extends State<HomePage> {
             vertical: 24.0,
           ),
           title: Text(title),
-          content: SizedBox(
-            width: dialogWidth,
-            child: Text(message),
-          ),
+          content: SizedBox(width: dialogWidth, child: Text(message)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -737,11 +750,7 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(14.0),
           child: Row(
             children: [
-              Icon(
-                Icons.storefront,
-                color: theme.colorScheme.error,
-                size: 30,
-              ),
+              Icon(Icons.storefront, color: theme.colorScheme.error, size: 30),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -808,7 +817,8 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            onPressed: () => _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
+            onPressed: () =>
+                _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
             tooltip: 'More',
             icon: const Icon(Icons.menu, size: 28),
           ),
@@ -922,11 +932,14 @@ class _HomePageState extends State<HomePage> {
                             } else if (!isOpen) {
                               statusText = localizations.shop_closed;
                               statusIcon = Icons.lock_outline;
-                              statusColor = theme.colorScheme.error.withOpacity(0.8);
+                              statusColor = theme.colorScheme.error.withOpacity(
+                                0.8,
+                              );
                             } else if (isAlwaysOpen) {
                               statusText = localizations.always_open;
                               statusIcon = Icons.all_inclusive;
-                              statusColor = theme.colorScheme.primary.withOpacity(0.8);
+                              statusColor = theme.colorScheme.primary
+                                  .withOpacity(0.8);
                             } else {
                               statusText = localizations.shop_open;
                               statusIcon = Icons.check_circle_outline;
@@ -955,11 +968,12 @@ class _HomePageState extends State<HomePage> {
                                       const SizedBox(width: 6),
                                       Text(
                                         statusText,
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: statusColor,
-                                          fontStyle: FontStyle.italic,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: statusColor,
+                                              fontStyle: FontStyle.italic,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -1105,9 +1119,8 @@ class _HomePageState extends State<HomePage> {
                                       size: 20,
                                       color: Colors.white54,
                                     ),
-                                    onPressed: () => provider.removeNotification(
-                                      notification.id,
-                                    ),
+                                    onPressed: () => provider
+                                        .removeNotification(notification.id),
                                   ),
                                   onTap: () {
                                     // Open Edit Item Dialog
