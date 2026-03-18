@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/common/button_styles.dart';
+import 'package:merchant/common/global_inventory_realtime_state.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/l10n/app_localizations.dart';
@@ -17,11 +17,7 @@ import 'package:merchant/menu/menu_item_card.dart';
 import 'package:merchant/menu/edit_item_dialog.dart';
 import 'package:merchant/common/shimmer_loading.dart';
 import 'package:merchant/menu/add_item_dialog.dart';
-import 'package:merchant/common/notification_service.dart';
 import 'package:merchant/main.dart';
-import 'package:merchant/providers/notification_provider.dart';
-import 'package:merchant/realtime/sse_realtime_client.dart';
-import 'package:provider/provider.dart';
 
 class Menupage extends StatefulWidget {
   final bool portrait;
@@ -35,10 +31,6 @@ class Menupage extends StatefulWidget {
 
 class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   int sortmenu = 1;
-  SseRealtimeClient? _inventorySseClient;
-  Timer? _inventoryFallbackTimer;
-  bool _inventoryFallbackNoticeShown = false;
-  bool _inventoryResyncInProgress = false;
   bool _isSlowNetwork = false;
   int? _latestLatencyMetricMs;
 
@@ -51,140 +43,45 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   @override
   void initState() {
     super.initState();
-    _bootstrapMenuRealtime();
+    GlobalInventoryRealtimeState.revision.addListener(
+      _onGlobalInventoryRevision,
+    );
+    GlobalInventoryRealtimeState.health.addListener(
+      _onGlobalInventoryHealthChanged,
+    );
+    if (GlobalMenuCache.items.isEmpty) {
+      fetchAndCacheAndNotify();
+    } else {
+      _hydrateFromGlobalCache();
+    }
+    _onGlobalInventoryHealthChanged();
   }
 
   @override
   void dispose() {
-    _stopInventoryFallback();
-    _inventorySseClient?.stop();
+    GlobalInventoryRealtimeState.revision.removeListener(
+      _onGlobalInventoryRevision,
+    );
+    GlobalInventoryRealtimeState.health.removeListener(
+      _onGlobalInventoryHealthChanged,
+    );
     super.dispose();
   }
 
-  Future<void> _bootstrapMenuRealtime() async {
-    await fetchAndCacheAndNotify();
-    if (!mounted) return;
-    _startInventorySse();
+  void _onGlobalInventoryRevision() {
+    _hydrateFromGlobalCache();
   }
 
-  void _startInventorySse() {
-    _inventorySseClient?.stop();
-    final canteenId = AuthService.canteenId ?? widget.canteenId;
-    _inventorySseClient = SseRealtimeClient(
-      path: ApiConstants.menuInventoryEvents(canteenId),
-      eventTypes: {'status', 'inventory_update'},
-      onMessage: _handleInventorySseMessage,
-      onConnectionStateChanged: _handleInventoryConnectionState,
-      onHealthUpdated: _handleInventoryHealth,
-      onFatalError: _handleInventoryFatalError,
-    )..start();
-  }
-
-  void _handleInventoryConnectionState(SseConnectionState state) {
+  void _hydrateFromGlobalCache() {
     if (!mounted) return;
-    if (state == SseConnectionState.connected) {
-      _stopInventoryFallback();
-      _inventoryFallbackNoticeShown = false;
+    if (GlobalMenuCache.items.isEmpty) {
+      setState(() {});
       return;
     }
-
-    if (state == SseConnectionState.reconnecting ||
-        state == SseConnectionState.failed) {
-      _startInventoryFallback();
-    }
-  }
-
-  void _handleInventoryHealth(SseNetworkHealth health) {
-    if (!mounted) return;
-    setState(() {
-      _isSlowNetwork = health.isSlowNetwork;
-      _latestLatencyMetricMs = health.metricMs;
-    });
-  }
-
-  void _handleInventoryFatalError(Object error, StackTrace stackTrace) {
-    debugPrint('[inventory-sse] fatal error: $error');
-    _startInventoryFallback();
-    if (!mounted || _inventoryFallbackNoticeShown) return;
-    _inventoryFallbackNoticeShown = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Realtime inventory disconnected. Falling back to periodic refresh.',
-        ),
-        backgroundColor: Colors.orangeAccent,
-      ),
-    );
-  }
-
-  void _startInventoryFallback() {
-    if (_inventoryFallbackTimer != null) return;
-    _inventoryFallbackTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      fetchAndCacheAndNotify();
-    });
-    fetchAndCacheAndNotify();
-  }
-
-  void _stopInventoryFallback() {
-    _inventoryFallbackTimer?.cancel();
-    _inventoryFallbackTimer = null;
-  }
-
-  void _handleInventorySseMessage(SseMessage message) {
-    if (message.event == 'status') {
-      return;
-    }
-    if (message.event != 'inventory_update') {
-      return;
-    }
-
-    try {
-      final decoded = jsonDecode(message.data);
-      if (decoded is! Map<String, dynamic>) return;
-      final items = decoded['items'];
-      if (items is! List) return;
-
-      bool shouldResync = false;
-      bool hasUpdates = false;
-      for (final raw in items) {
-        if (raw is! Map<String, dynamic>) continue;
-        final itemId = _asInt(raw['item_id']);
-        if (itemId == null) continue;
-
-        final current = fetchedItems[itemId] ?? GlobalMenuCache.items[itemId];
-        if (current == null) {
-          shouldResync = true;
-          continue;
-        }
-
-        final updated = current.copyWith(
-          name: (raw['name'] is String) ? raw['name'] as String : null,
-          price: _asInt(raw['price']),
-          available: _asBool(raw['is_available']),
-          isVeg: _asBool(raw['is_veg']),
-          stock: _asInt(raw['stock']),
-          pic: (raw['pic_link'] is String) ? raw['pic_link'] as String : null,
-          etag: (raw['pic_etag'] is String)
-              ? (raw['pic_etag'] as String).replaceAll('"', '')
-              : null,
-        );
-
-        fetchedItems[itemId] = updated;
-        GlobalMenuCache.items[itemId] = updated;
-        _syncAvailabilitySets(itemId, updated);
-        hasUpdates = true;
-      }
-
-      if (hasUpdates && mounted) {
-        applySorting(fetchedItems, sortmenu, fetchedAid, fetchedNaid);
-        unawaited(_syncLowStockNotifications());
-      }
-      if (shouldResync) {
-        _triggerInventoryResync();
-      }
-    } catch (e) {
-      debugPrint('[inventory-sse] unable to parse event payload: $e');
-    }
+    fetchedItems = Map<int, MenuItem>.from(GlobalMenuCache.items);
+    fetchedAid = LinkedHashSet<int>.from(GlobalMenuCache.availableid);
+    fetchedNaid = LinkedHashSet<int>.from(GlobalMenuCache.navailableid);
+    applySorting(fetchedItems, sortmenu, fetchedAid, fetchedNaid);
   }
 
   void _syncAvailabilitySets(int itemId, MenuItem item) {
@@ -201,56 +98,13 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
     GlobalMenuCache.navailableid = LinkedHashSet<int>.from(fetchedNaid);
   }
 
-  void _triggerInventoryResync() {
-    if (_inventoryResyncInProgress) return;
-    _inventoryResyncInProgress = true;
-    fetchAndCacheAndNotify().whenComplete(() {
-      _inventoryResyncInProgress = false;
-    });
-  }
-
-  Future<void> _syncLowStockNotifications() async {
+  void _onGlobalInventoryHealthChanged() {
     if (!mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final provider = Provider.of<NotificationProvider>(context, listen: false);
-    await NotificationService.checkAndNotifyStock(
-      fetchedItems.values.toList(),
-      titleBuilder: l10n != null ? (item) => l10n.stock_alert_title : null,
-      bodyBuilder: l10n != null
-          ? (item) => l10n.stock_alert_body(item.name, item.stock)
-          : null,
-      onNotify: (item, title, body) {
-        provider.addNotification(
-          InAppNotification(
-            id: item.id,
-            title: title,
-            message: body,
-            timestamp: DateTime.now(),
-          ),
-        );
-      },
-      onStockHealthy: (item) {
-        provider.removeNotification(item.id);
-      },
-    );
-  }
-
-  int? _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
-  }
-
-  bool? _asBool(dynamic value) {
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-    if (value is String) {
-      final lowered = value.toLowerCase();
-      if (lowered == 'true' || lowered == '1') return true;
-      if (lowered == 'false' || lowered == '0') return false;
-    }
-    return null;
+    final health = GlobalInventoryRealtimeState.health.value;
+    setState(() {
+      _isSlowNetwork = health?.isSlowNetwork ?? false;
+      _latestLatencyMetricMs = health?.metricMs;
+    });
   }
 
   void modifyItem(
