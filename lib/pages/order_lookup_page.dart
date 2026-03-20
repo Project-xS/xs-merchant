@@ -676,7 +676,7 @@ class _OrderLookupPageState extends State<OrderLookupPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            "No orders found for this student",
+            "No orders found",
             style: theme.textTheme.titleMedium,
           ),
         ],

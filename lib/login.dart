@@ -76,6 +76,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
   }
 
   Future<void> loginUser(String username, String password) async {
+    if (!mounted) return;
     setState(() {
       isLoading = true;
     });
@@ -85,6 +86,8 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username, 'password': password}),
       );
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
@@ -112,6 +115,8 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
           canteenName: responseCanteenName,
         );
         await AuthService.saveCredentials(username, password);
+
+        if (!mounted) return;
 
         final int effectiveCanteenId =
             AuthService.canteenId ?? responseCanteenId ?? 0;
@@ -148,6 +153,7 @@ class LoginState extends State<Login> with TickerProviderStateMixin {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Error during login: $e');
+      if (!mounted) return;
       setState(() {
         isLoggedin = false;
         isLoading = false;
