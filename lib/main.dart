@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
@@ -12,6 +13,7 @@ import 'package:merchant/mobile_billing.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/l10n/app_localizations.dart';
 import 'package:merchant/common/global_menu_cache.dart';
+import 'package:merchant/common/global_inventory_realtime_state.dart';
 import 'package:merchant/login.dart';
 import 'package:merchant/menupage.dart';
 import 'package:merchant/models/menu_item.dart';
@@ -26,6 +28,7 @@ import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/menu/edit_item_dialog.dart';
 import 'package:merchant/providers/canteen_status_provider.dart';
 import 'package:merchant/providers/notification_provider.dart';
+import 'package:merchant/realtime/sse_realtime_client.dart';
 import 'package:provider/provider.dart';
 import 'package:merchant/common/notification_service.dart';
 
@@ -52,9 +55,11 @@ String name = "";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(onTap: (details) {
-    _HomePageState.scaffoldKey.currentState?.openEndDrawer();
-  });
+  await NotificationService.init(
+    onTap: (details) {
+      _HomePageState.scaffoldKey.currentState?.openEndDrawer();
+    },
+  );
   await dotenv.load(fileName: ".env", isOptional: true);
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     setWindowMinSize(const Size(1025, 1025));
@@ -115,6 +120,13 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
   bool isTamil = false;
   bool isLoggedin = false;
   int canteenId = 0;
+  SseRealtimeClient? _inventorySseClient;
+  Timer? _inventoryFallbackTimer;
+  bool _inventoryFallbackNoticeShown = false;
+  bool _inventoryResyncInProgress = false;
+
+  @override
+  bool get enableAutoFetchTimer => false;
 
   @override
   void initState() {
@@ -153,6 +165,7 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
 
   @override
   void dispose() {
+    _stopInventoryRealtime();
     GlobalMenuCache.items.clear();
     GlobalMenuCache.availableid.clear();
     GlobalMenuCache.navailableid.clear();
@@ -190,22 +203,230 @@ class MyAppState extends State<MyApp> with AutoFetchMixin<MyApp> {
       canteenId = id;
       name = canteenname;
     });
-    final statusProvider =
-        Provider.of<CanteenStatusProvider>(context, listen: false);
+    final statusProvider = Provider.of<CanteenStatusProvider>(
+      context,
+      listen: false,
+    );
     if (loggedIn) {
       statusProvider.refresh();
+      _startInventoryRealtime();
     } else {
       statusProvider.stopPolling();
+      _stopInventoryRealtime();
     }
   }
 
   @override
   Future<void> fetchAndCacheAndNotify() async {
-    await super.fetchAndCacheAndNotify();
     if (!mounted || !AuthService.isLoggedIn) return;
-    final statusProvider =
-        Provider.of<CanteenStatusProvider>(context, listen: false);
+    await super.fetchAndCacheAndNotify();
+    if (!mounted) return;
+    final statusProvider = Provider.of<CanteenStatusProvider>(
+      context,
+      listen: false,
+    );
     statusProvider.refresh(silent: true);
+  }
+
+  void _startInventoryRealtime() {
+    _stopInventoryRealtime();
+    if (!AuthService.isLoggedIn) return;
+    final currentCanteenId = AuthService.canteenId ?? canteenId;
+    if (currentCanteenId == 0) return;
+
+    unawaited(
+      fetchAndCacheAndNotify().then((_) {
+        if (mounted) {
+          GlobalInventoryRealtimeState.bumpRevision();
+        }
+      }),
+    );
+
+    _inventorySseClient = SseRealtimeClient(
+      path: ApiConstants.menuInventoryEvents(currentCanteenId),
+      eventTypes: {'status', 'inventory_update'},
+      onMessage: _handleInventorySseMessage,
+      onConnectionStateChanged: _handleInventoryConnectionState,
+      onHealthUpdated: (health) {
+        GlobalInventoryRealtimeState.setHealth(health);
+      },
+      onFatalError: _handleInventoryFatalError,
+    )..start();
+  }
+
+  void _stopInventoryRealtime() {
+    _stopInventoryFallback();
+    unawaited(_inventorySseClient?.stop() ?? Future<void>.value());
+    _inventorySseClient = null;
+    _inventoryResyncInProgress = false;
+    _inventoryFallbackNoticeShown = false;
+    GlobalInventoryRealtimeState.reset();
+  }
+
+  void _handleInventoryConnectionState(SseConnectionState state) {
+    if (!mounted) return;
+    if (state == SseConnectionState.connected) {
+      _stopInventoryFallback();
+      _inventoryFallbackNoticeShown = false;
+      return;
+    }
+    if (state == SseConnectionState.reconnecting ||
+        state == SseConnectionState.failed) {
+      _startInventoryFallback();
+    }
+  }
+
+  void _handleInventoryFatalError(Object error, StackTrace stackTrace) {
+    debugPrint('[inventory-sse] fatal error: $error');
+    _startInventoryFallback();
+    if (_inventoryFallbackNoticeShown) return;
+    _inventoryFallbackNoticeShown = true;
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null || ScaffoldMessenger.maybeOf(ctx) == null) return;
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Realtime inventory disconnected. Falling back to periodic refresh.',
+        ),
+        backgroundColor: Colors.orangeAccent,
+      ),
+    );
+  }
+
+  void _startInventoryFallback() {
+    if (_inventoryFallbackTimer != null) return;
+    _inventoryFallbackTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      unawaited(_refreshInventoryFromRest());
+    });
+    unawaited(_refreshInventoryFromRest());
+  }
+
+  void _stopInventoryFallback() {
+    _inventoryFallbackTimer?.cancel();
+    _inventoryFallbackTimer = null;
+  }
+
+  Future<void> _refreshInventoryFromRest() async {
+    await fetchAndCacheAndNotify();
+    if (!mounted) return;
+    GlobalInventoryRealtimeState.bumpRevision();
+  }
+
+  void _handleInventorySseMessage(SseMessage message) {
+    if (message.event == 'status') return;
+    if (message.event != 'inventory_update') return;
+    try {
+      final decoded = jsonDecode(message.data);
+      if (decoded is! Map<String, dynamic>) return;
+      final items = decoded['items'];
+      if (items is! List) return;
+
+      bool hasUpdates = false;
+      bool shouldResync = false;
+      for (final raw in items) {
+        if (raw is! Map<String, dynamic>) continue;
+        final itemId = _asInt(raw['item_id']);
+        if (itemId == null) continue;
+
+        final current = GlobalMenuCache.items[itemId];
+        if (current == null) {
+          shouldResync = true;
+          continue;
+        }
+
+        final updated = current.copyWith(
+          name: raw['name'] is String ? raw['name'] as String : null,
+          price: _asInt(raw['price']),
+          available: _asBool(raw['is_available']),
+          isVeg: _asBool(raw['is_veg']),
+          stock: _asInt(raw['stock']),
+          pic: raw['pic_link'] is String ? raw['pic_link'] as String : null,
+          etag: raw['pic_etag'] is String
+              ? (raw['pic_etag'] as String).replaceAll('"', '')
+              : null,
+        );
+        GlobalMenuCache.items[itemId] = updated;
+        _syncAvailabilitySets(itemId, updated);
+        hasUpdates = true;
+      }
+
+      if (hasUpdates) {
+        GlobalInventoryRealtimeState.bumpRevision();
+        unawaited(_syncLowStockNotifications());
+      }
+      if (shouldResync) {
+        _triggerInventoryResync();
+      }
+    } catch (e) {
+      debugPrint('[inventory-sse] unable to parse payload: $e');
+    }
+  }
+
+  void _syncAvailabilitySets(int itemId, MenuItem item) {
+    final shouldBeVisible =
+        item.available && (item.stock == -1 || item.stock >= 1);
+    if (shouldBeVisible) {
+      GlobalMenuCache.availableid.add(itemId);
+      GlobalMenuCache.navailableid.remove(itemId);
+    } else {
+      GlobalMenuCache.navailableid.add(itemId);
+      GlobalMenuCache.availableid.remove(itemId);
+    }
+  }
+
+  void _triggerInventoryResync() {
+    if (_inventoryResyncInProgress) return;
+    _inventoryResyncInProgress = true;
+    _refreshInventoryFromRest().whenComplete(() {
+      _inventoryResyncInProgress = false;
+    });
+  }
+
+  Future<void> _syncLowStockNotifications() async {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final notificationProvider = Provider.of<NotificationProvider>(
+      context,
+      listen: false,
+    );
+    await NotificationService.checkAndNotifyStock(
+      GlobalMenuCache.items.values.toList(),
+      titleBuilder: l10n != null ? (item) => l10n.stock_alert_title : null,
+      bodyBuilder: l10n != null
+          ? (item) => l10n.stock_alert_body(item.name, item.stock)
+          : null,
+      onNotify: (item, title, body) {
+        notificationProvider.addNotification(
+          InAppNotification(
+            id: item.id,
+            title: title,
+            message: body,
+            timestamp: DateTime.now(),
+          ),
+        );
+      },
+      onStockHealthy: (item) {
+        notificationProvider.removeNotification(item.id);
+      },
+    );
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  bool? _asBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final lowered = value.toLowerCase();
+      if (lowered == 'true' || lowered == '1') return true;
+      if (lowered == 'false' || lowered == '0') return false;
+    }
+    return null;
   }
 
   @override
@@ -408,7 +629,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  static final GlobalKey<ScaffoldState> scaffoldKey =
+      GlobalKey<ScaffoldState>();
   bool portrait = Platform.isAndroid || Platform.isIOS;
   int currentIndex = 0;
 
@@ -436,7 +658,9 @@ class _HomePageState extends State<HomePage> {
                 setState(() {
                   final currentItem = GlobalMenuCache.items[item.id];
                   if (currentItem != null) {
-                    GlobalMenuCache.items[item.id] = currentItem.copyWith(pic: url);
+                    GlobalMenuCache.items[item.id] = currentItem.copyWith(
+                      pic: url,
+                    );
                     changeimage(item.id, url);
                   }
                 });
@@ -466,10 +690,12 @@ class _HomePageState extends State<HomePage> {
                 // Remove notification from provider immediately on success
                 final navContext = navigatorKey.currentContext;
                 if (navContext != null && navContext.mounted) {
-                  Provider.of<NotificationProvider>(navContext, listen: false)
-                      .removeNotification(item.id);
+                  Provider.of<NotificationProvider>(
+                    navContext,
+                    listen: false,
+                  ).removeNotification(item.id);
                 }
-                
+
                 setState(() {
                   GlobalMenuCache.items[item.id] = item.copyWith(
                     name: name,
@@ -491,7 +717,9 @@ class _HomePageState extends State<HomePage> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("Error updating item: ${response.statusCode}"),
+                      content: Text(
+                        "Error updating item: ${response.statusCode}",
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -514,7 +742,8 @@ class _HomePageState extends State<HomePage> {
 
   void _updatePortrait() {
     if (Platform.isAndroid || Platform.isIOS) {
-      final newPortrait = MediaQuery.orientationOf(context) == Orientation.portrait;
+      final newPortrait =
+          MediaQuery.orientationOf(context) == Orientation.portrait;
       if (portrait != newPortrait) {
         setState(() {
           portrait = newPortrait;
@@ -596,7 +825,8 @@ class _HomePageState extends State<HomePage> {
             ),
           Text(
             label,
-            style: theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
+            style:
+                theme.textTheme.labelLarge?.copyWith(color: baseColor) ??
                 TextStyle(color: baseColor),
           ),
         ],
@@ -623,9 +853,13 @@ class _HomePageState extends State<HomePage> {
     if (!status.hasStatus) return null;
 
     final bool isOpen = status.isOpen;
-    final String label = isOpen ? localizations.close_shop : localizations.open_shop;
+    final String label = isOpen
+        ? localizations.close_shop
+        : localizations.open_shop;
     final IconData icon = isOpen ? Icons.lock : Icons.lock_open;
-    final Color btnColor = isOpen ? theme.colorScheme.error : theme.colorScheme.primary;
+    final Color btnColor = isOpen
+        ? theme.colorScheme.error
+        : theme.colorScheme.primary;
 
     return FilledButton.icon(
       onPressed: status.isLoading
@@ -668,9 +902,7 @@ class _HomePageState extends State<HomePage> {
     AppLocalizations localizations,
     bool isOpen,
   ) async {
-    final title = isOpen
-        ? localizations.close_shop
-        : localizations.open_shop;
+    final title = isOpen ? localizations.close_shop : localizations.open_shop;
     final message = isOpen
         ? localizations.confirm_close_shop
         : localizations.confirm_open_shop;
@@ -692,10 +924,7 @@ class _HomePageState extends State<HomePage> {
             vertical: 24.0,
           ),
           title: Text(title),
-          content: SizedBox(
-            width: dialogWidth,
-            child: Text(message),
-          ),
+          content: SizedBox(width: dialogWidth, child: Text(message)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -737,11 +966,7 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(14.0),
           child: Row(
             children: [
-              Icon(
-                Icons.storefront,
-                color: theme.colorScheme.error,
-                size: 30,
-              ),
+              Icon(Icons.storefront, color: theme.colorScheme.error, size: 30),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -808,7 +1033,8 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            onPressed: () => _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
+            onPressed: () =>
+                _HomePageState.scaffoldKey.currentState?.openEndDrawer(),
             tooltip: 'More',
             icon: const Icon(Icons.menu, size: 28),
           ),
@@ -922,11 +1148,14 @@ class _HomePageState extends State<HomePage> {
                             } else if (!isOpen) {
                               statusText = localizations.shop_closed;
                               statusIcon = Icons.lock_outline;
-                              statusColor = theme.colorScheme.error.withOpacity(0.8);
+                              statusColor = theme.colorScheme.error.withOpacity(
+                                0.8,
+                              );
                             } else if (isAlwaysOpen) {
                               statusText = localizations.always_open;
                               statusIcon = Icons.all_inclusive;
-                              statusColor = theme.colorScheme.primary.withOpacity(0.8);
+                              statusColor = theme.colorScheme.primary
+                                  .withOpacity(0.8);
                             } else {
                               statusText = localizations.shop_open;
                               statusIcon = Icons.check_circle_outline;
@@ -955,11 +1184,12 @@ class _HomePageState extends State<HomePage> {
                                       const SizedBox(width: 6),
                                       Text(
                                         statusText,
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: statusColor,
-                                          fontStyle: FontStyle.italic,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: statusColor,
+                                              fontStyle: FontStyle.italic,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -1105,9 +1335,8 @@ class _HomePageState extends State<HomePage> {
                                       size: 20,
                                       color: Colors.white54,
                                     ),
-                                    onPressed: () => provider.removeNotification(
-                                      notification.id,
-                                    ),
+                                    onPressed: () => provider
+                                        .removeNotification(notification.id),
                                   ),
                                   onTap: () {
                                     // Open Edit Item Dialog

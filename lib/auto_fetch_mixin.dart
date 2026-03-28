@@ -21,10 +21,12 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
   Map<String, Map<String, dynamic>> orders = {};
   int sort = 1;
   int get canteenIdToFetch;
+  bool get enableAutoFetchTimer => true;
+  Duration get autoFetchInterval => const Duration(minutes: 1, seconds: 30);
 
   @override
   void initState() {
-    if (timer?.isActive == null) {
+    if (enableAutoFetchTimer && timer?.isActive == null) {
       startAutoFetch();
     }
     super.initState();
@@ -38,7 +40,7 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
 
   void startAutoFetch() {
     timer?.cancel();
-    timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
+    timer = Timer.periodic(autoFetchInterval, (timer) {
       debugPrint("Timer over, fetching");
       fetchAndCacheAndNotify();
     });
@@ -76,10 +78,14 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
         debugPrint("Fetched: ${decodedJson.toString()}");
         List<dynamic>? dataList = decodedJson["data"];
         if (!mounted) return;
-        
+
         if (dataList == null) {
           debugPrint("Error: 'data' field is null in response");
-          if (mounted) setState(() { isLoading = false; });
+          if (mounted) {
+            setState(() {
+              isLoading = false;
+            });
+          }
           return;
         }
 
@@ -98,7 +104,9 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
             }
             tempFetchedItems[menuItem.id] = menuItem;
           } catch (itemError) {
-            debugPrint("Error parsing individual item: $itemError, item data: $item1");
+            debugPrint(
+              "Error parsing individual item: $itemError, item data: $item1",
+            );
           }
         }
         if (!mounted) return;
@@ -106,12 +114,16 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
         // Perform stock check and notification
         try {
           final l10n = AppLocalizations.of(context);
-          final notificationProvider =
-              Provider.of<NotificationProvider>(context, listen: false);
+          final notificationProvider = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
+          );
 
           await NotificationService.checkAndNotifyStock(
             tempFetchedItems.values.toList(),
-            titleBuilder: l10n != null ? (item) => l10n.stock_alert_title : null,
+            titleBuilder: l10n != null
+                ? (item) => l10n.stock_alert_title
+                : null,
             bodyBuilder: l10n != null
                 ? (item) => l10n.stock_alert_body(item.name, item.stock)
                 : null,
@@ -137,11 +149,11 @@ mixin AutoFetchMixin<T extends StatefulWidget> on State<T> {
           fetchedItems = tempFetchedItems;
           fetchedAid = tempFetchedAid;
           fetchedNaid = tempFetchedNaid;
-          
+
           GlobalMenuCache.items = fetchedItems;
           GlobalMenuCache.availableid = fetchedAid;
           GlobalMenuCache.navailableid = fetchedNaid;
-          
+
           applySorting(
             GlobalMenuCache.items,
             sort,
@@ -259,14 +271,22 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
   Timer? _timer;
 
   int get canteenIdForOrders;
+  bool get triggerInitialOrderFetch => true;
+  bool get enableOrderAutoFetchTimer => true;
+  Duration get orderAutoFetchInterval =>
+      const Duration(minutes: 1, seconds: 30);
   void onOrdersUpdated(Map<String, List<ActiveOrderItem>> orders);
   void onOrderFetchError(dynamic error);
 
   @override
   void initState() {
     super.initState();
-    triggerOrderFetch();
-    _startOrderAutoFetchTimer();
+    if (triggerInitialOrderFetch) {
+      triggerOrderFetch();
+    }
+    if (enableOrderAutoFetchTimer) {
+      _startOrderAutoFetchTimer();
+    }
   }
 
   @override
@@ -276,7 +296,7 @@ mixin OrderFetchMixin<T extends StatefulWidget> on State<T> {
   }
 
   void _startOrderAutoFetchTimer() {
-    _timer = Timer.periodic(Duration(minutes: 1, seconds: 30), (timer) {
+    _timer = Timer.periodic(orderAutoFetchInterval, (timer) {
       triggerOrderFetch();
     });
   }

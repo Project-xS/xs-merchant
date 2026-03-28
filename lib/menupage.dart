@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +7,7 @@ import 'package:merchant/auto_fetch_mixin.dart';
 import 'package:merchant/api/api_client.dart';
 import 'package:merchant/auth/auth_service.dart';
 import 'package:merchant/common/button_styles.dart';
+import 'package:merchant/common/global_inventory_realtime_state.dart';
 import 'package:merchant/image_upload.dart';
 import 'package:merchant/api/api_constants.dart';
 import 'package:merchant/l10n/app_localizations.dart';
@@ -29,16 +31,80 @@ class Menupage extends StatefulWidget {
 
 class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
   int sortmenu = 1;
+  bool _isSlowNetwork = false;
+  int? _latestLatencyMetricMs;
 
   @override
   int get canteenIdToFetch => widget.canteenId;
 
   @override
+  bool get enableAutoFetchTimer => false;
+
+  @override
   void initState() {
-    if ((timer == null || !timer!.isActive) && GlobalMenuCache.items.isEmpty) {
-      fetchAndCacheAndNotify();
-    }
     super.initState();
+    GlobalInventoryRealtimeState.revision.addListener(
+      _onGlobalInventoryRevision,
+    );
+    GlobalInventoryRealtimeState.health.addListener(
+      _onGlobalInventoryHealthChanged,
+    );
+    if (GlobalMenuCache.items.isEmpty) {
+      fetchAndCacheAndNotify();
+    } else {
+      _hydrateFromGlobalCache();
+    }
+    _onGlobalInventoryHealthChanged();
+  }
+
+  @override
+  void dispose() {
+    GlobalInventoryRealtimeState.revision.removeListener(
+      _onGlobalInventoryRevision,
+    );
+    GlobalInventoryRealtimeState.health.removeListener(
+      _onGlobalInventoryHealthChanged,
+    );
+    super.dispose();
+  }
+
+  void _onGlobalInventoryRevision() {
+    _hydrateFromGlobalCache();
+  }
+
+  void _hydrateFromGlobalCache() {
+    if (!mounted) return;
+    if (GlobalMenuCache.items.isEmpty) {
+      setState(() {});
+      return;
+    }
+    fetchedItems = Map<int, MenuItem>.from(GlobalMenuCache.items);
+    fetchedAid = LinkedHashSet<int>.from(GlobalMenuCache.availableid);
+    fetchedNaid = LinkedHashSet<int>.from(GlobalMenuCache.navailableid);
+    applySorting(fetchedItems, sortmenu, fetchedAid, fetchedNaid);
+  }
+
+  void _syncAvailabilitySets(int itemId, MenuItem item) {
+    final shouldBeVisible =
+        item.available && (item.stock == -1 || item.stock >= 1);
+    if (shouldBeVisible) {
+      fetchedAid.add(itemId);
+      fetchedNaid.remove(itemId);
+    } else {
+      fetchedNaid.add(itemId);
+      fetchedAid.remove(itemId);
+    }
+    GlobalMenuCache.availableid = LinkedHashSet<int>.from(fetchedAid);
+    GlobalMenuCache.navailableid = LinkedHashSet<int>.from(fetchedNaid);
+  }
+
+  void _onGlobalInventoryHealthChanged() {
+    if (!mounted) return;
+    final health = GlobalInventoryRealtimeState.health.value;
+    setState(() {
+      _isSlowNetwork = health?.isSlowNetwork ?? false;
+      _latestLatencyMetricMs = health?.metricMs;
+    });
   }
 
   void modifyItem(
@@ -157,7 +223,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                 isAvailable,
                 hasPic: imageBytes != null,
               );
-              if (id != null && mounted) {
+              if (id != null && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text("Item : \"$name\" Added Successfully"),
@@ -428,7 +494,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                     for (var i in idList) {
                                       int? itemId = i["item_id"] is int
                                           ? i["item_id"]
-                                          : int.tryParse(i["item_id"].toString());
+                                          : int.tryParse(
+                                              i["item_id"].toString(),
+                                            );
 
                                       if (itemId != null) {
                                         searchitems.add(itemId);
@@ -440,7 +508,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text("Error performing search : $e"),
+                                      content: Text(
+                                        "Error performing search : $e",
+                                      ),
                                       backgroundColor: Theme.of(
                                         context,
                                       ).colorScheme.error,
@@ -465,189 +535,223 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                             ],
                           ),
                         ),
-                                              const SizedBox(height: 8),
-                                              Flexible(
-                                                child: GridView.builder(
-                                                  controller: gridScrollController,
-                                                  shrinkWrap: true,
-                                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(                            crossAxisCount: 2,
-                            childAspectRatio: (widget.portrait) ? 5.5 : 4.8,
-                            mainAxisSpacing: 4,
-                            crossAxisSpacing: 8,
+                        const SizedBox(height: 8),
+                        Flexible(
+                          child: GridView.builder(
+                            controller: gridScrollController,
+                            shrinkWrap: true,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: (widget.portrait)
+                                      ? 5.5
+                                      : 4.8,
+                                  mainAxisSpacing: 4,
+                                  crossAxisSpacing: 8,
+                                ),
+                            itemCount: searchitems.isNotEmpty
+                                ? searchitems.length
+                                : GlobalMenuCache.items.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              int itemId = searchitems.isNotEmpty
+                                  ? searchitems.elementAt(index)
+                                  : GlobalMenuCache.items.keys.elementAt(index);
+                              return Container(
+                                decoration: BoxDecoration(
+                                  border: (!widget.portrait && index % 2 != 0)
+                                      ? Border(
+                                          left: BorderSide(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.54),
+                                            width: 1.0,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                padding: const EdgeInsets.only(left: 4.0),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      "${index + 1}.",
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      flex: 3,
+                                      child: TextFormField(
+                                        key: ValueKey("name_$itemId"),
+                                        initialValue:
+                                            GlobalMenuCache.items[itemId]?.name,
+                                        scrollPadding: const EdgeInsets.only(
+                                          bottom: 120,
+                                        ),
+                                        decoration: const InputDecoration(
+                                          labelText: "Name",
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        style: const TextStyle(fontSize: 13),
+                                        onChanged: (value) {
+                                          changes[itemId] = {
+                                            ...changes[itemId] ?? {},
+                                            'name': value,
+                                          };
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      flex: 1,
+                                      child: TextFormField(
+                                        key: ValueKey("price_$itemId"),
+                                        initialValue: GlobalMenuCache
+                                            .items[itemId]
+                                            ?.price
+                                            .toString(),
+                                        scrollPadding: const EdgeInsets.only(
+                                          bottom: 120,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                          labelText: "Price",
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        style: const TextStyle(fontSize: 13),
+                                        onChanged: (value) {
+                                          changes[itemId] = {
+                                            ...changes[itemId] ?? {},
+                                            'price': int.tryParse(value) ?? 0,
+                                          };
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      flex: 1,
+                                      child: TextFormField(
+                                        key: ValueKey("stock_$itemId"),
+                                        initialValue: GlobalMenuCache
+                                            .items[itemId]
+                                            ?.stock
+                                            .toString(),
+                                        scrollPadding: const EdgeInsets.only(
+                                          bottom: 120,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                          labelText: "Stock",
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        style: const TextStyle(fontSize: 13),
+                                        onChanged: (value) {
+                                          changes[itemId] = {
+                                            ...changes[itemId] ?? {},
+                                            'stocks': int.tryParse(value) ?? 0,
+                                          };
+                                        },
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            "Veg",
+                                            style: TextStyle(fontSize: 10),
+                                          ),
+                                          Checkbox(
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                            value:
+                                                changes[itemId]?['is_veg'] ??
+                                                GlobalMenuCache
+                                                    .items[itemId]
+                                                    ?.isVeg,
+                                            onChanged: (value) {
+                                              if (mounted) {
+                                                setState(() {
+                                                  changes[itemId] = {
+                                                    ...changes[itemId] ?? {},
+                                                    'is_veg': value,
+                                                  };
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            "Menu",
+                                            style: TextStyle(fontSize: 10),
+                                          ),
+                                          Checkbox(
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                            value:
+                                                changes[itemId]?['available'] ??
+                                                GlobalMenuCache
+                                                    .items[itemId]
+                                                    ?.available,
+                                            onChanged: (value) {
+                                              if (mounted) {
+                                                setState(() {
+                                                  changes[itemId] = {
+                                                    ...changes[itemId] ?? {},
+                                                    'available': value,
+                                                  };
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                          itemCount: searchitems.isNotEmpty
-                              ? searchitems.length
-                              : GlobalMenuCache.items.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            int itemId = searchitems.isNotEmpty
-                                ? searchitems.elementAt(index)
-                                : GlobalMenuCache.items.keys.elementAt(index);
-                            return Container(
-                              decoration: BoxDecoration(
-                                border: (!widget.portrait && index % 2 != 0)
-                                    ? Border(
-                                        left: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.54),
-                                          width: 1.0,
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                              padding: const EdgeInsets.only(left: 4.0),
-                              child: Row(
-                                children: [
-                                  Text("${index + 1}.", style: const TextStyle(fontSize: 12)),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    flex: 3,
-                                    child: TextFormField(
-                                      key: ValueKey("name_$itemId"),
-                                      initialValue:
-                                          GlobalMenuCache.items[itemId]?.name,
-                                      scrollPadding: const EdgeInsets.only(bottom: 120),
-                                      decoration: const InputDecoration(
-                                        labelText: "Name",
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      ),
-                                      style: const TextStyle(fontSize: 13),
-                                      onChanged: (value) {
-                                        changes[itemId] = {
-                                          ...changes[itemId] ?? {},
-                                          'name': value,
-                                        };
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    flex: 1,
-                                    child: TextFormField(
-                                      key: ValueKey("price_$itemId"),
-                                      initialValue: GlobalMenuCache
-                                          .items[itemId]
-                                          ?.price
-                                          .toString(),
-                                      scrollPadding: const EdgeInsets.only(bottom: 120),
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText: "Price",
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      ),
-                                      style: const TextStyle(fontSize: 13),
-                                      onChanged: (value) {
-                                        changes[itemId] = {
-                                          ...changes[itemId] ?? {},
-                                          'price': int.tryParse(value) ?? 0,
-                                        };
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    flex: 1,
-                                    child: TextFormField(
-                                      key: ValueKey("stock_$itemId"),
-                                      initialValue: GlobalMenuCache
-                                          .items[itemId]
-                                          ?.stock
-                                          .toString(),
-                                      scrollPadding: const EdgeInsets.only(bottom: 120),
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        labelText: "Stock",
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      ),
-                                      style: const TextStyle(fontSize: 13),
-                                      onChanged: (value) {
-                                        changes[itemId] = {
-                                          ...changes[itemId] ?? {},
-                                          'stocks': int.tryParse(value) ?? 0,
-                                        };
-                                      },
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Text(
-                                          "Veg",
-                                          style: TextStyle(fontSize: 10),
-                                        ),
-                                        Checkbox(
-                                          visualDensity: VisualDensity.compact,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                          value:
-                                              changes[itemId]?['is_veg'] ??
-                                              GlobalMenuCache
-                                                  .items[itemId]
-                                                  ?.isVeg,
-                                          onChanged: (value) {
-                                            if (mounted) {
-                                              setState(() {
-                                                changes[itemId] = {
-                                                  ...changes[itemId] ?? {},
-                                                  'is_veg': value,
-                                                };
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Text(
-                                          "Menu",
-                                          style: TextStyle(fontSize: 10),
-                                        ),
-                                        Checkbox(
-                                          visualDensity: VisualDensity.compact,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                          value:
-                                              changes[itemId]?['available'] ??
-                                              GlobalMenuCache
-                                                  .items[itemId]
-                                                  ?.available,
-                                          onChanged: (value) {
-                                            if (mounted) {
-                                              setState(() {
-                                                changes[itemId] = {
-                                                  ...changes[itemId] ?? {},
-                                                  'available': value,
-                                                };
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             ElevatedButton(
-                              style: getActionButtonStyle(context, false).copyWith(
-                                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                                minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
-                              ),
+                              style: getActionButtonStyle(context, false)
+                                  .copyWith(
+                                    padding: const WidgetStatePropertyAll(
+                                      EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    minimumSize: const WidgetStatePropertyAll(
+                                      Size(0, 32),
+                                    ),
+                                  ),
                               onPressed: () {
                                 if (!isWindows) {
                                   SystemChrome.setPreferredOrientations([
@@ -660,15 +764,26 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                 children: [
                                   const Icon(Icons.close, size: 18),
                                   const SizedBox(width: 4),
-                                  Text(AppLocalizations.of(context)!.cancel, style: const TextStyle(fontSize: 12)),
+                                  Text(
+                                    AppLocalizations.of(context)!.cancel,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                 ],
                               ),
                             ),
                             ElevatedButton(
-                              style: getActionButtonStyle(context, true).copyWith(
-                                padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                                minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
-                              ),
+                              style: getActionButtonStyle(context, true)
+                                  .copyWith(
+                                    padding: const WidgetStatePropertyAll(
+                                      EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    minimumSize: const WidgetStatePropertyAll(
+                                      Size(0, 32),
+                                    ),
+                                  ),
                               onPressed: () async {
                                 for (int i in changes.keys) {
                                   final itemChanges = changes[i];
@@ -678,12 +793,21 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                   if (originalItem == null) continue;
 
                                   final updatedItem = {
-                                    'name': itemChanges['name'] ?? originalItem.name,
-                                    'price': itemChanges['price'] ?? originalItem.price,
-                                    'is_veg': itemChanges['is_veg'] ?? originalItem.isVeg,
+                                    'name':
+                                        itemChanges['name'] ??
+                                        originalItem.name,
+                                    'price':
+                                        itemChanges['price'] ??
+                                        originalItem.price,
+                                    'is_veg':
+                                        itemChanges['is_veg'] ??
+                                        originalItem.isVeg,
                                     'available':
-                                        itemChanges['available'] ?? originalItem.available,
-                                    'stocks': itemChanges['stocks'] ?? originalItem.stock,
+                                        itemChanges['available'] ??
+                                        originalItem.available,
+                                    'stocks':
+                                        itemChanges['stocks'] ??
+                                        originalItem.stock,
                                     'pic': originalItem.pic,
                                   };
                                   if (mounted) {
@@ -704,7 +828,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text("Item Changes are Successful"),
+                                      content: Text(
+                                        "Item Changes are Successful",
+                                      ),
                                       backgroundColor: Theme.of(
                                         context,
                                       ).colorScheme.secondary,
@@ -722,7 +848,10 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                                 children: [
                                   const Icon(Icons.check, size: 18),
                                   const SizedBox(width: 4),
-                                  Text(AppLocalizations.of(context)!.submit, style: const TextStyle(fontSize: 12)),
+                                  Text(
+                                    AppLocalizations.of(context)!.submit,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                 ],
                               ),
                             ),
@@ -736,13 +865,19 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
               if (isWindows) {
                 return Dialog(
                   backgroundColor: Theme.of(context).colorScheme.surface,
-                  insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  insetPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
                   child: SizedBox(width: 800, child: content),
                 );
               }
               return Dialog(
                 backgroundColor: Theme.of(context).colorScheme.surface,
-                insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 10,
+                ),
                 child: content,
               );
             },
@@ -787,7 +922,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
         if (mounted) {
           setState(() {
             if (createdItemId != null) {
-              GlobalMenuCache.items[createdItemId] = MenuItem(
+              final created = MenuItem(
                 id: createdItemId,
                 name: name,
                 price: price,
@@ -796,6 +931,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
                 stock: stocks,
                 pic: decodedJson["pic_link"],
               );
+              fetchedItems[createdItemId] = created;
+              GlobalMenuCache.items[createdItemId] = created;
+              _syncAvailabilitySets(createdItemId, created);
             }
           });
         }
@@ -861,13 +999,16 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           setState(() {
             final oldItem = GlobalMenuCache.items[itemId];
             if (oldItem != null) {
-              GlobalMenuCache.items[itemId] = oldItem.copyWith(
+              final updated = oldItem.copyWith(
                 available: available,
                 isVeg: item?['is_veg'],
                 name: item?["name"],
                 price: item?["price"],
                 stock: stock,
               );
+              fetchedItems[itemId] = updated;
+              GlobalMenuCache.items[itemId] = updated;
+              _syncAvailabilitySets(itemId, updated);
             }
           });
           return true;
@@ -908,6 +1049,9 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
             } else {
               GlobalMenuCache.navailableid.remove(itemId);
             }
+            fetchedAid.remove(itemId);
+            fetchedNaid.remove(itemId);
+            fetchedItems.remove(itemId);
             GlobalMenuCache.items.remove(itemId);
             fetchAndCacheAndNotify();
           });
@@ -987,6 +1131,7 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
       ),
       body: CustomScrollView(
         slivers: [
+          if (_isSlowNetwork) _buildSlowNetworkBanner(theme),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -1121,6 +1266,39 @@ class MenupageState extends State<Menupage> with AutoFetchMixin<Menupage> {
           return snapshot.data!;
         }
       },
+    );
+  }
+
+  Widget _buildSlowNetworkBanner(ThemeData theme) {
+    final metricLabel = _latestLatencyMetricMs != null
+        ? 'Latency signal: $_latestLatencyMetricMs ms'
+        : 'Latency signal: unavailable';
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orangeAccent.withValues(alpha: 0.16),
+            border: Border.all(
+              color: Colors.orangeAccent.withValues(alpha: 0.7),
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.network_check, color: Colors.orangeAccent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Network appears slow. Live inventory updates may be delayed. $metricLabel',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

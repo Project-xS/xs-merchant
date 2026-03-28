@@ -94,6 +94,13 @@ class ImageUploadState extends State<ImageUpload> {
 
         if (croppedResult != null && mounted) {
           ui.Image finalImage = croppedResult.uiImage;
+
+          // Set immediately to show in UI while resizing/converting
+          setState(() {
+            croppedUiImage = finalImage;
+            png = null;
+          });
+
           if (finalImage.width != width || finalImage.height != height) {
             final ByteData? byteData = await finalImage.toByteData(
               format: ui.ImageByteFormat.png,
@@ -111,13 +118,15 @@ class ImageUploadState extends State<ImageUpload> {
                   img.encodePng(resizedImage),
                 );
                 finalImage = await decodeImageFromList(resizedBytes);
+                if (mounted) {
+                  setState(() {
+                    croppedUiImage = finalImage;
+                  });
+                }
               }
             }
           }
-          setState(() {
-            croppedUiImage = finalImage;
-          });
-          await converttopng(croppedUiImage);
+          await converttopng(finalImage);
         }
       }
     } catch (e) {
@@ -170,10 +179,29 @@ class ImageUploadState extends State<ImageUpload> {
     }
     try {
       if (kDebugMode) debugPrint("[imageupload] Setting isLoading true");
-      if (mounted && Scaffold.maybeOf(context) != null) {
+      if (mounted) {
         setState(() {
           isLoading = true;
         });
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Dialog(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(width: 20),
+                    Text("Uploading..."),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
       }
       if (kDebugMode) {
         debugPrint("[imageupload] Sending PUT to /menu/upload_pic/$id");
@@ -193,7 +221,7 @@ class ImageUploadState extends State<ImageUpload> {
         if (kDebugMode) {
           debugPrint("[imageupload] POST response data: ${data.toString()}");
           debugPrint(
-            "[imageupload] Sending PUT to presigned url: ${data['url']}",
+            "[imageupload] Sending PUT to presigned url: ${data['presigned_url']}",
           );
         }
         final response = await http.put(
@@ -234,6 +262,7 @@ class ImageUploadState extends State<ImageUpload> {
               "[imageupload] GET /assets/$id status: ${response2.statusCode}, body: ${response2.body}",
             );
           }
+          debugPrint("[imageupload] GET /assets/$id status: ${response2.body}");
           if (response2.statusCode == 200) {
             data1 = jsonDecode(response2.body);
             if (kDebugMode) {
@@ -302,7 +331,10 @@ class ImageUploadState extends State<ImageUpload> {
       if (kDebugMode) {
         debugPrint("[imageupload] finally block, isLoading set to false");
       }
-      if (mounted && Scaffold.maybeOf(context) != null) {
+      if (mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
         setState(() {
           isLoading = false;
           if (data1 != null) {
@@ -387,6 +419,11 @@ class ImageUploadState extends State<ImageUpload> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Image.memory(png!, height: 150),
+          )
+        else if (croppedUiImage != null)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: RawImage(image: croppedUiImage, height: 150),
           ),
       ],
     );
@@ -488,6 +525,28 @@ Future<void> pickAndUploadCanteenImage(
     return;
   }
 
+  if (context.mounted) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Dialog(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text("Uploading..."),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   try {
     final response1 = await ApiClient.put(
       ApiConstants.canteenUploadPic,
@@ -509,6 +568,9 @@ Future<void> pickAndUploadCanteenImage(
         );
 
         if (context.mounted) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Canteen Image Updated Successfully"),
@@ -518,6 +580,9 @@ Future<void> pickAndUploadCanteenImage(
         }
       } else {
         if (context.mounted) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Image Upload Failed: 2nd Stage, ${response.body}"),
@@ -528,6 +593,9 @@ Future<void> pickAndUploadCanteenImage(
       }
     } else {
       if (context.mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Image Upload Failed: 1st Stage, ${response1.body}"),
@@ -539,6 +607,9 @@ Future<void> pickAndUploadCanteenImage(
   } on Exception catch (e) {
     if (kDebugMode) debugPrint("[imageupload] Exception: $e");
     if (context.mounted) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("An error occurred during upload."),
